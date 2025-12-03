@@ -15,6 +15,7 @@ export enum ControlMode {
   Eraser,
   DrawLine,
   DrawScribble,
+  EraserBrush,
 }
 
 export class MapController {
@@ -448,5 +449,67 @@ export class MapController {
         break;
     }
     this.controlMode = mode;
+  }
+
+  toggleTileBoundaries(show: boolean): void {
+    if (!this.map) return;
+
+    if (show) {
+      const features = Object.values(this.fogMap.tiles).map((tile) => {
+        const bbox = tile.bbox();
+        return {
+          type: "Feature",
+          properties: {
+            id: tile.id,
+            filename: tile.filename,
+          },
+          geometry: {
+            type: "Polygon",
+            coordinates: [
+              [
+                [bbox.west, bbox.north],
+                [bbox.east, bbox.north],
+                [bbox.east, bbox.south],
+                [bbox.west, bbox.south],
+                [bbox.west, bbox.north],
+              ],
+            ],
+          },
+        };
+      });
+
+      const data = {
+        type: "FeatureCollection",
+        features: features,
+      };
+
+      if (this.map.getSource("tile-boundaries")) {
+        (
+          this.map.getSource("tile-boundaries") as mapboxgl.GeoJSONSource
+        ).setData(data as any);
+      } else {
+        this.map.addSource("tile-boundaries", {
+          type: "geojson",
+          data: data as any,
+        });
+        this.map.addLayer({
+          id: "tile-boundaries-layer",
+          type: "line",
+          source: "tile-boundaries",
+          layout: {},
+          paint: {
+            "line-color": "#0080ff",
+            "line-width": 1,
+          },
+        });
+      }
+    } else {
+      if (this.map.getLayer("tile-boundaries-layer")) {
+        this.map.removeLayer("tile-boundaries-layer");
+      }
+      if (this.map.getSource("tile-boundaries")) {
+        this.map.removeSource("tile-boundaries");
+      }
+    }
   }
 }

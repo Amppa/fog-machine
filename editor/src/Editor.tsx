@@ -16,6 +16,11 @@ function Editor(props: Props): JSX.Element {
     mapController.setControlMode(controlMode);
   }, [controlMode]);
 
+  const [showTileBoundaries, setShowTileBoundaries] = useState(false);
+  useEffect(() => {
+    mapController.toggleTileBoundaries(showTileBoundaries);
+  }, [showTileBoundaries]);
+
   const [historyStatus, setHistoryStatus] = useState({
     canRedo: false,
     canUndo: false,
@@ -61,6 +66,15 @@ function Editor(props: Props): JSX.Element {
         mapController.redo();
       },
     },
+    {
+      key: "show-tiles",
+      icon: iconGrid,
+      clickable: true,
+      enabled: showTileBoundaries,
+      onClick: () => {
+        setShowTileBoundaries(!showTileBoundaries);
+      },
+    },
     null,
     {
       key: "eraser",
@@ -98,6 +112,19 @@ function Editor(props: Props): JSX.Element {
           setControlMode(ControlMode.View);
         } else {
           setControlMode(ControlMode.DrawScribble);
+        }
+      },
+    },
+    {
+      key: "eraser-brush",
+      icon: iconEraserBrush,
+      clickable: true,
+      enabled: controlMode === ControlMode.EraserBrush,
+      onClick: () => {
+        if (controlMode === ControlMode.EraserBrush) {
+          setControlMode(ControlMode.View);
+        } else {
+          setControlMode(ControlMode.EraserBrush);
         }
       },
     },
@@ -162,6 +189,29 @@ const iconEraserSolid = (
       fill="currentColor"
       d="M497.941 273.941c18.745-18.745 18.745-49.137 0-67.882l-160-160c-18.745-18.745-49.136-18.746-67.883 0l-256 256c-18.745 18.745-18.745 49.137 0 67.882l96 96A48.004 48.004 0 0 0 144 480h356c6.627 0 12-5.373 12-12v-40c0-6.627-5.373-12-12-12H355.883l142.058-142.059zm-302.627-62.627l137.373 137.373L265.373 416H150.628l-80-80 124.686-124.686z"
     ></path>
+  </svg>
+);
+
+const iconEraserBrush = (
+  <svg
+    aria-hidden="true"
+    focusable="false"
+    data-prefix="fas"
+    data-icon="eraser"
+    role="img"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 512 512"
+    className="w-full h-full"
+  >
+    <path
+      fill="currentColor"
+      d="M497.941 273.941c18.745-18.745 18.745-49.137 0-67.882l-160-160c-18.745-18.745-49.136-18.746-67.883 0l-256 256c-18.745 18.745-18.745 49.137 0 67.882l96 96A48.004 48.004 0 0 0 144 480h356c6.627 0 12-5.373 12-12v-40c0-6.627-5.373-12-12-12H355.883l142.058-142.059zm-302.627-62.627l137.373 137.373L265.373 416H150.628l-80-80 124.686-124.686z"
+    ></path>
+    <path
+      fill="currentColor"
+      d="M362.7 19.3L314.3 67.7 444.3 197.7l48.4-48.4c25-25 25-65.5 0-90.5L453.3 19.3c-25-25-65.5-25-90.5 0zm-71 71L58.6 323.5c-10.4 10.4-18 23.3-22.2 37.4L1 481.2C-1.5 489.7 .8 498.8 7 505s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L421.7 220.3 291.7 90.3z"
+      transform="translate(100, -100) scale(0.5)"
+    />
   </svg>
 );
 
@@ -245,5 +295,23 @@ const iconScribble = (
       strokeWidth="2"
       d="M6 14H5a2 2 0 0 0-2 2v0a2 2 0 0 0 2 2h14a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-4"
     />
+  </svg>
+);
+
+const iconGrid = (
+  <svg
+    aria-hidden="true"
+    focusable="false"
+    data-prefix="fas"
+    data-icon="border-all"
+    role="img"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    className="w-full h-full"
+  >
+    <path
+      fill="currentColor"
+      d="M3 3h18v18H3V3zm2 2v6h6V5H5zm8 0v6h6V5h-6zm0 8v6h6v-6h-6zm-8 0v6h6v-6H5z"
+    ></path>
   </svg>
 );
