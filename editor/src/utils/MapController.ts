@@ -15,6 +15,7 @@ export enum ControlMode {
   Eraser,
   DrawLine,
   DrawScribble,
+  EraseBrush,
 }
 
 export class MapController {
@@ -417,6 +418,10 @@ export class MapController {
           this.eraserArea = null;
         }
         break;
+      case ControlMode.EraseBrush:
+        mapboxCanvas.style.cursor = "";
+        this.map?.dragPan.enable();
+        break;
       case ControlMode.DrawLine:
         mapboxCanvas.style.cursor = "";
         this.map?.dragPan.enable();
@@ -435,6 +440,11 @@ export class MapController {
         break;
       case ControlMode.Eraser:
         mapboxCanvas.style.cursor = "cell";
+        this.map?.dragPan.disable();
+        break;
+      case ControlMode.EraseBrush:
+        mapboxCanvas.style.cursor =
+          'url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewport="0 0 24 24"><rect width="24" height="24" fill="white" fill-opacity="0.8"/></svg>\') 12 12, auto';
         this.map?.dragPan.disable();
         break;
       case ControlMode.DrawLine:

@@ -76,6 +76,19 @@ function Editor(props: Props): JSX.Element {
       },
     },
     {
+      key: "eraser-brush",
+      icon: iconEraserBrush,
+      clickable: true,
+      enabled: controlMode === ControlMode.EraseBrush,
+      onClick: () => {
+        if (controlMode === ControlMode.EraseBrush) {
+          setControlMode(ControlMode.View);
+        } else {
+          setControlMode(ControlMode.EraseBrush);
+        }
+      },
+    },
+    {
       key: "line",
       icon: iconLine,
       clickable: true,
@@ -245,5 +258,27 @@ const iconScribble = (
       strokeWidth="2"
       d="M6 14H5a2 2 0 0 0-2 2v0a2 2 0 0 0 2 2h14a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-4"
     />
+  </svg>
+);
+
+const iconEraserBrush = (
+  <svg
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    fill="#000000"
+    className="w-full h-full"
+  >
+    <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+    <g
+      id="SVGRepo_tracerCarrier"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    ></g>
+    <g id="SVGRepo_iconCarrier">
+      <g>
+        <path fill="none" d="M0 0h24v24H0z"></path>
+        <path d="M8 20v-5h2v5h9v-7H5v7h3zm-4-9h16V8h-6V4h-4v4H4v3zM3 21v-8H2V7a1 1 0 0 1 1-1h5V3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v3h5a1 1 0 0 1 1 1v6h-1v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"></path>
+      </g>
+    </g>
   </svg>
 );
