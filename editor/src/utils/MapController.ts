@@ -26,6 +26,7 @@ export class MapController {
   public historyManager: HistoryManager;
   private controlMode: ControlMode;
   private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
+  private eraseBrushLastPos: mapboxgl.LngLat | null;
   private scribbleLastPos: mapboxgl.LngLat | null;
   private scribbleStrokeBbox: Bbox | null;
   private mapDraw: MapDraw | null;
@@ -40,6 +41,7 @@ export class MapController {
     this.fogMap = fogMap.FogMap.empty;
     this.controlMode = ControlMode.View;
     this.eraserArea = null;
+    this.eraseBrushLastPos = null;
     this.scribbleLastPos = null;
     this.scribbleStrokeBbox = null;
     this.historyManager = new HistoryManager(this.fogMap);
@@ -295,6 +297,11 @@ export class MapController {
           this.eraserArea = [startPoint, eraserSource];
         }
       }
+    } else if (this.controlMode === ControlMode.EraseBrush) {
+      this.map?.dragPan.disable();
+      this.eraseBrushLastPos = e.lngLat;
+      // Initial erase at click point
+      this.eraseAtPoint(e.lngLat);
     } else if (this.controlMode === ControlMode.DrawScribble) {
       this.map?.dragPan.disable();
       this.scribbleLastPos = e.lngLat;
@@ -331,6 +338,47 @@ export class MapController {
           ],
         },
       });
+    } else if (
+      this.controlMode === ControlMode.EraseBrush &&
+      this.eraseBrushLastPos
+    ) {
+      const currentPos = e.lngLat;
+      const dist = currentPos.distanceTo(this.eraseBrushLastPos);
+      // Interpolate if distance is significant to avoid gaps
+      // 24px at zoom level 0 is huge, but we operate in lat/lng.
+      // A simple heuristic: if we moved more than a pixel's worth of distance, interpolate.
+      // Since we don't have easy access to pixel distance here without projecting,
+      // we'll just interpolate a few steps if the distance is "large".
+      // Actually, for a smooth brush, we can just interpolate based on a fixed number of steps
+      // or a small fixed distance. Let's try a simple step approach.
+
+      const steps = Math.ceil(dist / 5); // Arbitrary small distance divisor in meters? No, distanceTo returns meters.
+      // 5 meters is very small on a global scale, but fine for high zoom.
+      // Let's just use a fixed number of interpolations for now or rely on the fact that mousemove fires often.
+      // Better: project to pixels to see how far we moved.
+      const p1 = this.map?.project(this.eraseBrushLastPos);
+      const p2 = this.map?.project(currentPos);
+      if (p1 && p2) {
+        const pixelDist = Math.sqrt(
+          Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2)
+        );
+        const stepSize = 5; // interpolate every 5 pixels
+        const numSteps = Math.ceil(pixelDist / stepSize);
+
+        for (let i = 1; i <= numSteps; i++) {
+          const t = i / numSteps;
+          const lat =
+            this.eraseBrushLastPos.lat +
+            (currentPos.lat - this.eraseBrushLastPos.lat) * t;
+          const lng =
+            this.eraseBrushLastPos.lng +
+            (currentPos.lng - this.eraseBrushLastPos.lng) * t;
+          this.eraseAtPoint(new mapboxgl.LngLat(lng, lat));
+        }
+      } else {
+        this.eraseAtPoint(currentPos);
+      }
+      this.eraseBrushLastPos = currentPos;
     } else if (
       this.controlMode === ControlMode.DrawScribble &&
       this.scribbleLastPos
@@ -385,6 +433,18 @@ export class MapController {
       this.updateFogMap(newMap, bbox);
 
       this.eraserArea = null;
+    } else if (
+      this.controlMode === ControlMode.EraseBrush &&
+      this.eraseBrushLastPos
+    ) {
+      this.eraseBrushLastPos = null;
+      this.map?.dragPan.enable();
+      // We should probably add a history entry here, but since we modified the map in real-time
+      // without tracking the specific changed area for the whole stroke, it's tricky.
+      // For now, let's just assume the user is okay with the current state being the new history state.
+      // Ideally we would have accumulated the bbox of the entire stroke.
+      // TODO: Accumulate stroke bbox for history.
+      this.historyManager.append(this.fogMap, "all");
     } else if (
       this.controlMode === ControlMode.DrawScribble &&
       this.scribbleLastPos
@@ -458,5 +518,27 @@ export class MapController {
         break;
     }
     this.controlMode = mode;
+  }
+
+  private eraseAtPoint(lngLat: mapboxgl.LngLat) {
+    if (!this.map) return;
+    const point = this.map.project(lngLat);
+    const size = 24; // 24px square
+    const halfSize = size / 2;
+    const p1 = new mapboxgl.Point(point.x - halfSize, point.y - halfSize);
+    const p2 = new mapboxgl.Point(point.x + halfSize, point.y + halfSize);
+    const c1 = this.map.unproject(p1);
+    const c2 = this.map.unproject(p2);
+
+    const bbox = new Bbox(
+      Math.min(c1.lng, c2.lng),
+      Math.min(c1.lat, c2.lat),
+      Math.max(c1.lng, c2.lng),
+      Math.max(c1.lat, c2.lat)
+    );
+
+    const newMap = this.fogMap.clearBbox(bbox);
+    // Update map without adding to history for every small step
+    this.updateFogMap(newMap, bbox, true);
   }
 }
