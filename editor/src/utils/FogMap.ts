@@ -218,7 +218,7 @@ export class FogMap {
     }
   }
 
-  deleteBlocks(bbox: Bbox): FogMap {
+  getBlocks(bbox: Bbox): { tileKey: string; blockKey: string }[] {
     const nw = Tile.LngLatToXY(bbox.west, bbox.north);
     const se = Tile.LngLatToXY(bbox.east, bbox.south);
 
@@ -232,7 +232,7 @@ export class FogMap {
     const yMinTile = Math.floor(yMin);
     const yMaxTile = Math.floor(yMax);
 
-    let mutableTiles: { [key: XYKey]: Tile } | null = null;
+    const result: { tileKey: string; blockKey: string }[] = [];
 
     for (let tx = xMinTile; tx <= xMaxTile; tx++) {
       for (let ty = yMinTile; ty <= yMaxTile; ty++) {
@@ -244,22 +244,39 @@ export class FogMap {
           const localXMax = xMax - tx;
           const localYMax = yMax - ty;
 
-          const newTile = tile.deleteBlocksInArea(
+          const localKeys = tile.getIntersectingBlocks(
             localXMin,
             localYMin,
             localXMax,
             localYMax
           );
+          localKeys.forEach((bk) => result.push({ tileKey: key, blockKey: bk }));
+        }
+      }
+    }
+    return result;
+  }
 
-          if (newTile !== tile) {
-            if (!mutableTiles) {
-              mutableTiles = { ...this.tiles };
-            }
-            if (newTile) {
-              mutableTiles[key] = newTile;
-            } else {
-              delete mutableTiles[key];
-            }
+  removeBlocks(blocksToRemove: {
+    [tileKey: string]: string[] | Set<string>;
+  }): FogMap {
+    let mutableTiles: { [key: XYKey]: Tile } | null = null;
+
+    for (const tileKey in blocksToRemove) {
+      if (Object.prototype.hasOwnProperty.call(this.tiles, tileKey)) {
+        const tile = this.tiles[tileKey];
+        const val = blocksToRemove[tileKey];
+        const keysToRemove = val instanceof Set ? val : new Set(val);
+        const newTile = tile.removeBlocks(keysToRemove);
+
+        if (newTile !== tile) {
+          if (!mutableTiles) {
+            mutableTiles = { ...this.tiles };
+          }
+          if (newTile) {
+            mutableTiles[tileKey] = newTile;
+          } else {
+            delete mutableTiles[tileKey];
           }
         }
       }
@@ -586,44 +603,58 @@ export class Tile {
     }
   }
 
-  deleteBlocksInArea(
+  getIntersectingBlocks(
     xMin: number,
     yMin: number,
     xMax: number,
     yMax: number
-  ): Tile | null {
-    console.log(
-      `deleteBlocksInArea: xMin: ${xMin}, yMin: ${yMin}, xMax: ${xMax}, yMax: ${yMax}`
-    );
+  ): string[] {
     const bxMin = Math.floor(xMin * TILE_WIDTH);
     const byMin = Math.floor(yMin * TILE_WIDTH);
     const bxMax = Math.ceil(xMax * TILE_WIDTH);
     const byMax = Math.ceil(yMax * TILE_WIDTH);
 
-    let mutableBlocks: { [key: XYKey]: Block } | null = null;
+    const result: string[] = [];
 
     for (let x = bxMin; x < bxMax; x++) {
       for (let y = byMin; y < byMax; y++) {
         const key = FogMap.makeKeyXY(x, y);
         if (Object.prototype.hasOwnProperty.call(this.blocks, key)) {
-          if (!mutableBlocks) {
-            mutableBlocks = { ...this.blocks };
-          }
-          delete mutableBlocks[key];
+          result.push(key);
         }
       }
     }
+    return result;
+  }
 
-    if (mutableBlocks) {
-      if (Object.keys(mutableBlocks).length === 0) {
-        return null;
-      } else {
-        Object.freeze(mutableBlocks);
-        return new Tile(this.filename, this.id, this.x, this.y, mutableBlocks);
+  removeBlocks(blockKeys: Set<string>): Tile | null {
+    let mutableBlocks: { [key: XYKey]: Block } | null = null;
+    let changed = false;
+
+    // Check if any keys to remove exist in this tile
+    blockKeys.forEach((key) => {
+      if (Object.prototype.hasOwnProperty.call(this.blocks, key)) {
+        if (!mutableBlocks) {
+          mutableBlocks = { ...this.blocks };
+        }
+        delete mutableBlocks[key];
+        changed = true;
       }
-    } else {
+    });
+
+    if (!changed) {
       return this;
     }
+
+    if (mutableBlocks && Object.keys(mutableBlocks).length === 0) {
+      return null;
+    }
+
+    if (mutableBlocks) {
+      Object.freeze(mutableBlocks);
+      return new Tile(this.filename, this.id, this.x, this.y, mutableBlocks);
+    }
+    return this;
   }
 
   clearRect(x: number, y: number, width: number, height: number): Tile | null {
@@ -760,7 +791,7 @@ export class Block {
     );
     const regionChar1 = String.fromCharCode(
       (((this.extraData[0] & 0x7) << 2) | ((this.extraData[1] & 0xc0) >> 6)) +
-        "?".charCodeAt(0)
+      "?".charCodeAt(0)
     );
     return regionChar0 + regionChar1;
   }

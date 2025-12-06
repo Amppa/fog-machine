@@ -35,6 +35,9 @@ export class MapController {
   private resolvedLanguage: string;
   private fogConcentration: FogConcentration;
   private deleteBlockCursor: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
+  private pendingDeleteBlocks: { [tileKey: string]: Set<string> };
+  private pendingDeleteFeatures: GeoJSON.Feature<GeoJSON.Polygon>[];
+  private pendingDeleteBbox: Bbox | null;
 
   private constructor() {
     this.map = null;
@@ -52,6 +55,9 @@ export class MapController {
     this.mapDraw = null;
     this.mapRenderer = null;
     this.deleteBlockCursor = null;
+    this.pendingDeleteBlocks = {};
+    this.pendingDeleteFeatures = [];
+    this.pendingDeleteBbox = null;
   }
 
   static create(): MapController {
@@ -437,6 +443,9 @@ export class MapController {
         e.lngLat.lat
       );
     } else if (this.controlMode === ControlMode.DeleteBlock) {
+      this.pendingDeleteBlocks = {};
+      this.pendingDeleteFeatures = [];
+      this.pendingDeleteBbox = null;
       this.handleDeleteBlockInteraction(e.lngLat);
     }
   }
@@ -534,6 +543,14 @@ export class MapController {
       this.scribbleLastPos = null;
       this.scribbleStrokeBbox = null;
       this.map?.dragPan.enable();
+    } else if (this.controlMode === ControlMode.DeleteBlock) {
+      const newMap = this.fogMap.removeBlocks(this.pendingDeleteBlocks);
+      this.updateFogMap(newMap, this.pendingDeleteBbox || "all");
+
+      this.pendingDeleteBlocks = {};
+      this.pendingDeleteFeatures = [];
+      this.pendingDeleteBbox = null;
+      this.updatePendingDeleteLayer();
     }
   }
 
@@ -567,7 +584,7 @@ export class MapController {
         this.map?.dragPan.enable();
         this.scribbleLastPos = null;
         break;
-      case ControlMode.DeleteBlock:
+      case ControlMode.DeleteBlock: {
         mapboxCanvas.style.cursor = "";
         this.map?.dragPan.enable();
         this.showGrid = false;
@@ -580,7 +597,17 @@ export class MapController {
           if (this.map?.getSource(layerId)) this.map?.removeSource(layerId);
           this.deleteBlockCursor = null;
         }
+        // Cleanup pending layer
+        const pendingLayerId = "pending-delete-layer";
+        if (this.map?.getLayer(pendingLayerId))
+          this.map?.removeLayer(pendingLayerId);
+        if (this.map?.getSource(pendingLayerId))
+          this.map?.removeSource(pendingLayerId);
+        this.pendingDeleteBlocks = {};
+        this.pendingDeleteFeatures = [];
+        this.pendingDeleteBbox = null;
         break;
+      }
     }
 
     // enable the new mode
@@ -608,6 +635,36 @@ export class MapController {
         break;
     }
     this.controlMode = mode;
+  }
+
+  private updatePendingDeleteLayer() {
+    if (!this.map) return;
+    const layerId = "pending-delete-layer";
+    const sourceId = "pending-delete-layer";
+
+    const data: GeoJSON.FeatureCollection<GeoJSON.Polygon> = {
+      type: "FeatureCollection",
+      features: this.pendingDeleteFeatures,
+    };
+
+    const source = this.map.getSource(sourceId) as mapboxgl.GeoJSONSource;
+    if (source) {
+      source.setData(data);
+    } else {
+      this.map.addSource(sourceId, {
+        type: "geojson",
+        data: data,
+      });
+      this.map.addLayer({
+        id: layerId,
+        type: "line",
+        source: sourceId,
+        paint: {
+          "line-color": "#2200CC",
+          "line-width": 2,
+        },
+      });
+    }
   }
 
   private updateDeleteBlockCursor(lngLat: mapboxgl.LngLat) {
@@ -654,7 +711,7 @@ export class MapController {
         source: sourceId,
         paint: {
           "fill-color": "#FFFFFF",
-          "fill-opacity": 0.75,
+          "fill-opacity": 0.3,
         },
       });
       this.map.addLayer({
@@ -663,7 +720,7 @@ export class MapController {
         source: sourceId,
         paint: {
           "line-color": "#FFFFFF",
-          "line-width": 2,
+          "line-width": 1,
         },
       });
       const source = this.map.getSource(sourceId) as mapboxgl.GeoJSONSource;
@@ -695,7 +752,67 @@ export class MapController {
 
     const bbox = new Bbox(west, south, east, north);
 
-    const newMap = this.fogMap.deleteBlocks(bbox);
-    this.updateFogMap(newMap, bbox);
+    const keys = this.fogMap.getBlocks(bbox);
+    const TILE_WIDTH = fogMap.TILE_WIDTH;
+    let changed = false;
+
+    keys.forEach(({ tileKey, blockKey }) => {
+      if (!this.pendingDeleteBlocks[tileKey]) {
+        this.pendingDeleteBlocks[tileKey] = new Set();
+      }
+      if (!this.pendingDeleteBlocks[tileKey].has(blockKey)) {
+        this.pendingDeleteBlocks[tileKey].add(blockKey);
+        changed = true;
+
+        const tile = this.fogMap.tiles[tileKey];
+        if (tile && tile.blocks[blockKey]) {
+          const block = tile.blocks[blockKey];
+          const x0 = tile.x + block.x / TILE_WIDTH;
+          const y0 = tile.y + block.y / TILE_WIDTH;
+          const x1 = tile.x + (block.x + 1) / TILE_WIDTH;
+          const y1 = tile.y + (block.y + 1) / TILE_WIDTH;
+
+          const nw = fogMap.Tile.XYToLngLat(x0, y0);
+          const ne = fogMap.Tile.XYToLngLat(x1, y0);
+          const se = fogMap.Tile.XYToLngLat(x1, y1);
+          const sw = fogMap.Tile.XYToLngLat(x0, y1);
+
+          const cnw = [nw[0], nw[1]];
+          const cne = [ne[0], ne[1]];
+          const cse = [se[0], se[1]];
+          const csw = [sw[0], sw[1]];
+
+          this.pendingDeleteFeatures.push({
+            type: "Feature",
+            geometry: {
+              type: "Polygon",
+              coordinates: [[cnw, csw, cse, cne, cnw]],
+            },
+            properties: {},
+          });
+
+          // Update pendingDeleteBbox
+          const bWest = Math.min(nw[0], ne[0], se[0], sw[0]);
+          const bEast = Math.max(nw[0], ne[0], se[0], sw[0]);
+          const bNorth = Math.max(nw[1], ne[1], se[1], sw[1]);
+          const bSouth = Math.min(nw[1], ne[1], se[1], sw[1]);
+
+          if (!this.pendingDeleteBbox) {
+            this.pendingDeleteBbox = new Bbox(bWest, bSouth, bEast, bNorth);
+          } else {
+            this.pendingDeleteBbox = new Bbox(
+              Math.min(this.pendingDeleteBbox.west, bWest),
+              Math.min(this.pendingDeleteBbox.south, bSouth),
+              Math.max(this.pendingDeleteBbox.east, bEast),
+              Math.max(this.pendingDeleteBbox.north, bNorth)
+            );
+          }
+        }
+      }
+    });
+
+    if (changed) {
+      this.updatePendingDeleteLayer();
+    }
   }
 }
