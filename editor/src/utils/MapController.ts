@@ -15,6 +15,7 @@ export enum ControlMode {
   Eraser,
   DrawLine,
   DrawScribble,
+  DeleteBlock,
 }
 
 export class MapController {
@@ -33,6 +34,7 @@ export class MapController {
   private mapProjection: MapProjection;
   private resolvedLanguage: string;
   private fogConcentration: FogConcentration;
+  private deleteBlockCursor: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
 
   private constructor() {
     this.map = null;
@@ -49,6 +51,7 @@ export class MapController {
     this.fogConcentration = "medium";
     this.mapDraw = null;
     this.mapRenderer = null;
+    this.deleteBlockCursor = null;
   }
 
   static create(): MapController {
@@ -433,6 +436,8 @@ export class MapController {
         e.lngLat.lng,
         e.lngLat.lat
       );
+    } else if (this.controlMode === ControlMode.DeleteBlock) {
+      this.handleDeleteBlockInteraction(e.lngLat);
     }
   }
 
@@ -492,6 +497,11 @@ export class MapController {
 
       this.updateFogMap(newMap, segmentBbox, true);
       this.scribbleLastPos = currentPos;
+    } else if (this.controlMode === ControlMode.DeleteBlock) {
+      if (e.originalEvent.buttons === 1) {
+        this.handleDeleteBlockInteraction(e.lngLat);
+      }
+      this.updateDeleteBlockCursor(e.lngLat);
     }
   }
 
@@ -557,6 +567,20 @@ export class MapController {
         this.map?.dragPan.enable();
         this.scribbleLastPos = null;
         break;
+      case ControlMode.DeleteBlock:
+        mapboxCanvas.style.cursor = "";
+        this.map?.dragPan.enable();
+        this.showGrid = false;
+        this.updateGridLayer();
+        if (this.deleteBlockCursor) {
+          const layerId = "delete-block-cursor";
+          if (this.map?.getLayer(layerId)) this.map?.removeLayer(layerId);
+          if (this.map?.getLayer(layerId + "-outline"))
+            this.map?.removeLayer(layerId + "-outline");
+          if (this.map?.getSource(layerId)) this.map?.removeSource(layerId);
+          this.deleteBlockCursor = null;
+        }
+        break;
     }
 
     // enable the new mode
@@ -576,7 +600,102 @@ export class MapController {
         mapboxCanvas.style.cursor = "crosshair";
         this.map?.dragPan.disable();
         break;
+      case ControlMode.DeleteBlock:
+        mapboxCanvas.style.cursor = "none";
+        this.map?.dragPan.disable();
+        this.showGrid = true;
+        this.updateGridLayer();
+        break;
     }
     this.controlMode = mode;
+  }
+
+  private updateDeleteBlockCursor(lngLat: mapboxgl.LngLat) {
+    if (!this.map) return;
+    const layerId = "delete-block-cursor";
+    const sourceId = "delete-block-cursor";
+
+    // Define cursor size 20px
+    const point = this.map.project(lngLat);
+    const halfSize = 10; // 20px total
+    const nwPoint = new mapboxgl.Point(point.x - halfSize, point.y - halfSize);
+    const nePoint = new mapboxgl.Point(point.x + halfSize, point.y - halfSize);
+    const sePoint = new mapboxgl.Point(point.x + halfSize, point.y + halfSize);
+    const swPoint = new mapboxgl.Point(point.x - halfSize, point.y + halfSize);
+
+    const tnw = this.map.unproject(nwPoint);
+    const tne = this.map.unproject(nePoint);
+    const tse = this.map.unproject(sePoint);
+    const tsw = this.map.unproject(swPoint);
+
+    // Convert LngLat object to array [lng, lat]
+    const cnw = [tnw.lng, tnw.lat];
+    const cne = [tne.lng, tne.lat];
+    const cse = [tse.lng, tse.lat];
+    const csw = [tsw.lng, tsw.lat];
+
+    const data: GeoJSON.Feature<GeoJSON.Polygon> = {
+      type: "Feature",
+      geometry: {
+        type: "Polygon",
+        coordinates: [[cnw, csw, cse, cne, cnw]], // CCW
+      },
+      properties: {},
+    };
+
+    if (!this.deleteBlockCursor) {
+      this.map.addSource(sourceId, {
+        type: "geojson",
+        data: data,
+      });
+      this.map.addLayer({
+        id: layerId,
+        type: "fill",
+        source: sourceId,
+        paint: {
+          "fill-color": "#FFFFFF",
+          "fill-opacity": 0.75,
+        },
+      });
+      this.map.addLayer({
+        id: layerId + "-outline",
+        type: "line",
+        source: sourceId,
+        paint: {
+          "line-color": "#FFFFFF",
+          "line-width": 2,
+        },
+      });
+      const source = this.map.getSource(sourceId) as mapboxgl.GeoJSONSource;
+      this.deleteBlockCursor = [lngLat, source];
+    } else {
+      const source = this.deleteBlockCursor[1];
+      source.setData(data);
+      this.deleteBlockCursor[0] = lngLat;
+    }
+  }
+
+  private handleDeleteBlockInteraction(lngLat: mapboxgl.LngLat) {
+    if (!this.map) return;
+
+    // Calculate bbox from 20px cursor logic
+    const point = this.map.project(lngLat);
+    const halfSize = 10;
+    const nwPoint = new mapboxgl.Point(point.x - halfSize, point.y - halfSize);
+    const sePoint = new mapboxgl.Point(point.x + halfSize, point.y + halfSize);
+
+    const tnw = this.map.unproject(nwPoint);
+    const tse = this.map.unproject(sePoint);
+
+    // Construct bbox from the corner LngLats
+    const west = Math.min(tnw.lng, tse.lng);
+    const east = Math.max(tnw.lng, tse.lng);
+    const north = Math.max(tnw.lat, tse.lat);
+    const south = Math.min(tnw.lat, tse.lat);
+
+    const bbox = new Bbox(west, south, east, north);
+
+    const newMap = this.fogMap.deleteBlocks(bbox);
+    this.updateFogMap(newMap, bbox);
   }
 }

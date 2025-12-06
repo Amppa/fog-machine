@@ -218,6 +218,60 @@ export class FogMap {
     }
   }
 
+  deleteBlocks(bbox: Bbox): FogMap {
+    const nw = Tile.LngLatToXY(bbox.west, bbox.north);
+    const se = Tile.LngLatToXY(bbox.east, bbox.south);
+
+    const xMin = nw[0];
+    const xMax = se[0];
+    const yMin = nw[1];
+    const yMax = se[1];
+
+    const xMinTile = Math.floor(xMin);
+    const xMaxTile = Math.floor(xMax);
+    const yMinTile = Math.floor(yMin);
+    const yMaxTile = Math.floor(yMax);
+
+    let mutableTiles: { [key: XYKey]: Tile } | null = null;
+
+    for (let tx = xMinTile; tx <= xMaxTile; tx++) {
+      for (let ty = yMinTile; ty <= yMaxTile; ty++) {
+        const key = FogMap.makeKeyXY(tx, ty);
+        const tile = this.tiles[key];
+        if (tile) {
+          const localXMin = xMin - tx;
+          const localYMin = yMin - ty;
+          const localXMax = xMax - tx;
+          const localYMax = yMax - ty;
+
+          const newTile = tile.deleteBlocksInArea(
+            localXMin,
+            localYMin,
+            localXMax,
+            localYMax
+          );
+
+          if (newTile !== tile) {
+            if (!mutableTiles) {
+              mutableTiles = { ...this.tiles };
+            }
+            if (newTile) {
+              mutableTiles[key] = newTile;
+            } else {
+              delete mutableTiles[key];
+            }
+          }
+        }
+      }
+    }
+
+    if (mutableTiles) {
+      return new FogMap(mutableTiles);
+    } else {
+      return this;
+    }
+  }
+
   // we only provide interface for clearing a bbox, because we think it make no sense to add paths for whole bbox
   clearBbox(bbox: Bbox): FogMap {
     const nw = Tile.LngLatToXY(bbox.west, bbox.north);
@@ -532,7 +586,50 @@ export class Tile {
     }
   }
 
+  deleteBlocksInArea(
+    xMin: number,
+    yMin: number,
+    xMax: number,
+    yMax: number
+  ): Tile | null {
+    console.log(
+      `deleteBlocksInArea: xMin: ${xMin}, yMin: ${yMin}, xMax: ${xMax}, yMax: ${yMax}`
+    );
+    const bxMin = Math.floor(xMin * TILE_WIDTH);
+    const byMin = Math.floor(yMin * TILE_WIDTH);
+    const bxMax = Math.ceil(xMax * TILE_WIDTH);
+    const byMax = Math.ceil(yMax * TILE_WIDTH);
+
+    let mutableBlocks: { [key: XYKey]: Block } | null = null;
+
+    for (let x = bxMin; x < bxMax; x++) {
+      for (let y = byMin; y < byMax; y++) {
+        const key = FogMap.makeKeyXY(x, y);
+        if (Object.prototype.hasOwnProperty.call(this.blocks, key)) {
+          if (!mutableBlocks) {
+            mutableBlocks = { ...this.blocks };
+          }
+          delete mutableBlocks[key];
+        }
+      }
+    }
+
+    if (mutableBlocks) {
+      if (Object.keys(mutableBlocks).length === 0) {
+        return null;
+      } else {
+        Object.freeze(mutableBlocks);
+        return new Tile(this.filename, this.id, this.x, this.y, mutableBlocks);
+      }
+    } else {
+      return this;
+    }
+  }
+
   clearRect(x: number, y: number, width: number, height: number): Tile | null {
+    console.log(
+      `clearRect: x: ${x}, y: ${y}, width: ${width}, height: ${height}`
+    );
     const xMin = x;
     const yMin = y;
     const xMax = x + width;
@@ -663,7 +760,7 @@ export class Block {
     );
     const regionChar1 = String.fromCharCode(
       (((this.extraData[0] & 0x7) << 2) | ((this.extraData[1] & 0xc0) >> 6)) +
-        "?".charCodeAt(0)
+      "?".charCodeAt(0)
     );
     return regionChar0 + regionChar1;
   }
