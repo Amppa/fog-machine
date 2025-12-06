@@ -13,6 +13,7 @@ type FogConcentration = "low" | "medium" | "high";
 export enum ControlMode {
   View,
   Eraser,
+  EraserScribble,
   DrawLine,
   DrawScribble,
   DeleteBlock,
@@ -38,6 +39,7 @@ export class MapController {
   private pendingDeleteBlocks: { [tileKey: string]: Set<string> };
   private pendingDeleteFeatures: GeoJSON.Feature<GeoJSON.Polygon>[];
   private pendingDeleteBbox: Bbox | null;
+  private eraserStrokeBbox: Bbox | null;
 
   private constructor() {
     this.map = null;
@@ -58,6 +60,7 @@ export class MapController {
     this.pendingDeleteBlocks = {};
     this.pendingDeleteFeatures = [];
     this.pendingDeleteBbox = null;
+    this.eraserStrokeBbox = null;
   }
 
   static create(): MapController {
@@ -447,6 +450,9 @@ export class MapController {
       this.pendingDeleteFeatures = [];
       this.pendingDeleteBbox = null;
       this.handleDeleteBlockInteraction(e.lngLat);
+    } else if (this.controlMode === ControlMode.EraserScribble) {
+      this.map?.dragPan.disable();
+      this.handleEraserScribbleInteraction(e.lngLat);
     }
   }
 
@@ -511,6 +517,11 @@ export class MapController {
         this.handleDeleteBlockInteraction(e.lngLat);
       }
       this.updateDeleteBlockCursor(e.lngLat);
+    } else if (this.controlMode === ControlMode.EraserScribble) {
+      if (e.originalEvent.buttons === 1) {
+        this.handleEraserScribbleInteraction(e.lngLat);
+      }
+      this.updateDeleteBlockCursor(e.lngLat);
     }
   }
 
@@ -551,6 +562,12 @@ export class MapController {
       this.pendingDeleteFeatures = [];
       this.pendingDeleteBbox = null;
       this.updatePendingDeleteLayer();
+    } else if (this.controlMode === ControlMode.EraserScribble) {
+      if (this.eraserStrokeBbox) {
+        this.historyManager.append(this.fogMap, this.eraserStrokeBbox);
+        this.eraserStrokeBbox = null;
+      }
+      this.map?.dragPan.enable();
     }
   }
 
@@ -608,6 +625,21 @@ export class MapController {
         this.pendingDeleteBbox = null;
         break;
       }
+      case ControlMode.EraserScribble: {
+        mapboxCanvas.style.cursor = "";
+        this.map?.dragPan.enable();
+        this.showGrid = false;
+        this.updateGridLayer();
+        if (this.deleteBlockCursor) {
+          const layerId = "delete-block-cursor";
+          if (this.map?.getLayer(layerId)) this.map?.removeLayer(layerId);
+          if (this.map?.getLayer(layerId + "-outline"))
+            this.map?.removeLayer(layerId + "-outline");
+          if (this.map?.getSource(layerId)) this.map?.removeSource(layerId);
+          this.deleteBlockCursor = null;
+        }
+        break;
+      }
     }
 
     // enable the new mode
@@ -628,6 +660,12 @@ export class MapController {
         this.map?.dragPan.disable();
         break;
       case ControlMode.DeleteBlock:
+        mapboxCanvas.style.cursor = "none";
+        this.map?.dragPan.disable();
+        this.showGrid = true;
+        this.updateGridLayer();
+        break;
+      case ControlMode.EraserScribble:
         mapboxCanvas.style.cursor = "none";
         this.map?.dragPan.disable();
         this.showGrid = true;
@@ -813,6 +851,39 @@ export class MapController {
 
     if (changed) {
       this.updatePendingDeleteLayer();
+    }
+  }
+
+  private handleEraserScribbleInteraction(lngLat: mapboxgl.LngLat) {
+    if (!this.map) return;
+
+    const point = this.map.project(lngLat);
+    const halfSize = 10;
+    const nwPoint = new mapboxgl.Point(point.x - halfSize, point.y - halfSize);
+    const sePoint = new mapboxgl.Point(point.x + halfSize, point.y + halfSize);
+
+    const tnw = this.map.unproject(nwPoint);
+    const tse = this.map.unproject(sePoint);
+
+    const west = Math.min(tnw.lng, tse.lng);
+    const east = Math.max(tnw.lng, tse.lng);
+    const north = Math.max(tnw.lat, tse.lat);
+    const south = Math.min(tnw.lat, tse.lat);
+
+    const bbox = new Bbox(west, south, east, north);
+
+    const newMap = this.fogMap.clearBbox(bbox);
+    this.updateFogMap(newMap, bbox, true);
+
+    if (!this.eraserStrokeBbox) {
+      this.eraserStrokeBbox = bbox;
+    } else {
+      this.eraserStrokeBbox = new Bbox(
+        Math.min(this.eraserStrokeBbox.west, bbox.west),
+        Math.min(this.eraserStrokeBbox.south, bbox.south),
+        Math.max(this.eraserStrokeBbox.east, bbox.east),
+        Math.max(this.eraserStrokeBbox.north, bbox.north)
+      );
     }
   }
 }
