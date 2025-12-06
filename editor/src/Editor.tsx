@@ -41,6 +41,9 @@ function Editor(props: Props): JSX.Element {
   Mousetrap.bind(["mod+shift+z"], (_) => {
     mapController.redo();
   });
+  Mousetrap.bind(["b"], (_) => {
+    mapController.toggleGrid();
+  });
 
   const toolButtons = [
     {

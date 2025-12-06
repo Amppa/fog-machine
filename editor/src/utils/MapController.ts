@@ -207,6 +207,135 @@ export class MapController {
     delete this.onChangeCallback[key];
   }
 
+  private showGrid = false;
+
+  private updateGridLayer(): void {
+    const blocksLayerId = "blocks-layer";
+    const blocksSourceId = "blocks-source";
+    const tilesLayerId = "tiles-layer";
+    const tilesSourceId = "tiles-source";
+
+    if (!this.map) return;
+
+    if (!this.showGrid) {
+      if (this.map.getLayer(blocksLayerId)) this.map.removeLayer(blocksLayerId);
+      if (this.map.getSource(blocksSourceId))
+        this.map.removeSource(blocksSourceId);
+      if (this.map.getLayer(tilesLayerId)) this.map.removeLayer(tilesLayerId);
+      if (this.map.getSource(tilesSourceId))
+        this.map.removeSource(tilesSourceId);
+      return;
+    }
+
+    const blockFeatures: GeoJSON.Feature<GeoJSON.Polygon>[] = [];
+    const tileFeatures: GeoJSON.Feature<GeoJSON.Polygon>[] = [];
+    const tiles = this.fogMap.tiles;
+    const TILE_WIDTH = fogMap.TILE_WIDTH;
+
+    Object.values(tiles).forEach((tile) => {
+      // Tile boundary
+      const tx0 = tile.x;
+      const ty0 = tile.y;
+      const tx1 = tile.x + 1;
+      const ty1 = tile.y + 1;
+
+      const tnw = fogMap.Tile.XYToLngLat(tx0, ty0);
+      const tne = fogMap.Tile.XYToLngLat(tx1, ty0);
+      const tse = fogMap.Tile.XYToLngLat(tx1, ty1);
+      const tsw = fogMap.Tile.XYToLngLat(tx0, ty1);
+
+      tileFeatures.push({
+        type: "Feature",
+        geometry: {
+          type: "Polygon",
+          coordinates: [[tnw, tsw, tse, tne, tnw]],
+        },
+        properties: {},
+      });
+
+      // Block boundaries
+      Object.values(tile.blocks).forEach((block) => {
+        const x0 = tile.x + block.x / TILE_WIDTH;
+        const y0 = tile.y + block.y / TILE_WIDTH;
+        const x1 = tile.x + (block.x + 1) / TILE_WIDTH;
+        const y1 = tile.y + (block.y + 1) / TILE_WIDTH;
+
+        const nw = fogMap.Tile.XYToLngLat(x0, y0);
+        const ne = fogMap.Tile.XYToLngLat(x1, y0);
+        const se = fogMap.Tile.XYToLngLat(x1, y1);
+        const sw = fogMap.Tile.XYToLngLat(x0, y1);
+
+        blockFeatures.push({
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            coordinates: [[nw, sw, se, ne, nw]],
+          },
+          properties: {},
+        });
+      });
+    });
+
+    // Update Blocks Layer
+    const blocksData: GeoJSON.FeatureCollection<GeoJSON.Polygon> = {
+      type: "FeatureCollection",
+      features: blockFeatures,
+    };
+
+    const blocksSource = this.map.getSource(
+      blocksSourceId
+    ) as mapboxgl.GeoJSONSource;
+    if (blocksSource) {
+      blocksSource.setData(blocksData);
+    } else {
+      this.map.addSource(blocksSourceId, {
+        type: "geojson",
+        data: blocksData,
+      });
+      this.map.addLayer({
+        id: blocksLayerId,
+        type: "line",
+        source: blocksSourceId,
+        paint: {
+          "line-color": "#00AAFF", // Sky Blue
+          "line-width": 1,
+        },
+      });
+    }
+
+    // Update Tiles Layer
+    const tilesData: GeoJSON.FeatureCollection<GeoJSON.Polygon> = {
+      type: "FeatureCollection",
+      features: tileFeatures,
+    };
+
+    const tilesSource = this.map.getSource(
+      tilesSourceId
+    ) as mapboxgl.GeoJSONSource;
+    if (tilesSource) {
+      tilesSource.setData(tilesData);
+    } else {
+      this.map.addSource(tilesSourceId, {
+        type: "geojson",
+        data: tilesData,
+      });
+      this.map.addLayer({
+        id: tilesLayerId,
+        type: "line",
+        source: tilesSourceId,
+        paint: {
+          "line-color": "#8822D8", // Thistle (Light Purple)
+          "line-width": 1,
+        },
+      });
+    }
+  }
+
+  toggleGrid(): void {
+    this.showGrid = !this.showGrid;
+    this.updateGridLayer();
+  }
+
   redrawArea(area: Bbox | "all"): void {
     this.mapRenderer?.redrawArea(area);
   }
@@ -214,6 +343,7 @@ export class MapController {
   private applyFogMapUpdate(newMap: fogMap.FogMap, areaChanged: Bbox | "all") {
     this.fogMap = newMap;
     this.redrawArea(areaChanged);
+    this.updateGridLayer();
 
     if (this.onChange) {
       this.onChange();
