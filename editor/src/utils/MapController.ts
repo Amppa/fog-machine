@@ -336,88 +336,104 @@ export class MapController {
 
   handleMouseClick(e: mapboxgl.MapMouseEvent): void {
     if (this.controlMode === ControlMode.Eraser) {
-      console.log(
-        `A click event has occurred on a visible portion of the poi-label layer at ${e.lngLat}`
-      );
-
-      if (!this.eraserArea) {
-        this.map?.addSource("eraser", {
-          type: "geojson",
-          data: {
-            type: "Feature",
-            properties: {},
-            geometry: {
-              type: "Polygon",
-              coordinates: [[]],
-            },
-          },
-        });
-
-        this.map?.addLayer({
-          id: "eraser",
-          type: "fill",
-          source: "eraser",
-          layout: {},
-          paint: {
-            "fill-color": "#969696",
-            "fill-opacity": 0.5,
-          },
-        });
-        this.map?.addLayer({
-          id: "eraser-outline",
-          type: "line",
-          source: "eraser",
-          layout: {},
-          paint: {
-            "line-color": "#969696",
-            "line-width": 1,
-          },
-        });
-
-        const eraserSource = this.map?.getSource(
-          "eraser"
-        ) as mapboxgl.GeoJSONSource | null;
-        if (eraserSource) {
-          const startPoint = new mapboxgl.LngLat(e.lngLat.lng, e.lngLat.lat);
-          this.eraserArea = [startPoint, eraserSource];
-        }
-      }
+      this.handleEraserClick(e);
     } else if (this.controlMode === ControlMode.DrawScribble) {
-      this.map?.dragPan.disable();
-      this.scribbleLastPos = e.lngLat;
-      this.scribbleStrokeBbox = new Bbox(
-        e.lngLat.lng,
-        e.lngLat.lat,
-        e.lngLat.lng,
-        e.lngLat.lat
-      );
+      this.handleDrawScribbleClick(e);
     } else if (this.controlMode === ControlMode.DeleteBlock) {
-      this.pendingDeleteBlocks = {};
-      this.pendingDeleteFeatures = [];
-      this.pendingDeleteBbox = null;
-      this.handleDeleteBlockInteraction(e.lngLat);
+      this.handleDeleteBlockClick(e);
     } else if (this.controlMode === ControlMode.EraserScribble) {
-      this.map?.dragPan.disable();
-      this.scribbleLastPos = e.lngLat;
-      this.eraserStrokeBbox = new Bbox(
+      this.handleEraserScribbleClick(e);
+    }
+  }
+
+  private handleEraserClick(e: mapboxgl.MapMouseEvent): void {
+    console.log(
+      `A click event has occurred on a visible portion of the poi-label layer at ${e.lngLat}`
+    );
+
+    if (!this.eraserArea) {
+      this.map?.addSource("eraser", {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          properties: {},
+          geometry: {
+            type: "Polygon",
+            coordinates: [[]],
+          },
+        },
+      });
+
+      this.map?.addLayer({
+        id: "eraser",
+        type: "fill",
+        source: "eraser",
+        layout: {},
+        paint: {
+          "fill-color": "#969696",
+          "fill-opacity": 0.5,
+        },
+      });
+      this.map?.addLayer({
+        id: "eraser-outline",
+        type: "line",
+        source: "eraser",
+        layout: {},
+        paint: {
+          "line-color": "#969696",
+          "line-width": 1,
+        },
+      });
+
+      const eraserSource = this.map?.getSource(
+        "eraser"
+      ) as mapboxgl.GeoJSONSource | null;
+      if (eraserSource) {
+        const startPoint = new mapboxgl.LngLat(e.lngLat.lng, e.lngLat.lat);
+        this.eraserArea = [startPoint, eraserSource];
+      }
+    }
+  }
+
+  private handleDrawScribbleClick(e: mapboxgl.MapMouseEvent): void {
+    this.map?.dragPan.disable();
+    this.scribbleLastPos = e.lngLat;
+    this.scribbleStrokeBbox = new Bbox(
+      e.lngLat.lng,
+      e.lngLat.lat,
+      e.lngLat.lng,
+      e.lngLat.lat
+    );
+  }
+
+  private handleDeleteBlockClick(e: mapboxgl.MapMouseEvent): void {
+    this.pendingDeleteBlocks = {};
+    this.pendingDeleteFeatures = [];
+    this.pendingDeleteBbox = null;
+    this.handleDeleteBlockInteraction(e.lngLat);
+  }
+
+  private handleEraserScribbleClick(e: mapboxgl.MapMouseEvent): void {
+    this.map?.dragPan.disable();
+    this.scribbleLastPos = e.lngLat;
+    this.eraserStrokeBbox = new Bbox(
+      e.lngLat.lng,
+      e.lngLat.lat,
+      e.lngLat.lng,
+      e.lngLat.lat
+    );
+
+    this.drawingSession = {
+      baseMap: this.fogMap,
+      modifiedBlocks: {},
+      blockCounts: {},
+      erasedArea: new Bbox(
         e.lngLat.lng,
         e.lngLat.lat,
         e.lngLat.lng,
         e.lngLat.lat
-      );
-
-      this.drawingSession = {
-        baseMap: this.fogMap,
-        modifiedBlocks: {},
-        blockCounts: {},
-        erasedArea: new Bbox(
-          e.lngLat.lng,
-          e.lngLat.lat,
-          e.lngLat.lng,
-          e.lngLat.lat
-        ),
-      };
-    }
+      ),
+    };
   }
 
   handleMouseMove(e: mapboxgl.MapMouseEvent): void {
