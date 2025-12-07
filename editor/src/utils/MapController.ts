@@ -214,7 +214,7 @@ export class MapController {
   registerMap(map: mapboxgl.Map, resolvedLanguage: string): void {
     this.map = map;
     this.map.on("styledata", this.initMapStyle.bind(this));
-    this.map.on("mousedown", this.handleMouseClick.bind(this));
+    this.map.on("mousedown", this.handleMousePress.bind(this));
     this.map.on("mouseup", this.handleMouseRelease.bind(this));
     this.map.on("mousemove", this.handleMouseMove.bind(this));
     this.map.on("zoomend", this.handleZoomEnd.bind(this));
@@ -334,19 +334,19 @@ export class MapController {
     this.historyManager.redo(this.applyFogMapUpdate.bind(this));
   }
 
-  handleMouseClick(e: mapboxgl.MapMouseEvent): void {
+  handleMousePress(e: mapboxgl.MapMouseEvent): void {
     if (this.controlMode === ControlMode.Eraser) {
-      this.handleEraserClick(e);
+      this.handleEraserPress(e);
     } else if (this.controlMode === ControlMode.DrawScribble) {
-      this.handleDrawScribbleClick(e);
+      this.handleDrawScribblePress(e);
     } else if (this.controlMode === ControlMode.DeleteBlock) {
-      this.handleDeleteBlockClick(e);
+      this.handleDeleteBlockPress(e);
     } else if (this.controlMode === ControlMode.EraserScribble) {
-      this.handleEraserScribbleClick(e);
+      this.handleEraserScribblePress(e);
     }
   }
 
-  private handleEraserClick(e: mapboxgl.MapMouseEvent): void {
+  private handleEraserPress(e: mapboxgl.MapMouseEvent): void {
     console.log(
       `A click event has occurred on a visible portion of the poi-label layer at ${e.lngLat}`
     );
@@ -395,7 +395,7 @@ export class MapController {
     }
   }
 
-  private handleDrawScribbleClick(e: mapboxgl.MapMouseEvent): void {
+  private handleDrawScribblePress(e: mapboxgl.MapMouseEvent): void {
     this.map?.dragPan.disable();
     this.scribbleLastPos = e.lngLat;
     this.scribbleStrokeBbox = new Bbox(
@@ -406,14 +406,14 @@ export class MapController {
     );
   }
 
-  private handleDeleteBlockClick(e: mapboxgl.MapMouseEvent): void {
+  private handleDeleteBlockPress(e: mapboxgl.MapMouseEvent): void {
     this.pendingDeleteBlocks = {};
     this.pendingDeleteFeatures = [];
     this.pendingDeleteBbox = null;
     this.handleDeleteBlockInteraction(e.lngLat);
   }
 
-  private handleEraserScribbleClick(e: mapboxgl.MapMouseEvent): void {
+  private handleEraserScribblePress(e: mapboxgl.MapMouseEvent): void {
     this.map?.dragPan.disable();
     this.scribbleLastPos = e.lngLat;
     this.eraserStrokeBbox = new Bbox(
