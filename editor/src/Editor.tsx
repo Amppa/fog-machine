@@ -67,7 +67,7 @@ function Editor(props: Props): JSX.Element {
     null,
     {
       key: "eraser",
-      icon: iconEraserSolid,
+      icon: iconEraser,
       clickable: true,
       enabled: controlMode === ControlMode.Eraser,
       onClick: () => {
@@ -118,8 +118,8 @@ function Editor(props: Props): JSX.Element {
       },
     },
     {
-      key: "scribble",
-      icon: iconScribble,
+      key: "scribbleLine",
+      icon: iconScribbleLine,
       clickable: true,
       enabled: controlMode === ControlMode.DrawScribble,
       onClick: () => {
@@ -176,7 +176,7 @@ function Editor(props: Props): JSX.Element {
 
 export default Editor;
 
-const iconEraserSolid = (
+const iconEraser = (
   <svg
     aria-hidden="true"
     focusable="false"
@@ -199,7 +199,7 @@ const iconEraserBlock = (
     aria-hidden="true"
     focusable="false"
     data-prefix="fas"
-    data-icon="eraser"
+    data-icon="eraser-block"
     role="img"
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 512 512"
@@ -284,7 +284,6 @@ const iconUndo = (
   </svg>
 );
 
-// const iconPaint = <p>P</p>;
 const iconLine = (
   <svg
     aria-hidden="true"
@@ -303,7 +302,7 @@ const iconLine = (
   </svg>
 );
 
-const iconScribble = (
+const iconScribbleLine = (
   <svg
     aria-hidden="true"
     focusable="false"
@@ -314,7 +313,6 @@ const iconScribble = (
     viewBox="0 0 24 24"
     className="w-full h-full"
   >
-    {/* License: MIT. Made by halfmage: https://github.com/halfmage/majesticons */}
     <path
       fill="currentColor"
       fillRule="evenodd"

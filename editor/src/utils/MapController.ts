@@ -14,7 +14,7 @@ type FogConcentration = "low" | "medium" | "high";
 export enum ControlMode {
   View,
   Eraser,
-  EraserScribble,
+  DeletePixel,
   DrawLine,
   DrawScribble,
   DeleteBlock,
@@ -326,8 +326,8 @@ export class MapController {
       this.handleDrawScribblePress(e);
     } else if (this.controlMode === ControlMode.DeleteBlock) {
       this.handleDeleteBlockPress(e);
-    } else if (this.controlMode === ControlMode.EraserScribble) {
-      this.handleEraserScribblePress(e);
+    } else if (this.controlMode === ControlMode.DeletePixel) {
+      this.handleDeletePixelPress(e);
     }
   }
 
@@ -398,7 +398,7 @@ export class MapController {
     this.handleDeleteBlockInteraction(e.lngLat);
   }
 
-  private handleEraserScribblePress(e: mapboxgl.MapMouseEvent): void {
+  private handleDeletePixelPress(e: mapboxgl.MapMouseEvent): void {
     this.map?.dragPan.disable();
     this.scribbleLastPos = e.lngLat;
     this.eraserStrokeBbox = new Bbox(
@@ -431,8 +431,8 @@ export class MapController {
       this.handleDrawScribbleMove(e);
     } else if (this.controlMode === ControlMode.DeleteBlock) {
       this.handleDeleteBlockMove(e);
-    } else if (this.controlMode === ControlMode.EraserScribble) {
-      this.handleEraserScribbleMove(e);
+    } else if (this.controlMode === ControlMode.DeletePixel) {
+      this.handleDeletePixelMove(e);
     }
   }
 
@@ -503,9 +503,9 @@ export class MapController {
     this.updateDeleteBlockCursor(e.lngLat);
   }
 
-  private handleEraserScribbleMove(e: mapboxgl.MapMouseEvent): void {
+  private handleDeletePixelMove(e: mapboxgl.MapMouseEvent): void {
     if (e.originalEvent.buttons === 1 && this.scribbleLastPos) {
-      this.handleEraserScribbleInteraction(e.lngLat);
+      this.handleDeletePixelInteraction(e.lngLat);
     }
   }
 
@@ -519,8 +519,8 @@ export class MapController {
       this.handleDrawScribbleRelease(e);
     } else if (this.controlMode === ControlMode.DeleteBlock) {
       this.handleDeleteBlockRelease(e);
-    } else if (this.controlMode === ControlMode.EraserScribble) {
-      this.handleEraserScribbleRelease(e);
+    } else if (this.controlMode === ControlMode.DeletePixel) {
+      this.handleDeletePixelRelease(e);
     }
   }
 
@@ -566,7 +566,7 @@ export class MapController {
     this.map?.dragPan.enable();
   }
 
-  private handleEraserScribbleRelease(e: mapboxgl.MapMouseEvent): void {
+  private handleDeletePixelRelease(e: mapboxgl.MapMouseEvent): void {
     if (this.drawingSession) {
       // Finalize the session
       // We should already have the visual state in this.fogMap thanks to mouseMove updates
