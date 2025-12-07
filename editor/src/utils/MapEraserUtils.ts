@@ -412,3 +412,17 @@ export function finishEraserSession(
         recordedBbox: drawingSession.erasedArea,
     };
 }
+
+export function cleanupDeleteBlockLayers(map: mapboxgl.Map | null) {
+    if (!map) return;
+
+    const cursorLayerId = "delete-block-cursor";
+    if (map.getLayer(cursorLayerId)) map.removeLayer(cursorLayerId);
+    if (map.getLayer(cursorLayerId + "-outline"))
+        map.removeLayer(cursorLayerId + "-outline");
+    if (map.getSource(cursorLayerId)) map.removeSource(cursorLayerId);
+
+    const pendingLayerId = "pending-delete-layer";
+    if (map.getLayer(pendingLayerId)) map.removeLayer(pendingLayerId);
+    if (map.getSource(pendingLayerId)) map.removeSource(pendingLayerId);
+}
