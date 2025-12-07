@@ -268,23 +268,8 @@ export class MapController {
     this.gridRenderer.update(this.map, this.fogMap, this.showGrid);
   }
 
-  debugGridInfo(): void {
-    if (this.map && this.showGrid) {
-      const zoom = this.map.getZoom();
-      const stats = this.gridRenderer.getStats();
-      console.log(
-        `Zoom Level: ${zoom.toFixed(2)}\n
-        Total Tiles: ${stats.tiles.total},
-        Blocks: ${stats.blocks.total}\n
-        Visiable Tiles: ${stats.tiles.visible},
-        Blocks: ${stats.blocks.visible}`
-      );
-    }
-  }
-
   toggleGrid(): void {
     this.showGrid = !this.showGrid;
-    this.debugGridInfo();
   }
 
   redrawArea(area: Bbox | "all"): void {

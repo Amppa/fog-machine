@@ -16,6 +16,16 @@ export class GridRenderer {
     return this.stats;
   }
 
+  public debugInfo(map: mapboxgl.Map): void {
+    const zoom = map.getZoom();
+    const stats = this.stats;
+    console.log(
+      `Show Tiles and Blocks. Zoom Level = ${zoom.toFixed(3)}\n`,
+      `Total Tiles: ${stats.tiles.total}, Blocks: ${stats.blocks.total}\n`,
+      `Visiable Tiles: ${stats.tiles.visible}, Blocks: ${stats.blocks.visible}`
+    );
+  }
+
   public update(
     map: mapboxgl.Map,
     currentFogMap: fogMap.FogMap,
@@ -38,6 +48,7 @@ export class GridRenderer {
       this.clearTileLayer(map);
       this.clearBlockLayer(map);
     }
+    this.debugInfo(map);
   }
 
   public remove(map: mapboxgl.Map): void {
