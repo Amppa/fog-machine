@@ -276,6 +276,8 @@ export class MapController {
       });
     });
 
+    console.log(`Zoom Level: ${this.map.getZoom()}; Total Tiles: ${tileFeatures.length}; Total Blocks: ${blockFeatures.length}`);
+
     // Update Blocks Layer
     const blocksData: GeoJSON.FeatureCollection<GeoJSON.Polygon> = {
       type: "FeatureCollection",
