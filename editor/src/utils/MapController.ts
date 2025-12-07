@@ -124,6 +124,13 @@ export class MapController {
     });
   }
 
+  private initMapStyle(): void {
+    // Set the default atmosphere style for globe mode
+    if (!this.map) return;
+    this.map.setFog({});
+    this.setMapboxLanguage();
+  }
+
   setMapStyle(style: MapStyle): void {
     if (style != this.mapStyle) {
       if (style == "none") {
@@ -175,6 +182,7 @@ export class MapController {
 
   registerMap(map: mapboxgl.Map, resolvedLanguage: string): void {
     this.map = map;
+    this.map.on("styledata", this.initMapStyle.bind(this));
     this.map.on("mousedown", this.handleMouseClick.bind(this));
     this.map.on("mouseup", this.handleMouseRelease.bind(this));
     this.map.on("mousemove", this.handleMouseMove.bind(this));
@@ -183,11 +191,8 @@ export class MapController {
         this.updateGridLayer();
       }
     });
-    map.on("styledata", () => {
-      // Set the default atmosphere style for globe mode
-      map.setFog({});
-      this.setMapboxLanguage();
-    });
+
+
     this.setControlMode(this.controlMode);
     this.onChange();
     this.resolvedLanguage = resolvedLanguage;
