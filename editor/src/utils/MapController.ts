@@ -34,17 +34,17 @@ export class MapController {
   private map: mapboxgl.Map | null;
   private mapRenderer: MapRenderer | null;
   public fogMap: fogMap.FogMap;
-  public historyManager: HistoryManager;
   private controlMode: ControlMode;
-  private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
-  private scribbleLastPos: mapboxgl.LngLat | null;
-  private scribbleStrokeBbox: Bbox | null;
-  private mapDraw: MapDraw | null;
-  private onChangeCallback: { [key: string]: () => void };
   private mapStyle: MapStyle;
   private mapProjection: MapProjection;
   private resolvedLanguage: string;
   private fogConcentration: FogConcentration;
+  private mapDraw: MapDraw | null;
+  private onChangeCallback: { [key: string]: () => void };
+  public historyManager: HistoryManager;
+  private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
+  private scribbleLastPos: mapboxgl.LngLat | null;
+  private scribbleStrokeBbox: Bbox | null;
   private deleteBlockCursor: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
   private pendingDeleteBlocks: { [tileKey: string]: Set<string> };
   private pendingDeleteFeatures: GeoJSON.Feature<GeoJSON.Polygon>[];
@@ -55,19 +55,19 @@ export class MapController {
 
   private constructor() {
     this.map = null;
+    this.mapRenderer = null;
     this.fogMap = fogMap.FogMap.empty;
     this.controlMode = ControlMode.View;
-    this.eraserArea = null;
-    this.scribbleLastPos = null;
-    this.scribbleStrokeBbox = null;
-    this.historyManager = new HistoryManager(this.fogMap);
-    this.onChangeCallback = {};
     this.mapStyle = "standard";
     this.mapProjection = "mercator";
     this.resolvedLanguage = "en";
     this.fogConcentration = "medium";
     this.mapDraw = null;
-    this.mapRenderer = null;
+    this.onChangeCallback = {};
+    this.historyManager = new HistoryManager(this.fogMap);
+    this.eraserArea = null;
+    this.scribbleLastPos = null;
+    this.scribbleStrokeBbox = null;
     this.deleteBlockCursor = null;
     this.pendingDeleteBlocks = {};
     this.pendingDeleteFeatures = [];
@@ -253,10 +253,8 @@ export class MapController {
       const zoom = this.map.getZoom();
       const stats = this.gridRenderer.getStats();
       console.log(
-        `Zoom Level: ${zoom.toFixed(2)}\nTotal Tiles: ${
-          stats.tiles.total
-        }, Blocks: ${stats.blocks.total}\nVisiable Tiles: ${
-          stats.tiles.visible
+        `Zoom Level: ${zoom.toFixed(2)}\nTotal Tiles: ${stats.tiles.total
+        }, Blocks: ${stats.blocks.total}\nVisiable Tiles: ${stats.tiles.visible
         }, Blocks: ${stats.blocks.visible}`
       );
     }
