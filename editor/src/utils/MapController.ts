@@ -131,6 +131,37 @@ export class MapController {
     this.setMapboxLanguage();
   }
 
+  private initMapDraw(map: mapboxgl.Map): void {
+    this.mapDraw = new MapDraw(
+      map,
+      () => {
+        return this.fogMap;
+      },
+      (newMap, areaChanged) => {
+        this.updateFogMap(newMap, areaChanged);
+      }
+    );
+  }
+
+  private initMapRenderer(map: mapboxgl.Map): void {
+    this.mapRenderer = new MapRenderer(
+      map,
+      0,
+      () => {
+        return this.fogMap;
+      },
+      () => {
+        if (this.fogConcentration == "high") {
+          return 0.8;
+        } else if (this.fogConcentration == "medium") {
+          return 0.6;
+        } else {
+          return 0.4;
+        }
+      }
+    );
+  }
+
   setMapStyle(style: MapStyle): void {
     if (style != this.mapStyle) {
       if (style == "none") {
@@ -192,36 +223,11 @@ export class MapController {
       }
     });
 
-
     this.setControlMode(this.controlMode);
     this.onChange();
     this.resolvedLanguage = resolvedLanguage;
-    this.mapRenderer = new MapRenderer(
-      map,
-      0,
-      () => {
-        return this.fogMap;
-      },
-      () => {
-        if (this.fogConcentration == "high") {
-          return 0.8;
-        } else if (this.fogConcentration == "medium") {
-          return 0.6;
-        } else {
-          return 0.4;
-        }
-      }
-    );
-
-    this.mapDraw = new MapDraw(
-      map,
-      () => {
-        return this.fogMap;
-      },
-      (newMap, areaChanged) => {
-        this.updateFogMap(newMap, areaChanged);
-      }
-    );
+    this.initMapRenderer(map);
+    this.initMapDraw(map);
   }
 
   setResolvedLanguage(resolvedLanguage: string) {
@@ -254,8 +260,10 @@ export class MapController {
       const zoom = this.map.getZoom();
       const stats = this.gridRenderer.getStats();
       console.log(
-        `Zoom Level: ${zoom.toFixed(2)}\nTotal Tiles: ${stats.tiles.total
-        }, Blocks: ${stats.blocks.total}\nVisiable Tiles: ${stats.tiles.visible
+        `Zoom Level: ${zoom.toFixed(2)}\nTotal Tiles: ${
+          stats.tiles.total
+        }, Blocks: ${stats.blocks.total}\nVisiable Tiles: ${
+          stats.tiles.visible
         }, Blocks: ${stats.blocks.visible}`
       );
     }
