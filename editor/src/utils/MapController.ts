@@ -324,12 +324,14 @@ export class MapController {
     console.log(`[Mouse Press] at ${e.lngLat}`);
     if (this.controlMode === ControlMode.Eraser) {
       this.handleEraserPress(e);
-    } else if (this.controlMode === ControlMode.DrawScribble) {
-      this.handleDrawScribblePress(e);
     } else if (this.controlMode === ControlMode.DeleteBlock) {
       this.handleDeleteBlockPress(e);
     } else if (this.controlMode === ControlMode.DeletePixel) {
       this.handleDeletePixelPress(e);
+    } else if (this.controlMode === ControlMode.DrawLine) {
+      // pass. -> setControlMode(ControlMode.DrawLine) -> @mapbox/mapbox-gl-draw 
+    } else if (this.controlMode === ControlMode.DrawScribble) {
+      this.handleDrawScribblePress(e);
     }
   }
 
@@ -420,12 +422,9 @@ export class MapController {
   }
 
   handleMouseMove(e: mapboxgl.MapMouseEvent): void {
-    if (this.controlMode === ControlMode.Eraser && this.eraserArea) {
+    if (this.controlMode === ControlMode.Eraser) {
       this.handleEraserMove(e);
-    } else if (
-      this.controlMode === ControlMode.DrawScribble &&
-      this.scribbleLastPos
-    ) {
+    } else if (this.controlMode === ControlMode.DrawScribble) {
       this.handleDrawScribbleMove(e);
     } else if (this.controlMode === ControlMode.DeleteBlock) {
       this.handleDeleteBlockMove(e);
@@ -435,63 +434,62 @@ export class MapController {
   }
 
   private handleEraserMove(e: mapboxgl.MapMouseEvent): void {
-    if (this.controlMode === ControlMode.Eraser && this.eraserArea) {
-      const [startPoint, eraserSource] = this.eraserArea;
-      const west = Math.min(e.lngLat.lng, startPoint.lng);
-      const north = Math.max(e.lngLat.lat, startPoint.lat);
-      const east = Math.max(e.lngLat.lng, startPoint.lng);
-      const south = Math.min(e.lngLat.lat, startPoint.lat);
+    if (!this.eraserArea) return;
+    const [startPoint, eraserSource] = this.eraserArea;
+    const west = Math.min(e.lngLat.lng, startPoint.lng);
+    const north = Math.max(e.lngLat.lat, startPoint.lat);
+    const east = Math.max(e.lngLat.lng, startPoint.lng);
+    const south = Math.min(e.lngLat.lat, startPoint.lat);
 
-      eraserSource.setData({
-        type: "Feature",
-        properties: {},
-        geometry: {
-          type: "Polygon",
-          coordinates: [
-            [
-              [east, north],
-              [west, north],
-              [west, south],
-              [east, south],
-              [east, north],
-            ],
+    eraserSource.setData({
+      type: "Feature",
+      properties: {},
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [east, north],
+            [west, north],
+            [west, south],
+            [east, south],
+            [east, north],
           ],
-        },
-      });
-    }
+        ],
+      },
+    });
   }
 
   private handleDrawScribbleMove(e: mapboxgl.MapMouseEvent): void {
-    if (this.scribbleLastPos) {
-      const currentPos = e.lngLat;
-      const newMap = this.fogMap.addLine(
-        this.scribbleLastPos.lng,
-        this.scribbleLastPos.lat,
-        currentPos.lng,
-        currentPos.lat
+    if (!this.scribbleLastPos) return;
+
+    const currentPos = e.lngLat;
+    const newMap = this.fogMap.addLine(
+      this.scribbleLastPos.lng,
+      this.scribbleLastPos.lat,
+      currentPos.lng,
+      currentPos.lat
+    );
+
+    // TODO: the computation below cannot handle anti-meridian crossing correctly.
+    // It is tricky and most people don't need it.
+    const segmentBbox = new Bbox(
+      Math.min(this.scribbleLastPos.lng, currentPos.lng),
+      Math.min(this.scribbleLastPos.lat, currentPos.lat),
+      Math.max(this.scribbleLastPos.lng, currentPos.lng),
+      Math.max(this.scribbleLastPos.lat, currentPos.lat)
+    );
+
+    if (this.scribbleStrokeBbox) {
+      this.scribbleStrokeBbox = new Bbox(
+        Math.min(this.scribbleStrokeBbox.west, segmentBbox.west),
+        Math.min(this.scribbleStrokeBbox.south, segmentBbox.south),
+        Math.max(this.scribbleStrokeBbox.east, segmentBbox.east),
+        Math.max(this.scribbleStrokeBbox.north, segmentBbox.north)
       );
-
-      // TODO: the computation below cannot handle anti-meridian crossing correctly.
-      // It is tricky and most people don't need it.
-      const segmentBbox = new Bbox(
-        Math.min(this.scribbleLastPos.lng, currentPos.lng),
-        Math.min(this.scribbleLastPos.lat, currentPos.lat),
-        Math.max(this.scribbleLastPos.lng, currentPos.lng),
-        Math.max(this.scribbleLastPos.lat, currentPos.lat)
-      );
-
-      if (this.scribbleStrokeBbox) {
-        this.scribbleStrokeBbox = new Bbox(
-          Math.min(this.scribbleStrokeBbox.west, segmentBbox.west),
-          Math.min(this.scribbleStrokeBbox.south, segmentBbox.south),
-          Math.max(this.scribbleStrokeBbox.east, segmentBbox.east),
-          Math.max(this.scribbleStrokeBbox.north, segmentBbox.north)
-        );
-      }
-
-      this.updateFogMap(newMap, segmentBbox, true);
-      this.scribbleLastPos = currentPos;
     }
+
+    this.updateFogMap(newMap, segmentBbox, true);
+    this.scribbleLastPos = currentPos;
   }
 
   private handleDeleteBlockMove(e: mapboxgl.MapMouseEvent): void {
@@ -509,12 +507,9 @@ export class MapController {
 
   handleMouseRelease(e: mapboxgl.MapMouseEvent): void {
     console.log(`[Mouse Release] at ${e.lngLat}`);
-    if (this.controlMode === ControlMode.Eraser && this.eraserArea) {
+    if (this.controlMode === ControlMode.Eraser) {
       this.handleEraserRelease(e);
-    } else if (
-      this.controlMode === ControlMode.DrawScribble &&
-      this.scribbleLastPos
-    ) {
+    } else if (this.controlMode === ControlMode.DrawScribble) {
       this.handleDrawScribbleRelease(e);
     } else if (this.controlMode === ControlMode.DeleteBlock) {
       this.handleDeleteBlockRelease(e);
@@ -524,24 +519,23 @@ export class MapController {
   }
 
   private handleEraserRelease(e: mapboxgl.MapMouseEvent): void {
-    if (this.controlMode === ControlMode.Eraser && this.eraserArea) {
-      const startPoint = this.eraserArea[0];
-      const west = Math.min(e.lngLat.lng, startPoint.lng);
-      const north = Math.max(e.lngLat.lat, startPoint.lat);
-      const east = Math.max(e.lngLat.lng, startPoint.lng);
-      const south = Math.min(e.lngLat.lat, startPoint.lat);
+    if (!this.eraserArea) return;
+    const startPoint = this.eraserArea[0];
+    const west = Math.min(e.lngLat.lng, startPoint.lng);
+    const north = Math.max(e.lngLat.lat, startPoint.lat);
+    const east = Math.max(e.lngLat.lng, startPoint.lng);
+    const south = Math.min(e.lngLat.lat, startPoint.lat);
 
-      this.map?.removeLayer("eraser");
-      this.map?.removeLayer("eraser-outline");
-      this.map?.removeSource("eraser");
+    this.map?.removeLayer("eraser");
+    this.map?.removeLayer("eraser-outline");
+    this.map?.removeSource("eraser");
 
-      const bbox = new Bbox(west, south, east, north);
+    const bbox = new Bbox(west, south, east, north);
 
-      const newMap = this.fogMap.clearBbox(bbox);
-      this.updateFogMap(newMap, bbox);
+    const newMap = this.fogMap.clearBbox(bbox);
+    this.updateFogMap(newMap, bbox);
 
-      this.eraserArea = null;
-    }
+    this.eraserArea = null;
   }
 
   private handleDrawScribbleRelease(e: mapboxgl.MapMouseEvent): void {
