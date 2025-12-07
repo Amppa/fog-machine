@@ -63,6 +63,64 @@ export class FogMap {
     return new FogMap(mutableTiles);
   }
 
+  updateBlocks(newBlocks: {
+    [tileKey: string]: { [blockKey: string]: Block | null };
+  }): FogMap {
+    const mutableTiles = { ...this.tiles };
+    let changed = false;
+
+    Object.entries(newBlocks).forEach(([tileKey, blocks]) => {
+      let tile = this.tiles[tileKey];
+      if (!tile) {
+        // If tile doesn't exist, we only care if we are ADDING blocks.
+        // If we are deleting (null), we can ignore validly.
+        // Check if any block is not null
+        const hasNewBlocks = Object.values(blocks).some((b) => b !== null);
+        if (!hasNewBlocks) return;
+
+        const [tx, ty] = tileKey.split("-").map(Number);
+        tile = Tile.createEmptyTile(tx, ty);
+      }
+
+      // Merge new blocks into tile
+      const mutableBlocks = { ...tile.blocks };
+      let tileChanged = false;
+
+      Object.entries(blocks).forEach(([blockKey, block]) => {
+        if (block === null) {
+          if (mutableBlocks[blockKey]) {
+            delete mutableBlocks[blockKey];
+            tileChanged = true;
+          }
+        } else {
+          mutableBlocks[blockKey] = block;
+          tileChanged = true;
+        }
+      });
+
+      if (tileChanged) {
+        if (Object.keys(mutableBlocks).length === 0) {
+          delete mutableTiles[tileKey];
+        } else {
+          const newTile = new Tile(
+            tile.filename,
+            tile.id,
+            tile.x,
+            tile.y,
+            mutableBlocks
+          );
+          mutableTiles[tileKey] = newTile;
+        }
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      return new FogMap(mutableTiles);
+    }
+    return this;
+  }
+
   async exportArchive(): Promise<Blob | null> {
     const zip = new JSZip();
     const syncZip = zip.folder("Sync");
@@ -90,13 +148,48 @@ export class FogMap {
     return [xg, yg];
   }
 
+  static *traceLine(
+    x0: number,
+    y0: number,
+    x1: number,
+    y1: number
+  ): Generator<[number, number]> {
+    // Calculate line deltas
+    const dx = Math.abs(x1 - x0);
+    const dy = Math.abs(y1 - y0);
+    const sx = x0 < x1 ? 1 : -1;
+    const sy = y0 < y1 ? 1 : -1;
+    let err = dx - dy;
+
+    let x = x0;
+    let y = y0;
+
+    while (true) {
+      yield [x, y];
+
+      if (Math.abs(x - x1) < 0.5 && Math.abs(y - y1) < 0.5) break;
+      const e2 = 2 * err;
+      if (e2 > -dy) {
+        err -= dy;
+        x += sx;
+      }
+      if (e2 < dx) {
+        err += dx;
+        y += sy;
+      }
+    }
+  }
+
   addLine(
     startLng: number,
     startLat: number,
     endLng: number,
-    endLat: number
+    endLat: number,
+    val = true
   ): FogMap {
-    console.log(`[${startLng},${startLat}] to [${endLng},${endLat}]`);
+    console.log(
+      `[${startLng},${startLat}] to [${endLng},${endLat}] (val=${val})`
+    );
     const [x0, y0] = FogMap.LngLatToGlobalXY(startLng, startLat);
     const [x1, y1] = FogMap.LngLatToGlobalXY(endLng, endLat);
 
@@ -144,7 +237,8 @@ export class FogMap {
             dx0,
             dy0,
             true,
-            (dx < 0 && dy < 0) || (dx > 0 && dy > 0)
+            (dx < 0 && dy < 0) || (dx > 0 && dy > 0),
+            val
           );
           x += tileX << ALL_OFFSET;
           y += tileY << ALL_OFFSET;
@@ -193,7 +287,8 @@ export class FogMap {
             dx0,
             dy0,
             false,
-            (dx < 0 && dy < 0) || (dx > 0 && dy > 0)
+            (dx < 0 && dy < 0) || (dx > 0 && dy > 0),
+            val
           );
           x += tileX << ALL_OFFSET;
           y += tileY << ALL_OFFSET;
@@ -348,7 +443,7 @@ export class Tile {
   readonly y: number;
   readonly blocks: { [key: XYKey]: Block };
 
-  private constructor(
+  constructor(
     filename: string,
     id: TileID,
     x: number,
@@ -485,7 +580,8 @@ export class Tile {
     dx0: number,
     dy0: number,
     xaxis: boolean,
-    quadrants13: boolean
+    quadrants13: boolean,
+    val: boolean
   ): [Tile | null, number, number, number] {
     let mutableBlocks: { [key: XYKey]: Block } | null = null;
     if (xaxis) {
@@ -518,7 +614,8 @@ export class Tile {
             dx0,
             dy0,
             xaxis,
-            quadrants13
+            quadrants13,
+            val
           );
 
           x += blockX << BITMAP_WIDTH_OFFSET;
@@ -566,7 +663,8 @@ export class Tile {
             dx0,
             dy0,
             xaxis,
-            quadrants13
+            quadrants13,
+            val
           );
 
           x += blockX << BITMAP_WIDTH_OFFSET;
@@ -848,12 +946,13 @@ export class Block {
     dx0: number,
     dy0: number,
     xaxis: boolean,
-    quadrants13: boolean
-  ): [Block, number, number, number] {
+    quadrants13: boolean,
+    val: boolean
+  ): [Block | null, number, number, number] {
     const mutableBitmap = new Uint8Array(this.bitmap);
     console.log(`subblock draw: x:${x}, y:${y}, e:${e}`);
     // Draw the first pixel
-    Block.setPoint(mutableBitmap, x, y, true);
+    Block.setPoint(mutableBitmap, x, y, val);
     if (xaxis) {
       // Rasterize the line
       for (let i = 0; x < e; i++) {
@@ -875,7 +974,7 @@ export class Block {
         }
         // Draw pixel from line span at
         // currently rasterized position
-        Block.setPoint(mutableBitmap, x, y, true);
+        Block.setPoint(mutableBitmap, x, y, val);
       }
     } else {
       // The line is Y-axis dominant
@@ -899,9 +998,15 @@ export class Block {
         }
         // Draw pixel from line span at
         // currently rasterized position
-        Block.setPoint(mutableBitmap, x, y, true);
+        Block.setPoint(mutableBitmap, x, y, val);
       }
     }
+
+    // Check if empty when clearing
+    if (!val && mutableBitmap.every((v) => v === 0)) {
+      return [null, x, y, p];
+    }
+
     if (Block.bitmapEqual(mutableBitmap, this.bitmap)) {
       return [this, x, y, p];
     } else {

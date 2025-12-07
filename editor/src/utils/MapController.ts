@@ -19,6 +19,15 @@ export enum ControlMode {
   DeleteBlock,
 }
 
+interface DrawingSession {
+  baseMap: fogMap.FogMap; // The state before drawing started
+  modifiedBlocks: {
+    [tileKey: string]: { [blockKey: string]: fogMap.Block | null };
+  }; // Mutable Blocks
+  blockCounts: { [tileKey: string]: { [blockKey: string]: number } };
+  erasedArea: Bbox | null;
+}
+
 export class MapController {
   private static instance: MapController | null = null;
   private map: mapboxgl.Map | null;
@@ -40,6 +49,7 @@ export class MapController {
   private pendingDeleteFeatures: GeoJSON.Feature<GeoJSON.Polygon>[];
   private pendingDeleteBbox: Bbox | null;
   private eraserStrokeBbox: Bbox | null;
+  private drawingSession: DrawingSession | null;
 
   private constructor() {
     this.map = null;
@@ -60,7 +70,9 @@ export class MapController {
     this.pendingDeleteBlocks = {};
     this.pendingDeleteFeatures = [];
     this.pendingDeleteBbox = null;
+    this.pendingDeleteBbox = null;
     this.eraserStrokeBbox = null;
+    this.drawingSession = null;
   }
 
   static create(): MapController {
@@ -352,10 +364,16 @@ export class MapController {
     this.mapRenderer?.redrawArea(area);
   }
 
-  private applyFogMapUpdate(newMap: fogMap.FogMap, areaChanged: Bbox | "all") {
+  private applyFogMapUpdate(
+    newMap: fogMap.FogMap,
+    areaChanged: Bbox | "all",
+    skipGridUpdate = false
+  ) {
     this.fogMap = newMap;
     this.redrawArea(areaChanged);
-    this.updateGridLayer();
+    if (!skipGridUpdate) {
+      this.updateGridLayer();
+    }
 
     if (this.onChange) {
       this.onChange();
@@ -365,13 +383,14 @@ export class MapController {
   private updateFogMap(
     newMap: fogMap.FogMap,
     areaChanged: Bbox | "all",
-    skipHistory = false
+    skipHistory = false,
+    skipGridUpdate = false
   ): void {
     if (this.fogMap !== newMap) {
       if (!skipHistory) {
         this.historyManager.append(newMap, areaChanged);
       }
-      this.applyFogMapUpdate(newMap, areaChanged);
+      this.applyFogMapUpdate(newMap, areaChanged, skipGridUpdate);
     }
   }
 
@@ -452,7 +471,25 @@ export class MapController {
       this.handleDeleteBlockInteraction(e.lngLat);
     } else if (this.controlMode === ControlMode.EraserScribble) {
       this.map?.dragPan.disable();
-      this.handleEraserScribbleInteraction(e.lngLat);
+      this.scribbleLastPos = e.lngLat;
+      this.eraserStrokeBbox = new Bbox(
+        e.lngLat.lng,
+        e.lngLat.lat,
+        e.lngLat.lng,
+        e.lngLat.lat
+      );
+
+      this.drawingSession = {
+        baseMap: this.fogMap,
+        modifiedBlocks: {},
+        blockCounts: {},
+        erasedArea: new Bbox(
+          e.lngLat.lng,
+          e.lngLat.lat,
+          e.lngLat.lng,
+          e.lngLat.lat
+        ),
+      };
     }
   }
 
@@ -518,10 +555,9 @@ export class MapController {
       }
       this.updateDeleteBlockCursor(e.lngLat);
     } else if (this.controlMode === ControlMode.EraserScribble) {
-      if (e.originalEvent.buttons === 1) {
+      if (e.originalEvent.buttons === 1 && this.scribbleLastPos) {
         this.handleEraserScribbleInteraction(e.lngLat);
       }
-      this.updateDeleteBlockCursor(e.lngLat);
     }
   }
 
@@ -562,11 +598,23 @@ export class MapController {
       this.pendingDeleteFeatures = [];
       this.pendingDeleteBbox = null;
       this.updatePendingDeleteLayer();
+      this.map?.dragPan.enable();
     } else if (this.controlMode === ControlMode.EraserScribble) {
-      if (this.eraserStrokeBbox) {
-        this.historyManager.append(this.fogMap, this.eraserStrokeBbox);
-        this.eraserStrokeBbox = null;
+      if (this.drawingSession) {
+        // Finalize the session
+        // We should already have the visual state in this.fogMap thanks to mouseMove updates
+        // So this.fogMap IS the final map.
+
+        if (this.drawingSession.erasedArea) {
+          this.historyManager.append(
+            this.fogMap,
+            this.drawingSession.erasedArea
+          );
+        }
+        this.drawingSession = null;
       }
+      this.scribbleLastPos = null;
+      this.updateGridLayer();
       this.map?.dragPan.enable();
     }
   }
@@ -630,14 +678,6 @@ export class MapController {
         this.map?.dragPan.enable();
         this.showGrid = false;
         this.updateGridLayer();
-        if (this.deleteBlockCursor) {
-          const layerId = "delete-block-cursor";
-          if (this.map?.getLayer(layerId)) this.map?.removeLayer(layerId);
-          if (this.map?.getLayer(layerId + "-outline"))
-            this.map?.removeLayer(layerId + "-outline");
-          if (this.map?.getSource(layerId)) this.map?.removeSource(layerId);
-          this.deleteBlockCursor = null;
-        }
         break;
       }
     }
@@ -666,7 +706,7 @@ export class MapController {
         this.updateGridLayer();
         break;
       case ControlMode.EraserScribble:
-        mapboxCanvas.style.cursor = "none";
+        mapboxCanvas.style.cursor = "crosshair";
         this.map?.dragPan.disable();
         this.showGrid = true;
         this.updateGridLayer();
@@ -709,31 +749,33 @@ export class MapController {
     if (!this.map) return;
     const layerId = "delete-block-cursor";
     const sourceId = "delete-block-cursor";
+    const imageId = "red-square-cursor";
 
-    // Define cursor size 20px
-    const point = this.map.project(lngLat);
-    const halfSize = 10; // 20px total
-    const nwPoint = new mapboxgl.Point(point.x - halfSize, point.y - halfSize);
-    const nePoint = new mapboxgl.Point(point.x + halfSize, point.y - halfSize);
-    const sePoint = new mapboxgl.Point(point.x + halfSize, point.y + halfSize);
-    const swPoint = new mapboxgl.Point(point.x - halfSize, point.y + halfSize);
+    // Ensure the red square image exists
+    // (It might be created by Eraser first, or not. Check again.)
+    if (!this.map.hasImage(imageId)) {
+      const size = 20;
+      const data = new Uint8Array(size * size * 4);
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const i = (y * size + x) * 4;
+          const isBorder =
+            x === 0 || x === size - 1 || y === 0 || y === size - 1;
+          data[i] = 255;
+          data[i + 1] = 0;
+          data[i + 2] = 0;
+          data[i + 3] = isBorder ? 255 : 128; // 0.5 opacity fill, solid border
+        }
+      }
+      this.map.addImage(imageId, { width: size, height: size, data: data });
+    }
 
-    const tnw = this.map.unproject(nwPoint);
-    const tne = this.map.unproject(nePoint);
-    const tse = this.map.unproject(sePoint);
-    const tsw = this.map.unproject(swPoint);
-
-    // Convert LngLat object to array [lng, lat]
-    const cnw = [tnw.lng, tnw.lat];
-    const cne = [tne.lng, tne.lat];
-    const cse = [tse.lng, tse.lat];
-    const csw = [tsw.lng, tsw.lat];
-
-    const data: GeoJSON.Feature<GeoJSON.Polygon> = {
+    // Use Point geometry for fixed-size icon
+    const data: GeoJSON.Feature<GeoJSON.Point> = {
       type: "Feature",
       geometry: {
-        type: "Polygon",
-        coordinates: [[cnw, csw, cse, cne, cnw]], // CCW
+        type: "Point",
+        coordinates: [lngLat.lng, lngLat.lat],
       },
       properties: {},
     };
@@ -745,21 +787,15 @@ export class MapController {
       });
       this.map.addLayer({
         id: layerId,
-        type: "fill",
+        type: "symbol",
         source: sourceId,
-        paint: {
-          "fill-color": "#FFFFFF",
-          "fill-opacity": 0.3,
+        layout: {
+          "icon-image": imageId,
+          "icon-size": 1, // 20px / 20px = 1.0
+          "icon-allow-overlap": true,
+          "icon-ignore-placement": true,
         },
-      });
-      this.map.addLayer({
-        id: layerId + "-outline",
-        type: "line",
-        source: sourceId,
-        paint: {
-          "line-color": "#FFFFFF",
-          "line-width": 1,
-        },
+        paint: {},
       });
       const source = this.map.getSource(sourceId) as mapboxgl.GeoJSONSource;
       this.deleteBlockCursor = [lngLat, source];
@@ -855,35 +891,128 @@ export class MapController {
   }
 
   private handleEraserScribbleInteraction(lngLat: mapboxgl.LngLat) {
-    if (!this.map) return;
+    if (!this.map || !this.scribbleLastPos || !this.drawingSession) return;
 
-    const point = this.map.project(lngLat);
-    const halfSize = 10;
-    const nwPoint = new mapboxgl.Point(point.x - halfSize, point.y - halfSize);
-    const sePoint = new mapboxgl.Point(point.x + halfSize, point.y + halfSize);
+    const currentPos = lngLat;
+    const [x0, y0] = fogMap.FogMap.LngLatToGlobalXY(
+      this.scribbleLastPos.lng,
+      this.scribbleLastPos.lat
+    );
+    const [x1, y1] = fogMap.FogMap.LngLatToGlobalXY(
+      currentPos.lng,
+      currentPos.lat
+    );
 
-    const tnw = this.map.unproject(nwPoint);
-    const tse = this.map.unproject(sePoint);
+    const TILE_WIDTH = fogMap.TILE_WIDTH;
+    const BITMAP_WIDTH = fogMap.BITMAP_WIDTH;
+    const BITMAP_WIDTH_OFFSET = fogMap.BITMAP_WIDTH_OFFSET; // 6
+    const ALL_OFFSET = fogMap.TILE_WIDTH_OFFSET + BITMAP_WIDTH_OFFSET; // 13
 
-    const west = Math.min(tnw.lng, tse.lng);
-    const east = Math.max(tnw.lng, tse.lng);
-    const north = Math.max(tnw.lat, tse.lat);
-    const south = Math.min(tnw.lat, tse.lat);
+    // Trace line and update mutable bitmaps
+    const points = Array.from(fogMap.FogMap.traceLine(x0, y0, x1, y1));
+    let changed = false;
 
-    const bbox = new Bbox(west, south, east, north);
+    const erasePixel = (gx: number, gy: number) => {
+      const tileX = gx >> ALL_OFFSET;
+      const tileY = gy >> ALL_OFFSET;
+      const tileKey = fogMap.FogMap.makeKeyXY(tileX, tileY);
 
-    const newMap = this.fogMap.clearBbox(bbox);
-    this.updateFogMap(newMap, bbox, true);
+      const blockX = (gx >> BITMAP_WIDTH_OFFSET) % TILE_WIDTH;
+      const blockY = (gy >> BITMAP_WIDTH_OFFSET) % TILE_WIDTH;
+      const blockKey = fogMap.FogMap.makeKeyXY(blockX, blockY);
 
-    if (!this.eraserStrokeBbox) {
-      this.eraserStrokeBbox = bbox;
-    } else {
-      this.eraserStrokeBbox = new Bbox(
-        Math.min(this.eraserStrokeBbox.west, bbox.west),
-        Math.min(this.eraserStrokeBbox.south, bbox.south),
-        Math.max(this.eraserStrokeBbox.east, bbox.east),
-        Math.max(this.eraserStrokeBbox.north, bbox.north)
-      );
+      let block = this.drawingSession!.modifiedBlocks[tileKey]?.[blockKey];
+
+      // If block is explicitly set to null, it means it's deleted. Skip.
+      if (block === null) return;
+
+      if (!block) {
+        const tile = this.drawingSession!.baseMap.tiles[tileKey];
+        const originalBlock = tile?.blocks[blockKey];
+
+        // If block doesn't exist in original map, we don't need to create it for erasing.
+        if (!originalBlock) return;
+
+        block = fogMap.Block.create(blockX, blockY, originalBlock.dump());
+
+        if (!this.drawingSession!.modifiedBlocks[tileKey]) {
+          this.drawingSession!.modifiedBlocks[tileKey] = {};
+          this.drawingSession!.blockCounts[tileKey] = {};
+        }
+        this.drawingSession!.modifiedBlocks[tileKey][blockKey] = block;
+        this.drawingSession!.blockCounts[tileKey][blockKey] = block.count();
+      }
+
+      const localX = gx % BITMAP_WIDTH;
+      const localY = gy % BITMAP_WIDTH;
+
+      const bitOffset = 7 - (localX % 8);
+      const i = Math.floor(localX / 8);
+      const j = localY;
+      const index = i + j * 8;
+
+      // Check if pixel is currently ON
+      const isSet = (block.bitmap[index] & (1 << bitOffset)) !== 0;
+
+      if (isSet) {
+        // Clear the bit
+        block.bitmap[index] &= ~(1 << bitOffset);
+
+        // Decrement count
+        this.drawingSession!.blockCounts[tileKey][blockKey]--;
+
+        // Check if block is empty
+        if (this.drawingSession!.blockCounts[tileKey][blockKey] <= 0) {
+          this.drawingSession!.modifiedBlocks[tileKey][blockKey] = null;
+        }
+
+        // Mark as changed
+        changed = true;
+      }
+    };
+
+    const ERASER_SIZE = 8;
+    const offsetStart = -Math.floor(ERASER_SIZE / 2); // -4
+    const offsetEnd = Math.ceil(ERASER_SIZE / 2); // +4
+
+    for (const [x, y] of points) {
+      for (let dx = offsetStart; dx < offsetEnd; dx++) {
+        for (let dy = offsetStart; dy < offsetEnd; dy++) {
+          erasePixel(x + dx, y + dy);
+        }
+      }
     }
+
+    if (changed) {
+      // Construct new FogMap using updateBlocks
+      // We update THIS.FOGMAP but we do NOT update drawingSession.baseMap
+      const newMap = this.fogMap.updateBlocks(
+        this.drawingSession.modifiedBlocks
+      );
+
+      // Update BBox
+      // TODO: anti-meridian handling if needed
+      const segmentBbox = new Bbox(
+        Math.min(this.scribbleLastPos.lng, currentPos.lng),
+        Math.min(this.scribbleLastPos.lat, currentPos.lat),
+        Math.max(this.scribbleLastPos.lng, currentPos.lng),
+        Math.max(this.scribbleLastPos.lat, currentPos.lat)
+      );
+
+      if (this.drawingSession.erasedArea) {
+        const b = this.drawingSession.erasedArea;
+        this.drawingSession.erasedArea = new Bbox(
+          Math.min(b.west, segmentBbox.west),
+          Math.min(b.south, segmentBbox.south),
+          Math.max(b.east, segmentBbox.east),
+          Math.max(b.north, segmentBbox.north)
+        );
+      }
+
+      // Update display with skipGridUpdate=true for speed
+      this.updateFogMap(newMap, segmentBbox, true, true);
+    }
+
+    this.scribbleLastPos = currentPos;
   }
 }
