@@ -4,6 +4,7 @@ import * as fogMap from "./FogMap";
 import { HistoryManager } from "./HistoryManager";
 import { MapDraw } from "./MapDraw";
 import { MapRenderer, MAPBOX_MAIN_CANVAS_LAYER } from "./MapRenderer";
+import { GridRenderer } from "./GridRenderer";
 import { Bbox } from "./CommonTypes";
 
 type MapStyle = "standard" | "satellite" | "hybrid" | "none";
@@ -50,6 +51,7 @@ export class MapController {
   private pendingDeleteBbox: Bbox | null;
   private eraserStrokeBbox: Bbox | null;
   private drawingSession: DrawingSession | null;
+  private gridRenderer: GridRenderer;
 
   private constructor() {
     this.map = null;
@@ -70,9 +72,9 @@ export class MapController {
     this.pendingDeleteBlocks = {};
     this.pendingDeleteFeatures = [];
     this.pendingDeleteBbox = null;
-    this.pendingDeleteBbox = null;
     this.eraserStrokeBbox = null;
     this.drawingSession = null;
+    this.gridRenderer = new GridRenderer();
   }
 
   static create(): MapController {
@@ -175,6 +177,11 @@ export class MapController {
     this.map.on("mousedown", this.handleMouseClick.bind(this));
     this.map.on("mouseup", this.handleMouseRelease.bind(this));
     this.map.on("mousemove", this.handleMouseMove.bind(this));
+    this.map.on("zoomend", () => {
+      if (this.showGrid) {
+        this.updateGridLayer();
+      }
+    });
     map.on("styledata", () => {
       // Set the default atmosphere style for globe mode
       map.setFog({});
@@ -234,130 +241,23 @@ export class MapController {
   private showGrid = false;
 
   private updateGridLayer(): void {
-    const blocksLayerId = "blocks-layer";
-    const blocksSourceId = "blocks-source";
-    const tilesLayerId = "tiles-layer";
-    const tilesSourceId = "tiles-source";
-
     if (!this.map) return;
-
-    if (!this.showGrid) {
-      if (this.map.getLayer(blocksLayerId)) this.map.removeLayer(blocksLayerId);
-      if (this.map.getSource(blocksSourceId))
-        this.map.removeSource(blocksSourceId);
-      if (this.map.getLayer(tilesLayerId)) this.map.removeLayer(tilesLayerId);
-      if (this.map.getSource(tilesSourceId))
-        this.map.removeSource(tilesSourceId);
-      return;
-    }
-
-    const blockFeatures: GeoJSON.Feature<GeoJSON.Polygon>[] = [];
-    const tileFeatures: GeoJSON.Feature<GeoJSON.Polygon>[] = [];
-    const tiles = this.fogMap.tiles;
-    const TILE_WIDTH = fogMap.TILE_WIDTH;
-
-    Object.values(tiles).forEach((tile) => {
-      // Tile boundary
-      const tx0 = tile.x;
-      const ty0 = tile.y;
-      const tx1 = tile.x + 1;
-      const ty1 = tile.y + 1;
-
-      const tnw = fogMap.Tile.XYToLngLat(tx0, ty0);
-      const tne = fogMap.Tile.XYToLngLat(tx1, ty0);
-      const tse = fogMap.Tile.XYToLngLat(tx1, ty1);
-      const tsw = fogMap.Tile.XYToLngLat(tx0, ty1);
-
-      tileFeatures.push({
-        type: "Feature",
-        geometry: {
-          type: "Polygon",
-          coordinates: [[tnw, tsw, tse, tne, tnw]],
-        },
-        properties: {},
-      });
-
-      // Block boundaries
-      Object.values(tile.blocks).forEach((block) => {
-        const x0 = tile.x + block.x / TILE_WIDTH;
-        const y0 = tile.y + block.y / TILE_WIDTH;
-        const x1 = tile.x + (block.x + 1) / TILE_WIDTH;
-        const y1 = tile.y + (block.y + 1) / TILE_WIDTH;
-
-        const nw = fogMap.Tile.XYToLngLat(x0, y0);
-        const ne = fogMap.Tile.XYToLngLat(x1, y0);
-        const se = fogMap.Tile.XYToLngLat(x1, y1);
-        const sw = fogMap.Tile.XYToLngLat(x0, y1);
-
-        blockFeatures.push({
-          type: "Feature",
-          geometry: {
-            type: "Polygon",
-            coordinates: [[nw, sw, se, ne, nw]],
-          },
-          properties: {},
-        });
-      });
-    });
-
-    // Update Blocks Layer
-    const blocksData: GeoJSON.FeatureCollection<GeoJSON.Polygon> = {
-      type: "FeatureCollection",
-      features: blockFeatures,
-    };
-
-    const blocksSource = this.map.getSource(
-      blocksSourceId
-    ) as mapboxgl.GeoJSONSource;
-    if (blocksSource) {
-      blocksSource.setData(blocksData);
-    } else {
-      this.map.addSource(blocksSourceId, {
-        type: "geojson",
-        data: blocksData,
-      });
-      this.map.addLayer({
-        id: blocksLayerId,
-        type: "line",
-        source: blocksSourceId,
-        paint: {
-          "line-color": "#00AAFF", // Sky Blue
-          "line-width": 1,
-        },
-      });
-    }
-
-    // Update Tiles Layer
-    const tilesData: GeoJSON.FeatureCollection<GeoJSON.Polygon> = {
-      type: "FeatureCollection",
-      features: tileFeatures,
-    };
-
-    const tilesSource = this.map.getSource(
-      tilesSourceId
-    ) as mapboxgl.GeoJSONSource;
-    if (tilesSource) {
-      tilesSource.setData(tilesData);
-    } else {
-      this.map.addSource(tilesSourceId, {
-        type: "geojson",
-        data: tilesData,
-      });
-      this.map.addLayer({
-        id: tilesLayerId,
-        type: "line",
-        source: tilesSourceId,
-        paint: {
-          "line-color": "#8822D8", // Thistle (Light Purple)
-          "line-width": 1,
-        },
-      });
-    }
+    this.gridRenderer.update(this.map, this.fogMap, this.showGrid);
   }
 
   toggleGrid(): void {
     this.showGrid = !this.showGrid;
     this.updateGridLayer();
+
+    if (this.map && this.showGrid) {
+      const zoom = this.map.getZoom();
+      const stats = this.gridRenderer.getStats();
+      console.log(
+        `Zoom Level: ${zoom.toFixed(2)}\nTotal Tiles: ${stats.tiles.total
+        }, Blocks: ${stats.blocks.total}\nVisiable Tiles: ${stats.tiles.visible
+        }, Blocks: ${stats.blocks.visible}`
+      );
+    }
   }
 
   redrawArea(area: Bbox | "all"): void {
