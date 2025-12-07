@@ -92,15 +92,15 @@ function Editor(props: Props): JSX.Element {
       },
     },
     {
-      key: "eraserPath",
-      icon: iconEraserScribble,
+      key: "deletePixel",
+      icon: iconDeletePixel,
       clickable: true,
-      enabled: controlMode === ControlMode.EraserScribble,
+      enabled: controlMode === ControlMode.DeletePixel,
       onClick: () => {
-        if (controlMode === ControlMode.EraserScribble) {
+        if (controlMode === ControlMode.DeletePixel) {
           setControlMode(ControlMode.View);
         } else {
-          setControlMode(ControlMode.EraserScribble);
+          setControlMode(ControlMode.DeletePixel);
         }
       },
     },
@@ -222,7 +222,7 @@ const iconEraserBlock = (
   </svg>
 );
 
-const iconEraserScribble = (
+const iconDeletePixel = (
   <svg
     aria-hidden="true"
     focusable="false"

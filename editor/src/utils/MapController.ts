@@ -14,10 +14,10 @@ type FogConcentration = "low" | "medium" | "high";
 export enum ControlMode {
   View,
   Eraser,
+  DeleteBlock,
   DeletePixel,
   DrawLine,
   DrawScribble,
-  DeleteBlock,
 }
 
 interface DrawingSession {
@@ -640,7 +640,7 @@ export class MapController {
         this.pendingDeleteBbox = null;
         break;
       }
-      case ControlMode.EraserScribble: {
+      case ControlMode.DeletePixel: {
         mapboxCanvas.style.cursor = "";
         this.map?.dragPan.enable();
         this.showGrid = false;
@@ -670,7 +670,7 @@ export class MapController {
         this.map?.dragPan.disable();
         this.showGrid = true;
         break;
-      case ControlMode.EraserScribble:
+      case ControlMode.DeletePixel:
         mapboxCanvas.style.cursor = "crosshair";
         this.map?.dragPan.disable();
         this.showGrid = true;
@@ -854,7 +854,7 @@ export class MapController {
     }
   }
 
-  private handleEraserScribbleInteraction(lngLat: mapboxgl.LngLat) {
+  private handleDeletePixelInteraction(lngLat: mapboxgl.LngLat) {
     if (!this.map || !this.scribbleLastPos || !this.drawingSession) return;
 
     const currentPos = lngLat;

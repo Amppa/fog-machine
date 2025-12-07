@@ -217,7 +217,7 @@ export function handleDeleteBlockInteraction(
     };
 }
 
-export function handleEraserScribbleInteraction(
+export function handleDeletePixelInteraction(
     fogMapInstance: fogMap.FogMap,
     drawingSession: DrawingSession,
     lastPos: mapboxgl.LngLat | null,
