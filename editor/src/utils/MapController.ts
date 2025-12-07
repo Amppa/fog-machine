@@ -34,6 +34,11 @@ export class MapController {
   private resolvedLanguage: string;
   private fogConcentration: FogConcentration;
 
+  private readonly BLOCKS_LAYER_ID = "blocks-layer";
+  private readonly BLOCKS_SOURCE_ID = "blocks-source";
+  private readonly TILES_LAYER_ID = "tiles-layer";
+  private readonly TILES_SOURCE_ID = "tiles-source";
+
   private constructor() {
     this.map = null;
     this.fogMap = fogMap.FogMap.empty;
@@ -215,129 +220,151 @@ export class MapController {
   private showGrid = false;
 
   private updateGridLayer(): void {
-    const blocksLayerId = "blocks-layer";
-    const blocksSourceId = "blocks-source";
-    const tilesLayerId = "tiles-layer";
-    const tilesSourceId = "tiles-source";
-
     if (!this.map) return;
-
     if (!this.showGrid) {
-      if (this.map.getLayer(blocksLayerId)) this.map.removeLayer(blocksLayerId);
-      if (this.map.getSource(blocksSourceId))
-        this.map.removeSource(blocksSourceId);
-      if (this.map.getLayer(tilesLayerId)) this.map.removeLayer(tilesLayerId);
-      if (this.map.getSource(tilesSourceId))
-        this.map.removeSource(tilesSourceId);
+      this.removeGridLayers();
       return;
     }
 
-    const blockFeatures: GeoJSON.Feature<GeoJSON.Polygon>[] = [];
+    const zoom = this.map.getZoom();
+
+    if (zoom > 8.5) {
+      this.showTile();
+      this.showBlock();
+    } else if (zoom > 6) {
+      this.showTile();
+      this.clearBlockLayer();
+    } else {
+      this.clearTileLayer();
+      this.clearBlockLayer();
+    }
+  }
+
+  private removeGridLayers(): void {
+    if (!this.map) return;
+    if (this.map.getLayer(this.BLOCKS_LAYER_ID))
+      this.map.removeLayer(this.BLOCKS_LAYER_ID);
+    if (this.map.getSource(this.BLOCKS_SOURCE_ID))
+      this.map.removeSource(this.BLOCKS_SOURCE_ID);
+    if (this.map.getLayer(this.TILES_LAYER_ID))
+      this.map.removeLayer(this.TILES_LAYER_ID);
+    if (this.map.getSource(this.TILES_SOURCE_ID))
+      this.map.removeSource(this.TILES_SOURCE_ID);
+  }
+
+  private showTile(): void {
     const tileFeatures: GeoJSON.Feature<GeoJSON.Polygon>[] = [];
+    const tiles = this.fogMap.tiles;
+
+    Object.values(tiles).forEach((tile) => {
+      const tx0 = tile.x;
+      const ty0 = tile.y;
+      const tx1 = tile.x + 1;
+      const ty1 = tile.y + 1;
+
+      const tnw = fogMap.Tile.XYToLngLat(tx0, ty0);
+      const tne = fogMap.Tile.XYToLngLat(tx1, ty0);
+      const tse = fogMap.Tile.XYToLngLat(tx1, ty1);
+      const tsw = fogMap.Tile.XYToLngLat(tx0, ty1);
+
+      tileFeatures.push({
+        type: "Feature",
+        geometry: {
+          type: "Polygon",
+          coordinates: [[tnw, tsw, tse, tne, tnw]],
+        },
+        properties: {},
+      });
+    });
+
+    this.updateLayerData(
+      this.TILES_SOURCE_ID,
+      this.TILES_LAYER_ID,
+      tileFeatures,
+      "#8822D8"
+    );
+  }
+
+  private showBlock(): void {
+    const blockFeatures: GeoJSON.Feature<GeoJSON.Polygon>[] = [];
     const tiles = this.fogMap.tiles;
     const TILE_WIDTH = fogMap.TILE_WIDTH;
 
-    const zoom = this.map.getZoom();
+    Object.values(tiles).forEach((tile) => {
+      Object.values(tile.blocks).forEach((block) => {
+        const x0 = tile.x + block.x / TILE_WIDTH;
+        const y0 = tile.y + block.y / TILE_WIDTH;
+        const x1 = tile.x + (block.x + 1) / TILE_WIDTH;
+        const y1 = tile.y + (block.y + 1) / TILE_WIDTH;
 
-    if (zoom > 6) {
-      Object.values(tiles).forEach((tile) => {
-        // Tile boundary
-        const tx0 = tile.x;
-        const ty0 = tile.y;
-        const tx1 = tile.x + 1;
-        const ty1 = tile.y + 1;
+        const nw = fogMap.Tile.XYToLngLat(x0, y0);
+        const ne = fogMap.Tile.XYToLngLat(x1, y0);
+        const se = fogMap.Tile.XYToLngLat(x1, y1);
+        const sw = fogMap.Tile.XYToLngLat(x0, y1);
 
-        const tnw = fogMap.Tile.XYToLngLat(tx0, ty0);
-        const tne = fogMap.Tile.XYToLngLat(tx1, ty0);
-        const tse = fogMap.Tile.XYToLngLat(tx1, ty1);
-        const tsw = fogMap.Tile.XYToLngLat(tx0, ty1);
-
-        tileFeatures.push({
+        blockFeatures.push({
           type: "Feature",
           geometry: {
             type: "Polygon",
-            coordinates: [[tnw, tsw, tse, tne, tnw]],
+            coordinates: [[nw, sw, se, ne, nw]],
           },
           properties: {},
         });
-
-        // Block boundaries
-        if (zoom > 8.5) {
-          Object.values(tile.blocks).forEach((block) => {
-            const x0 = tile.x + block.x / TILE_WIDTH;
-            const y0 = tile.y + block.y / TILE_WIDTH;
-            const x1 = tile.x + (block.x + 1) / TILE_WIDTH;
-            const y1 = tile.y + (block.y + 1) / TILE_WIDTH;
-
-            const nw = fogMap.Tile.XYToLngLat(x0, y0);
-            const ne = fogMap.Tile.XYToLngLat(x1, y0);
-            const se = fogMap.Tile.XYToLngLat(x1, y1);
-            const sw = fogMap.Tile.XYToLngLat(x0, y1);
-
-            blockFeatures.push({
-              type: "Feature",
-              geometry: {
-                type: "Polygon",
-                coordinates: [[nw, sw, se, ne, nw]],
-              },
-              properties: {},
-            });
-          });
-        }
       });
-    }
+    });
 
-    console.log(`Zoom Level: ${this.map.getZoom()}; Total Tiles: ${tileFeatures.length}; Total Blocks: ${blockFeatures.length}`);
+    this.updateLayerData(
+      this.BLOCKS_SOURCE_ID,
+      this.BLOCKS_LAYER_ID,
+      blockFeatures,
+      "#00AAFF"
+    );
+  }
 
-    // Update Blocks Layer
-    const blocksData: GeoJSON.FeatureCollection<GeoJSON.Polygon> = {
+  private clearTileLayer(): void {
+    this.updateLayerData(
+      this.TILES_SOURCE_ID,
+      this.TILES_LAYER_ID,
+      [],
+      "#8822D8"
+    );
+  }
+
+  private clearBlockLayer(): void {
+    this.updateLayerData(
+      this.BLOCKS_SOURCE_ID,
+      this.BLOCKS_LAYER_ID,
+      [],
+      "#00AAFF"
+    );
+  }
+
+  private updateLayerData(
+    sourceId: string,
+    layerId: string,
+    features: GeoJSON.Feature<GeoJSON.Polygon>[],
+    color: string
+  ): void {
+    if (!this.map) return;
+    const data: GeoJSON.FeatureCollection<GeoJSON.Polygon> = {
       type: "FeatureCollection",
-      features: blockFeatures,
+      features: features,
     };
 
-    const blocksSource = this.map.getSource(
-      blocksSourceId
-    ) as mapboxgl.GeoJSONSource;
-    if (blocksSource) {
-      blocksSource.setData(blocksData);
+    const source = this.map.getSource(sourceId) as mapboxgl.GeoJSONSource;
+    if (source) {
+      source.setData(data);
     } else {
-      this.map.addSource(blocksSourceId, {
+      this.map.addSource(sourceId, {
         type: "geojson",
-        data: blocksData,
+        data: data,
       });
       this.map.addLayer({
-        id: blocksLayerId,
+        id: layerId,
         type: "line",
-        source: blocksSourceId,
+        source: sourceId,
         paint: {
-          "line-color": "#00AAFF", // Sky Blue
-          "line-width": 1,
-        },
-      });
-    }
-
-    // Update Tiles Layer
-    const tilesData: GeoJSON.FeatureCollection<GeoJSON.Polygon> = {
-      type: "FeatureCollection",
-      features: tileFeatures,
-    };
-
-    const tilesSource = this.map.getSource(
-      tilesSourceId
-    ) as mapboxgl.GeoJSONSource;
-    if (tilesSource) {
-      tilesSource.setData(tilesData);
-    } else {
-      this.map.addSource(tilesSourceId, {
-        type: "geojson",
-        data: tilesData,
-      });
-      this.map.addLayer({
-        id: tilesLayerId,
-        type: "line",
-        source: tilesSourceId,
-        paint: {
-          "line-color": "#8822D8", // Thistle (Light Purple)
+          "line-color": color,
           "line-width": 1,
         },
       });
