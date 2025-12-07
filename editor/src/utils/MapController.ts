@@ -321,6 +321,7 @@ export class MapController {
   }
 
   handleMousePress(e: mapboxgl.MapMouseEvent): void {
+    console.log(`[Mouse Press] at ${e.lngLat}`);
     if (this.controlMode === ControlMode.Eraser) {
       this.handleEraserPress(e);
     } else if (this.controlMode === ControlMode.DrawScribble) {
@@ -333,10 +334,6 @@ export class MapController {
   }
 
   private handleEraserPress(e: mapboxgl.MapMouseEvent): void {
-    console.log(
-      `A click event has occurred on a visible portion of the poi-label layer at ${e.lngLat}`
-    );
-
     if (!this.eraserArea) {
       this.map?.addSource("eraser", {
         type: "geojson",
@@ -511,6 +508,7 @@ export class MapController {
   }
 
   handleMouseRelease(e: mapboxgl.MapMouseEvent): void {
+    console.log(`[Mouse Release] at ${e.lngLat}`);
     if (this.controlMode === ControlMode.Eraser && this.eraserArea) {
       this.handleEraserRelease(e);
     } else if (
@@ -538,7 +536,6 @@ export class MapController {
       this.map?.removeSource("eraser");
 
       const bbox = new Bbox(west, south, east, north);
-      console.log(`clearing the bbox ${west} ${north} ${east} ${south}`);
 
       const newMap = this.fogMap.clearBbox(bbox);
       this.updateFogMap(newMap, bbox);
