@@ -52,7 +52,7 @@ export class MapController {
   private eraserStrokeBbox: Bbox | null;
   private drawingSession: DrawingSession | null;
   private gridRenderer: GridRenderer;
-  private showGrid = false;
+  private _showGrid = false;
 
   private constructor() {
     this.map = null;
@@ -246,6 +246,17 @@ export class MapController {
     delete this.onChangeCallback[key];
   }
 
+  get showGrid(): boolean {
+    return this._showGrid;
+  }
+
+  set showGrid(value: boolean) {
+    if (this._showGrid !== value) {
+      this._showGrid = value;
+      this.updateGridLayer();
+    }
+  }
+
   private handleZoomEnd(): void {
     if (this.showGrid) {
       this.updateGridLayer();
@@ -273,7 +284,6 @@ export class MapController {
 
   toggleGrid(): void {
     this.showGrid = !this.showGrid;
-    this.updateGridLayer();
     this.debugGridInfo();
   }
 
@@ -288,7 +298,7 @@ export class MapController {
   ) {
     this.fogMap = newMap;
     this.redrawArea(areaChanged);
-    if (!skipGridUpdate) {
+    if (!skipGridUpdate && this.showGrid) {
       this.updateGridLayer();
     }
 
@@ -531,7 +541,9 @@ export class MapController {
         this.drawingSession = null;
       }
       this.scribbleLastPos = null;
-      this.updateGridLayer();
+      if (this.showGrid) {
+        this.updateGridLayer();
+      }
       this.map?.dragPan.enable();
     }
   }
@@ -570,7 +582,6 @@ export class MapController {
         mapboxCanvas.style.cursor = "";
         this.map?.dragPan.enable();
         this.showGrid = false;
-        this.updateGridLayer();
         if (this.deleteBlockCursor) {
           const layerId = "delete-block-cursor";
           if (this.map?.getLayer(layerId)) this.map?.removeLayer(layerId);
@@ -594,7 +605,6 @@ export class MapController {
         mapboxCanvas.style.cursor = "";
         this.map?.dragPan.enable();
         this.showGrid = false;
-        this.updateGridLayer();
         break;
       }
     }
@@ -620,13 +630,11 @@ export class MapController {
         mapboxCanvas.style.cursor = "none";
         this.map?.dragPan.disable();
         this.showGrid = true;
-        this.updateGridLayer();
         break;
       case ControlMode.EraserScribble:
         mapboxCanvas.style.cursor = "crosshair";
         this.map?.dragPan.disable();
         this.showGrid = true;
-        this.updateGridLayer();
         break;
     }
     this.controlMode = mode;
