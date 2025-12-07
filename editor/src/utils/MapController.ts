@@ -225,6 +225,14 @@ export class MapController {
   toggleGrid(): void {
     this.showGrid = !this.showGrid;
     this.updateGridLayer();
+
+    if (this.map && this.showGrid) {
+      const zoom = this.map.getZoom();
+      const stats = this.gridRenderer.getStats();
+      console.log(
+        `Zoom Level: ${zoom}; Total Tiles: ${stats.tiles}; Total Blocks: ${stats.blocks}`
+      );
+    }
   }
 
   redrawArea(area: Bbox | "all"): void {

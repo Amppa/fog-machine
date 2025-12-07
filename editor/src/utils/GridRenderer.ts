@@ -7,6 +7,16 @@ export class GridRenderer {
   private readonly TILES_LAYER_ID = "tiles-layer";
   private readonly TILES_SOURCE_ID = "tiles-source";
 
+  private activeTileCount = 0;
+  private activeBlockCount = 0;
+
+  public getStats() {
+    return {
+      tiles: this.activeTileCount,
+      blocks: this.activeBlockCount,
+    };
+  }
+
   public update(
     map: mapboxgl.Map,
     currentFogMap: fogMap.FogMap,
@@ -39,6 +49,9 @@ export class GridRenderer {
     if (map.getLayer(this.TILES_LAYER_ID)) map.removeLayer(this.TILES_LAYER_ID);
     if (map.getSource(this.TILES_SOURCE_ID))
       map.removeSource(this.TILES_SOURCE_ID);
+
+    this.activeTileCount = 0;
+    this.activeBlockCount = 0;
   }
 
   private showTile(map: mapboxgl.Map, currentFogMap: fogMap.FogMap): void {
@@ -65,6 +78,8 @@ export class GridRenderer {
         properties: {},
       });
     });
+
+    this.activeTileCount = tileFeatures.length;
 
     this.updateLayerData(
       map,
@@ -103,6 +118,8 @@ export class GridRenderer {
       });
     });
 
+    this.activeBlockCount = blockFeatures.length;
+
     this.updateLayerData(
       map,
       this.BLOCKS_SOURCE_ID,
@@ -113,6 +130,7 @@ export class GridRenderer {
   }
 
   private clearTileLayer(map: mapboxgl.Map): void {
+    this.activeTileCount = 0;
     this.updateLayerData(
       map,
       this.TILES_SOURCE_ID,
@@ -123,6 +141,7 @@ export class GridRenderer {
   }
 
   private clearBlockLayer(map: mapboxgl.Map): void {
+    this.activeBlockCount = 0;
     this.updateLayerData(
       map,
       this.BLOCKS_SOURCE_ID,
