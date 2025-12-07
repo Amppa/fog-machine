@@ -608,16 +608,6 @@ export class MapController {
           this.eraserArea = null;
         }
         break;
-      case ControlMode.DrawLine:
-        mapboxCanvas.style.cursor = "";
-        this.map?.dragPan.enable();
-        this.mapDraw?.deactivate();
-        break;
-      case ControlMode.DrawScribble:
-        mapboxCanvas.style.cursor = "";
-        this.map?.dragPan.enable();
-        this.scribbleLastPos = null;
-        break;
       case ControlMode.DeleteBlock: {
         mapboxCanvas.style.cursor = "";
         this.map?.dragPan.enable();
@@ -635,6 +625,16 @@ export class MapController {
         this.showGrid = false;
         break;
       }
+      case ControlMode.DrawLine:
+        mapboxCanvas.style.cursor = "";
+        this.map?.dragPan.enable();
+        this.mapDraw?.deactivate();
+        break;
+      case ControlMode.DrawScribble:
+        mapboxCanvas.style.cursor = "";
+        this.map?.dragPan.enable();
+        this.scribbleLastPos = null;
+        break;
     }
 
     // enable the new mode
@@ -645,6 +645,16 @@ export class MapController {
         mapboxCanvas.style.cursor = "cell";
         this.map?.dragPan.disable();
         break;
+      case ControlMode.DeleteBlock:
+        mapboxCanvas.style.cursor = "none";   // hide mouse cursor, show red rectangle
+        this.map?.dragPan.disable();
+        this.showGrid = true;
+        break;
+      case ControlMode.DeletePixel:
+        mapboxCanvas.style.cursor = "crosshair";
+        this.map?.dragPan.disable();
+        this.showGrid = true;
+        break;
       case ControlMode.DrawLine:
         mapboxCanvas.style.cursor = "crosshair";
         this.map?.dragPan.disable();
@@ -653,16 +663,6 @@ export class MapController {
       case ControlMode.DrawScribble:
         mapboxCanvas.style.cursor = "crosshair";
         this.map?.dragPan.disable();
-        break;
-      case ControlMode.DeleteBlock:
-        mapboxCanvas.style.cursor = "none";
-        this.map?.dragPan.disable();
-        this.showGrid = true;
-        break;
-      case ControlMode.DeletePixel:
-        mapboxCanvas.style.cursor = "crosshair";
-        this.map?.dragPan.disable();
-        this.showGrid = true;
         break;
     }
     this.controlMode = mode;
