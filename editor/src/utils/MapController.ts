@@ -438,6 +438,21 @@ export class MapController {
 
   handleMouseMove(e: mapboxgl.MapMouseEvent): void {
     if (this.controlMode === ControlMode.Eraser && this.eraserArea) {
+      this.handleEraserMove(e);
+    } else if (
+      this.controlMode === ControlMode.DrawScribble &&
+      this.scribbleLastPos
+    ) {
+      this.handleDrawScribbleMove(e);
+    } else if (this.controlMode === ControlMode.DeleteBlock) {
+      this.handleDeleteBlockMove(e);
+    } else if (this.controlMode === ControlMode.EraserScribble) {
+      this.handleEraserScribbleMove(e);
+    }
+  }
+
+  private handleEraserMove(e: mapboxgl.MapMouseEvent): void {
+    if (this.controlMode === ControlMode.Eraser && this.eraserArea) {
       const [startPoint, eraserSource] = this.eraserArea;
       const west = Math.min(e.lngLat.lng, startPoint.lng);
       const north = Math.max(e.lngLat.lat, startPoint.lat);
@@ -460,10 +475,11 @@ export class MapController {
           ],
         },
       });
-    } else if (
-      this.controlMode === ControlMode.DrawScribble &&
-      this.scribbleLastPos
-    ) {
+    }
+  }
+
+  private handleDrawScribbleMove(e: mapboxgl.MapMouseEvent): void {
+    if (this.scribbleLastPos) {
       const currentPos = e.lngLat;
       const newMap = this.fogMap.addLine(
         this.scribbleLastPos.lng,
@@ -492,15 +508,19 @@ export class MapController {
 
       this.updateFogMap(newMap, segmentBbox, true);
       this.scribbleLastPos = currentPos;
-    } else if (this.controlMode === ControlMode.DeleteBlock) {
-      if (e.originalEvent.buttons === 1) {
-        this.handleDeleteBlockInteraction(e.lngLat);
-      }
-      this.updateDeleteBlockCursor(e.lngLat);
-    } else if (this.controlMode === ControlMode.EraserScribble) {
-      if (e.originalEvent.buttons === 1 && this.scribbleLastPos) {
-        this.handleEraserScribbleInteraction(e.lngLat);
-      }
+    }
+  }
+
+  private handleDeleteBlockMove(e: mapboxgl.MapMouseEvent): void {
+    if (e.originalEvent.buttons === 1) {
+      this.handleDeleteBlockInteraction(e.lngLat);
+    }
+    this.updateDeleteBlockCursor(e.lngLat);
+  }
+
+  private handleEraserScribbleMove(e: mapboxgl.MapMouseEvent): void {
+    if (e.originalEvent.buttons === 1 && this.scribbleLastPos) {
+      this.handleEraserScribbleInteraction(e.lngLat);
     }
   }
 
