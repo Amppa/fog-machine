@@ -230,7 +230,7 @@ export class MapController {
       const zoom = this.map.getZoom();
       const stats = this.gridRenderer.getStats();
       console.log(
-        `Zoom Level: ${zoom}; Total Tiles: ${stats.tiles}; Total Blocks: ${stats.blocks}`
+        `Zoom Level: ${zoom.toFixed(2)}\nTotal Tiles: ${stats.tiles.total}, Blocks: ${stats.blocks.total}\nVisiable Tiles: ${stats.tiles.visible}, Blocks: ${stats.blocks.visible}`
       );
     }
   }
