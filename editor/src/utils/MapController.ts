@@ -151,6 +151,11 @@ export class MapController {
     this.map.on("mousedown", this.handleMouseClick.bind(this));
     this.map.on("mouseup", this.handleMouseRelease.bind(this));
     this.map.on("mousemove", this.handleMouseMove.bind(this));
+    this.map.on("zoomend", () => {
+      if (this.showGrid) {
+        this.updateGridLayer();
+      }
+    });
     map.on("styledata", () => {
       // Set the default atmosphere style for globe mode
       map.setFog({});
@@ -232,49 +237,55 @@ export class MapController {
     const tiles = this.fogMap.tiles;
     const TILE_WIDTH = fogMap.TILE_WIDTH;
 
-    Object.values(tiles).forEach((tile) => {
-      // Tile boundary
-      const tx0 = tile.x;
-      const ty0 = tile.y;
-      const tx1 = tile.x + 1;
-      const ty1 = tile.y + 1;
+    const zoom = this.map.getZoom();
 
-      const tnw = fogMap.Tile.XYToLngLat(tx0, ty0);
-      const tne = fogMap.Tile.XYToLngLat(tx1, ty0);
-      const tse = fogMap.Tile.XYToLngLat(tx1, ty1);
-      const tsw = fogMap.Tile.XYToLngLat(tx0, ty1);
+    if (zoom > 6) {
+      Object.values(tiles).forEach((tile) => {
+        // Tile boundary
+        const tx0 = tile.x;
+        const ty0 = tile.y;
+        const tx1 = tile.x + 1;
+        const ty1 = tile.y + 1;
 
-      tileFeatures.push({
-        type: "Feature",
-        geometry: {
-          type: "Polygon",
-          coordinates: [[tnw, tsw, tse, tne, tnw]],
-        },
-        properties: {},
-      });
+        const tnw = fogMap.Tile.XYToLngLat(tx0, ty0);
+        const tne = fogMap.Tile.XYToLngLat(tx1, ty0);
+        const tse = fogMap.Tile.XYToLngLat(tx1, ty1);
+        const tsw = fogMap.Tile.XYToLngLat(tx0, ty1);
 
-      // Block boundaries
-      Object.values(tile.blocks).forEach((block) => {
-        const x0 = tile.x + block.x / TILE_WIDTH;
-        const y0 = tile.y + block.y / TILE_WIDTH;
-        const x1 = tile.x + (block.x + 1) / TILE_WIDTH;
-        const y1 = tile.y + (block.y + 1) / TILE_WIDTH;
-
-        const nw = fogMap.Tile.XYToLngLat(x0, y0);
-        const ne = fogMap.Tile.XYToLngLat(x1, y0);
-        const se = fogMap.Tile.XYToLngLat(x1, y1);
-        const sw = fogMap.Tile.XYToLngLat(x0, y1);
-
-        blockFeatures.push({
+        tileFeatures.push({
           type: "Feature",
           geometry: {
             type: "Polygon",
-            coordinates: [[nw, sw, se, ne, nw]],
+            coordinates: [[tnw, tsw, tse, tne, tnw]],
           },
           properties: {},
         });
+
+        // Block boundaries
+        if (zoom > 8.5) {
+          Object.values(tile.blocks).forEach((block) => {
+            const x0 = tile.x + block.x / TILE_WIDTH;
+            const y0 = tile.y + block.y / TILE_WIDTH;
+            const x1 = tile.x + (block.x + 1) / TILE_WIDTH;
+            const y1 = tile.y + (block.y + 1) / TILE_WIDTH;
+
+            const nw = fogMap.Tile.XYToLngLat(x0, y0);
+            const ne = fogMap.Tile.XYToLngLat(x1, y0);
+            const se = fogMap.Tile.XYToLngLat(x1, y1);
+            const sw = fogMap.Tile.XYToLngLat(x0, y1);
+
+            blockFeatures.push({
+              type: "Feature",
+              geometry: {
+                type: "Polygon",
+                coordinates: [[nw, sw, se, ne, nw]],
+              },
+              properties: {},
+            });
+          });
+        }
       });
-    });
+    }
 
     console.log(`Zoom Level: ${this.map.getZoom()}; Total Tiles: ${tileFeatures.length}; Total Blocks: ${blockFeatures.length}`);
 
