@@ -217,11 +217,7 @@ export class MapController {
     this.map.on("mousedown", this.handleMouseClick.bind(this));
     this.map.on("mouseup", this.handleMouseRelease.bind(this));
     this.map.on("mousemove", this.handleMouseMove.bind(this));
-    this.map.on("zoomend", () => {
-      if (this.showGrid) {
-        this.updateGridLayer();
-      }
-    });
+    this.map.on("zoomend", this.handleZoomEnd.bind(this));
 
     this.setControlMode(this.controlMode);
     this.onChange();
@@ -250,6 +246,12 @@ export class MapController {
     delete this.onChangeCallback[key];
   }
 
+  private handleZoomEnd(): void {
+    if (this.showGrid) {
+      this.updateGridLayer();
+    }
+  }
+
   private updateGridLayer(): void {
     if (!this.map) return;
     this.gridRenderer.update(this.map, this.fogMap, this.showGrid);
@@ -260,11 +262,11 @@ export class MapController {
       const zoom = this.map.getZoom();
       const stats = this.gridRenderer.getStats();
       console.log(
-        `Zoom Level: ${zoom.toFixed(2)}\nTotal Tiles: ${
-          stats.tiles.total
-        }, Blocks: ${stats.blocks.total}\nVisiable Tiles: ${
-          stats.tiles.visible
-        }, Blocks: ${stats.blocks.visible}`
+        `Zoom Level: ${zoom.toFixed(2)}\n
+        Total Tiles: ${stats.tiles.total},
+        Blocks: ${stats.blocks.total}\n
+        Visiable Tiles: ${stats.tiles.visible},
+        Blocks: ${stats.blocks.visible}`
       );
     }
   }
