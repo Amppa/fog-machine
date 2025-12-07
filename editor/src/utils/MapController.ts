@@ -52,6 +52,7 @@ export class MapController {
   private eraserStrokeBbox: Bbox | null;
   private drawingSession: DrawingSession | null;
   private gridRenderer: GridRenderer;
+  private showGrid = false;
 
   private constructor() {
     this.map = null;
@@ -238,17 +239,12 @@ export class MapController {
     delete this.onChangeCallback[key];
   }
 
-  private showGrid = false;
-
   private updateGridLayer(): void {
     if (!this.map) return;
     this.gridRenderer.update(this.map, this.fogMap, this.showGrid);
   }
 
-  toggleGrid(): void {
-    this.showGrid = !this.showGrid;
-    this.updateGridLayer();
-
+  debugGridInfo(): void {
     if (this.map && this.showGrid) {
       const zoom = this.map.getZoom();
       const stats = this.gridRenderer.getStats();
@@ -258,6 +254,12 @@ export class MapController {
         }, Blocks: ${stats.blocks.visible}`
       );
     }
+  }
+
+  toggleGrid(): void {
+    this.showGrid = !this.showGrid;
+    this.updateGridLayer();
+    this.debugGridInfo();
   }
 
   redrawArea(area: Bbox | "all"): void {
