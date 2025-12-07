@@ -526,6 +526,21 @@ export class MapController {
 
   handleMouseRelease(e: mapboxgl.MapMouseEvent): void {
     if (this.controlMode === ControlMode.Eraser && this.eraserArea) {
+      this.handleEraserRelease(e);
+    } else if (
+      this.controlMode === ControlMode.DrawScribble &&
+      this.scribbleLastPos
+    ) {
+      this.handleDrawScribbleRelease(e);
+    } else if (this.controlMode === ControlMode.DeleteBlock) {
+      this.handleDeleteBlockRelease(e);
+    } else if (this.controlMode === ControlMode.EraserScribble) {
+      this.handleEraserScribbleRelease(e);
+    }
+  }
+
+  private handleEraserRelease(e: mapboxgl.MapMouseEvent): void {
+    if (this.controlMode === ControlMode.Eraser && this.eraserArea) {
       const startPoint = this.eraserArea[0];
       const west = Math.min(e.lngLat.lng, startPoint.lng);
       const north = Math.max(e.lngLat.lat, startPoint.lat);
@@ -543,45 +558,48 @@ export class MapController {
       this.updateFogMap(newMap, bbox);
 
       this.eraserArea = null;
-    } else if (
-      this.controlMode === ControlMode.DrawScribble &&
-      this.scribbleLastPos
-    ) {
-      if (this.scribbleStrokeBbox) {
-        this.historyManager.append(this.fogMap, this.scribbleStrokeBbox);
-      }
-      this.scribbleLastPos = null;
-      this.scribbleStrokeBbox = null;
-      this.map?.dragPan.enable();
-    } else if (this.controlMode === ControlMode.DeleteBlock) {
-      const newMap = this.fogMap.removeBlocks(this.pendingDeleteBlocks);
-      this.updateFogMap(newMap, this.pendingDeleteBbox || "all");
-
-      this.pendingDeleteBlocks = {};
-      this.pendingDeleteFeatures = [];
-      this.pendingDeleteBbox = null;
-      this.updatePendingDeleteLayer();
-      this.map?.dragPan.enable();
-    } else if (this.controlMode === ControlMode.EraserScribble) {
-      if (this.drawingSession) {
-        // Finalize the session
-        // We should already have the visual state in this.fogMap thanks to mouseMove updates
-        // So this.fogMap IS the final map.
-
-        if (this.drawingSession.erasedArea) {
-          this.historyManager.append(
-            this.fogMap,
-            this.drawingSession.erasedArea
-          );
-        }
-        this.drawingSession = null;
-      }
-      this.scribbleLastPos = null;
-      if (this.showGrid) {
-        this.updateGridLayer();
-      }
-      this.map?.dragPan.enable();
     }
+  }
+
+  private handleDrawScribbleRelease(e: mapboxgl.MapMouseEvent): void {
+    if (this.scribbleStrokeBbox) {
+      this.historyManager.append(this.fogMap, this.scribbleStrokeBbox);
+    }
+    this.scribbleLastPos = null;
+    this.scribbleStrokeBbox = null;
+    this.map?.dragPan.enable();
+  }
+
+  private handleDeleteBlockRelease(e: mapboxgl.MapMouseEvent): void {
+    const newMap = this.fogMap.removeBlocks(this.pendingDeleteBlocks);
+    this.updateFogMap(newMap, this.pendingDeleteBbox || "all");
+
+    this.pendingDeleteBlocks = {};
+    this.pendingDeleteFeatures = [];
+    this.pendingDeleteBbox = null;
+    this.updatePendingDeleteLayer();
+    this.map?.dragPan.enable();
+  }
+
+  private handleEraserScribbleRelease(e: mapboxgl.MapMouseEvent): void {
+    if (this.drawingSession) {
+      // Finalize the session
+      // We should already have the visual state in this.fogMap thanks to mouseMove updates
+      // So this.fogMap IS the final map.
+
+      if (this.drawingSession.erasedArea) {
+        this.historyManager.append(
+          this.fogMap,
+          this.drawingSession.erasedArea
+        );
+      }
+      this.drawingSession = null;
+    }
+    this.scribbleLastPos = null;
+    if (this.showGrid) {
+      this.updateGridLayer();
+    }
+    this.map?.dragPan.enable();
   }
 
   setControlMode(mode: ControlMode): void {
