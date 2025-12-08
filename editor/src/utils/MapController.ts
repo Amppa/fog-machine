@@ -555,7 +555,6 @@ export class MapController {
     this.pendingDeleteFeatures = [];
     this.pendingDeleteBbox = null;
     this.updatePendingDeleteLayer();
-    this.map?.dragPan.enable();
   }
 
   private handleDeletePixelRelease(e: mapboxgl.MapMouseEvent): void {
