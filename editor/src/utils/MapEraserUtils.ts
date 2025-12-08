@@ -11,7 +11,7 @@ export interface DrawingSession {
     erasedArea: Bbox | null;
 }
 
-export interface PendingDeleteState {
+export interface DeleteBlockState {
     blocks: { [tileKey: string]: Set<string> };
     features: GeoJSON.Feature<GeoJSON.Polygon>[];
     bbox: Bbox | null;
@@ -84,9 +84,9 @@ export function updateDeleteBlockCursor(
 export function handleDeleteBlockInteraction(
     map: mapboxgl.Map | null,
     fogMapInstance: fogMap.FogMap,
-    pendingState: PendingDeleteState,
+    pendingState: DeleteBlockState,
     lngLat: mapboxgl.LngLat
-): { newState: PendingDeleteState; changed: boolean } {
+): { newState: DeleteBlockState; changed: boolean } {
     if (!map) return { newState: pendingState, changed: false };
 
     // Calculate bbox from 20px cursor logic

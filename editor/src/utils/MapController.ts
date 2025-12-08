@@ -7,6 +7,7 @@ import { MapRenderer, MAPBOX_MAIN_CANVAS_LAYER } from "./MapRenderer";
 import { GridRenderer } from "./GridRenderer";
 import { Bbox } from "./CommonTypes";
 import * as MapEraserUtils from "./MapEraserUtils";
+import { DeleteBlockState } from "./MapEraserUtils";
 
 type MapStyle = "standard" | "satellite" | "hybrid" | "none";
 type MapProjection = "globe" | "mercator";
@@ -47,9 +48,8 @@ export class MapController {
   private scribbleLastPos: mapboxgl.LngLat | null;
   private scribbleStrokeBbox: Bbox | null;
   private deleteBlockCursor: mapboxgl.Marker | null;
-  private pendingDeleteBlocks: { [tileKey: string]: Set<string> };
-  private pendingDeleteFeatures: GeoJSON.Feature<GeoJSON.Polygon>[];
-  private pendingDeleteBbox: Bbox | null;
+
+  private deleteBlockState: DeleteBlockState;
   private eraserStrokeBbox: Bbox | null;
   private drawingSession: DrawingSession | null;
   private gridRenderer: GridRenderer;
@@ -71,9 +71,12 @@ export class MapController {
     this.scribbleLastPos = null;
     this.scribbleStrokeBbox = null;
     this.deleteBlockCursor = null;
-    this.pendingDeleteBlocks = {};
-    this.pendingDeleteFeatures = [];
-    this.pendingDeleteBbox = null;
+    this.deleteBlockCursor = null;
+    this.deleteBlockState = {
+      blocks: {},
+      features: [],
+      bbox: null,
+    };
     this.eraserStrokeBbox = null;
     this.drawingSession = null;
     this.gridRenderer = new GridRenderer();
@@ -392,9 +395,11 @@ export class MapController {
   }
 
   private handleDeleteBlockPress(e: mapboxgl.MapMouseEvent): void {
-    this.pendingDeleteBlocks = {};
-    this.pendingDeleteFeatures = [];
-    this.pendingDeleteBbox = null;
+    this.deleteBlockState = {
+      blocks: {},
+      features: [],
+      bbox: null,
+    };
     this.handleDeleteBlockInteraction(e.lngLat);
   }
 
@@ -548,12 +553,14 @@ export class MapController {
   }
 
   private handleDeleteBlockRelease(e: mapboxgl.MapMouseEvent): void {
-    const newMap = this.fogMap.removeBlocks(this.pendingDeleteBlocks);
-    this.updateFogMap(newMap, this.pendingDeleteBbox || "all");
+    const newMap = this.fogMap.removeBlocks(this.deleteBlockState.blocks);
+    this.updateFogMap(newMap, this.deleteBlockState.bbox || "all");
 
-    this.pendingDeleteBlocks = {};
-    this.pendingDeleteFeatures = [];
-    this.pendingDeleteBbox = null;
+    this.deleteBlockState = {
+      blocks: {},
+      features: [],
+      bbox: null,
+    };
     this.updatePendingDeleteLayer();
   }
 
@@ -605,9 +612,11 @@ export class MapController {
         MapEraserUtils.cleanupDeleteBlockLayers(this.map);
         this.deleteBlockCursor?.remove();
         this.deleteBlockCursor = null;
-        this.pendingDeleteBlocks = {};
-        this.pendingDeleteFeatures = [];
-        this.pendingDeleteBbox = null;
+        this.deleteBlockState = {
+          blocks: {},
+          features: [],
+          bbox: null,
+        };
         break;
       }
       case ControlMode.DeletePixel: {
@@ -637,7 +646,7 @@ export class MapController {
         this.map?.dragPan.disable();
         break;
       case ControlMode.DeleteBlock:
-        mapboxCanvas.style.cursor = "none";   // hide mouse cursor, show red rectangle
+        mapboxCanvas.style.cursor = "none";   // hide mouse cursor, show blue rectangle
         this.map?.dragPan.disable();
         this.showGrid = true;
         break;
@@ -662,7 +671,7 @@ export class MapController {
   private updatePendingDeleteLayer() {
     MapEraserUtils.updatePendingDeleteLayer(
       this.map,
-      this.pendingDeleteFeatures
+      this.deleteBlockState.features
     );
   }
 
@@ -679,17 +688,11 @@ export class MapController {
     const result = MapEraserUtils.handleDeleteBlockInteraction(
       this.map,
       this.fogMap,
-      {
-        blocks: this.pendingDeleteBlocks,
-        features: this.pendingDeleteFeatures,
-        bbox: this.pendingDeleteBbox,
-      },
+      this.deleteBlockState,
       lngLat
     );
 
-    this.pendingDeleteBlocks = result.newState.blocks;
-    this.pendingDeleteFeatures = result.newState.features;
-    this.pendingDeleteBbox = result.newState.bbox;
+    this.deleteBlockState = result.newState;
 
     if (result.changed) {
       this.updatePendingDeleteLayer();
