@@ -43,7 +43,7 @@ export function updatePendingDeleteLayer(
             type: "line",
             source: sourceId,
             paint: {
-                "line-color": "#2200CC",
+                "line-color": "#2200AA",
                 "line-width": 2,
             },
         });
@@ -52,65 +52,33 @@ export function updatePendingDeleteLayer(
 
 export function updateDeleteBlockCursor(
     map: mapboxgl.Map | null,
-    cursorRef: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null,
+    cursorRef: mapboxgl.Marker | null,
     lngLat: mapboxgl.LngLat
-): [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null {
+): mapboxgl.Marker | null {
     if (!map) return cursorRef;
-    const layerId = "delete-block-cursor";
-    const sourceId = "delete-block-cursor";
-    const imageId = "red-square-cursor";
 
-    // Ensure the red square image exists
-    if (!map.hasImage(imageId)) {
-        const size = 20;
-        const data = new Uint8Array(size * size * 4);
-        for (let y = 0; y < size; y++) {
-            for (let x = 0; x < size; x++) {
-                const i = (y * size + x) * 4;
-                const isBorder = x === 0 || x === size - 1 || y === 0 || y === size - 1;
-                data[i] = 255;
-                data[i + 1] = 0;
-                data[i + 2] = 0;
-                data[i + 3] = isBorder ? 255 : 128; // 0.5 opacity fill, solid border
-            }
-        }
-        map.addImage(imageId, { width: size, height: size, data: data });
-    }
-
-    // Use Point geometry for fixed-size icon
-    const data: GeoJSON.Feature<GeoJSON.Point> = {
-        type: "Feature",
-        geometry: {
-            type: "Point",
-            coordinates: [lngLat.lng, lngLat.lat],
-        },
-        properties: {},
-    };
+    let marker: mapboxgl.Marker;
 
     if (!cursorRef) {
-        map.addSource(sourceId, {
-            type: "geojson",
-            data: data,
-        });
-        map.addLayer({
-            id: layerId,
-            type: "symbol",
-            source: sourceId,
-            layout: {
-                "icon-image": imageId,
-                "icon-size": 1, // 20px / 20px = 1.0
-                "icon-allow-overlap": true,
-                "icon-ignore-placement": true,
-            },
-            paint: {},
-        });
-        const source = map.getSource(sourceId) as mapboxgl.GeoJSONSource;
-        return [lngLat, source];
+        const el = document.createElement('div');
+        el.className = 'delete-block-cursor-dom'; // use css
+        el.style.width = '20px';
+        el.style.height = '20px';
+        el.style.border = '2px solid blue';
+        el.style.backgroundColor = 'rgba(0, 0, 255, 0.2)';
+
+        marker = new mapboxgl.Marker({
+            element: el,
+            anchor: 'center',
+        })
+            .setLngLat(lngLat)
+            .addTo(map);
+
     } else {
-        const source = cursorRef[1];
-        source.setData(data);
-        return [lngLat, source]; // Updated position, same source
+        marker = cursorRef;
+        marker.setLngLat(lngLat);
     }
+    return marker;
 }
 
 export function handleDeleteBlockInteraction(

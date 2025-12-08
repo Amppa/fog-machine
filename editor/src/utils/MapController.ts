@@ -46,7 +46,7 @@ export class MapController {
   private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
   private scribbleLastPos: mapboxgl.LngLat | null;
   private scribbleStrokeBbox: Bbox | null;
-  private deleteBlockCursor: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
+  private deleteBlockCursor: mapboxgl.Marker | null;
   private pendingDeleteBlocks: { [tileKey: string]: Set<string> };
   private pendingDeleteFeatures: GeoJSON.Feature<GeoJSON.Polygon>[];
   private pendingDeleteBbox: Bbox | null;
@@ -603,6 +603,7 @@ export class MapController {
         this.map?.dragPan.enable();
         this.showGrid = false;
         MapEraserUtils.cleanupDeleteBlockLayers(this.map);
+        this.deleteBlockCursor?.remove();
         this.deleteBlockCursor = null;
         this.pendingDeleteBlocks = {};
         this.pendingDeleteFeatures = [];
