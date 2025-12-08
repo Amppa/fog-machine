@@ -2,6 +2,7 @@ import { ControlMode, MapController } from "./utils/MapController";
 import { useEffect, useState } from "react";
 import Mousetrap from "mousetrap";
 import MainMenu from "./MainMenu";
+import FlyToDialog from "./FlyToDialog";
 
 type Props = {
   setLoaded(isLoaded: boolean): void;
@@ -20,6 +21,8 @@ function Editor(props: Props): JSX.Element {
     canRedo: false,
     canUndo: false,
   });
+
+  const [isFlyToDialogOpen, setIsFlyToDialogOpen] = useState(false);
 
   useEffect(() => {
     mapController.registerOnChangeCallback("editor", () => {
@@ -62,6 +65,15 @@ function Editor(props: Props): JSX.Element {
       enabled: false,
       onClick: () => {
         mapController.redo();
+      },
+    },
+    {
+      key: "move-map",
+      icon: iconFlyTo,
+      clickable: true,
+      enabled: false,
+      onClick: () => {
+        setIsFlyToDialogOpen(true);
       },
     },
     null,
@@ -138,6 +150,12 @@ function Editor(props: Props): JSX.Element {
         mapController={mapController}
         msgboxShow={props.msgboxShow}
         mode="editor"
+      />
+
+      <FlyToDialog
+        mapController={mapController}
+        isOpen={isFlyToDialogOpen}
+        setIsOpen={setIsFlyToDialogOpen}
       />
 
       <div className="absolute bottom-0 pb-4 z-10 pointer-events-none flex justify-center w-full">
@@ -336,5 +354,23 @@ const iconScribbleLine = (
       strokeWidth="2"
       d="M6 14H5a2 2 0 0 0-2 2v0a2 2 0 0 0 2 2h14a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-4"
     />
+  </svg>
+);
+
+const iconFlyTo = (
+  <svg
+    aria-hidden="true"
+    focusable="false"
+    data-prefix="fas"
+    data-icon="fly-to-pin"
+    role="img"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 384 512"
+    className="w-full h-full"
+  >
+    <path
+      fill="currentColor"
+      d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0zM192 272c44.183 0 80-35.817 80-80s-35.817-80-80-80-80 35.817-80 80 35.817 80 80 80z"
+    ></path>
   </svg>
 );

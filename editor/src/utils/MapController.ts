@@ -48,7 +48,6 @@ export class MapController {
   private scribbleLastPos: mapboxgl.LngLat | null;
   private scribbleStrokeBbox: Bbox | null;
   private deleteBlockCursor: mapboxgl.Marker | null;
-
   private deleteBlockState: DeleteBlockState;
   private eraserStrokeBbox: Bbox | null;
   private drawingSession: DrawingSession | null;
@@ -60,6 +59,7 @@ export class MapController {
     this.mapRenderer = null;
     this.fogMap = fogMap.FogMap.empty;
     this.controlMode = ControlMode.View;
+
     this.mapStyle = "standard";
     this.mapProjection = "mercator";
     this.resolvedLanguage = "en";
@@ -702,5 +702,25 @@ export class MapController {
     }
 
     this.scribbleLastPos = lngLat;
+  }
+
+  getCenter(): { lng: number; lat: number; zoom: number } | null {
+    const center = this.map?.getCenter();
+    const zoom = this.map?.getZoom();
+    if (center && zoom !== undefined) {
+      return { lng: center.lng, lat: center.lat, zoom };
+    }
+    return null;
+  }
+
+  flyTo(lng: number, lat: number, zoom?: number): void {
+    const options: mapboxgl.FlyToOptions = {
+      center: [lng, lat],
+      essential: true,
+    };
+    if (zoom !== undefined) {
+      options.zoom = zoom;
+    }
+    this.map?.flyTo(options);
   }
 }
