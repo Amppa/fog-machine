@@ -587,17 +587,13 @@ export class MapController {
 
   setControlMode(mode: ControlMode): void {
     const mapboxCanvas = this.map?.getCanvasContainer();
-    if (!mapboxCanvas) {
-      return;
-    }
+    if (!mapboxCanvas) return;
 
     // disable the current active mode
     switch (this.controlMode) {
       case ControlMode.View:
         break;
       case ControlMode.Eraser:
-        mapboxCanvas.style.cursor = "";
-        this.map?.dragPan.enable();
         if (this.eraserArea) {
           this.map?.removeLayer("eraser");
           this.map?.removeLayer("eraser-outline");
@@ -605,9 +601,7 @@ export class MapController {
           this.eraserArea = null;
         }
         break;
-      case ControlMode.DeleteBlock: {
-        mapboxCanvas.style.cursor = "";
-        this.map?.dragPan.enable();
+      case ControlMode.DeleteBlock:
         this.showGrid = false;
         MapEraserUtils.cleanupDeleteBlockLayers(this.map);
         this.deleteBlockCursor?.remove();
@@ -618,21 +612,13 @@ export class MapController {
           bbox: null,
         };
         break;
-      }
-      case ControlMode.DeletePixel: {
-        mapboxCanvas.style.cursor = "";
-        this.map?.dragPan.enable();
+      case ControlMode.DeletePixel:
         this.showGrid = false;
         break;
-      }
       case ControlMode.DrawLine:
-        mapboxCanvas.style.cursor = "";
-        this.map?.dragPan.enable();
         this.mapDraw?.deactivate();
         break;
       case ControlMode.DrawScribble:
-        mapboxCanvas.style.cursor = "";
-        this.map?.dragPan.enable();
         this.scribbleLastPos = null;
         break;
     }
@@ -640,6 +626,8 @@ export class MapController {
     // enable the new mode
     switch (mode) {
       case ControlMode.View:
+        mapboxCanvas.style.cursor = "grab";
+        this.map?.dragPan.enable();
         break;
       case ControlMode.Eraser:
         mapboxCanvas.style.cursor = "cell";
