@@ -166,55 +166,63 @@ export default function MainMenu(props: Props): JSX.Element {
   const mapController = props.mapController;
 
   const [importDialog, setImportDialog] = useState(false);
+  const [exportProgress, setExportProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
 
   const menuItems =
     props.mode == "viewer"
       ? []
       : // Import and Export is only allowed in editor
-        [
-          {
-            name: t("import"),
-            description: t("import-description"),
-            action: () => {
-              setImportDialog(true);
-            },
-            icon: IconImport,
+      [
+        {
+          name: t("import"),
+          description: t("import-description"),
+          action: () => {
+            setImportDialog(true);
           },
-          {
-            name: t("export"),
-            description: t("export-description"),
-            action: async () => {
-              // TODO: seems pretty fast, but we should consider handle this async properly
-              const blob = await mapController.fogMap.exportArchive();
-              if (blob) {
-                popDownload("Sync.zip", blob);
-                props.msgboxShow("info", "export-done-message");
-              }
-            },
-            icon: IconExport,
+          icon: IconImport,
+        },
+        {
+          name: t("export"),
+          description: t("export-description"),
+          action: async () => {
+            // TODO: seems pretty fast, but we should consider handle this async properly
+            setExportProgress({ current: 0, total: 0 });
+            const blob = await mapController.fogMap.exportArchive((current, total) => {
+              setExportProgress({ current, total });
+            });
+            setExportProgress(null);
+            if (blob) {
+              popDownload("Sync.zip", blob);
+              props.msgboxShow("info", "export-done-message");
+            }
           },
-          // TODO: This feature is not really ready, so let's disable it for now.
-          // {
-          //   name: t("export-gpx"),
-          //   description: t("export-description-gpx"),
-          //   action: async () => {
-          //     // TODO: generating the gpx archive for a whole fogMap doesn't feel
-          //     // like a common use case, we could do something like: ask user to
-          //     // select an area and only generate gpx archive for that area.
+          icon: IconExport,
+        },
+        // TODO: This feature is not really ready, so let's disable it for now.
+        // {
+        //   name: t("export-gpx"),
+        //   description: t("export-description-gpx"),
+        //   action: async () => {
+        //     // TODO: generating the gpx archive for a whole fogMap doesn't feel
+        //     // like a common use case, we could do something like: ask user to
+        //     // select an area and only generate gpx archive for that area.
 
-          //     // TODO: `generateGpxArchive` is a blocking operation that takes a
-          //     // really long time, we should:
-          //     // 1. make it async by yielding from time to time.
-          //     // 2. show a progress bar.
-          //     const blob = await generateGpxArchive(mapController.fogMap);
-          //     if (blob) {
-          //       popDownload("Gpx.zip", blob);
-          //       props.msgboxShow("info", "export-done-message-gpx");
-          //     }
-          //   },
-          //   icon: IconExport,
-          // },
-        ];
+        //     // TODO: `generateGpxArchive` is a blocking operation that takes a
+        //     // really long time, we should:
+        //     // 1. make it async by yielding from time to time.
+        //     // 2. show a progress bar.
+        //     const blob = await generateGpxArchive(mapController.fogMap);
+        //     if (blob) {
+        //       popDownload("Gpx.zip", blob);
+        //       props.msgboxShow("info", "export-done-message-gpx");
+        //     }
+        //   },
+        //   icon: IconExport,
+        // },
+      ];
 
   const languageTab = (
     <div className="w-full pt-4 grid lg:grid-cols-2">
@@ -255,6 +263,18 @@ export default function MainMenu(props: Props): JSX.Element {
         setIsOpen={setImportDialog}
         msgboxShow={props.msgboxShow}
       />
+      {exportProgress && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {t("exporting")}
+            </h3>
+            <p className="text-gray-500">
+              {exportProgress.current} / {exportProgress.total} tiles
+            </p>
+          </div>
+        </div>
+      )}
       <div className="absolute z-40 top-4 left-4">
         <div className="max-w-sm m-auto bg-white bg-opacity-90 rounded-xl shadow-md flex items-center space-x-4">
           <Popover className="relative">

@@ -121,7 +121,9 @@ export class FogMap {
     return this;
   }
 
-  async exportArchive(): Promise<Blob | null> {
+  async exportArchive(
+    onProgress?: (current: number, total: number) => void
+  ): Promise<Blob | null> {
     const zip = new JSZip();
     const syncZip = zip.folder("Sync");
     if (!syncZip) {
@@ -129,12 +131,33 @@ export class FogMap {
       console.log("unable to create archive");
       return null;
     }
-    Object.values(this.tiles).forEach((tile) => {
+
+    const tiles = Object.values(this.tiles);
+    const totalTiles = tiles.length;
+    let processedTiles = 0;
+
+    for (let i = 0; i < totalTiles; i++) {
+      const tile = tiles[i];
       // just in case
       if (Object.entries(tile.blocks).length !== 0) {
         syncZip.file("Sync/" + tile.filename, tile.dump());
       }
-    });
+      processedTiles++;
+
+      // Yield every 50 tiles to let UI update
+      if (i % 50 === 0) {
+        if (onProgress) {
+          onProgress(processedTiles, totalTiles);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+    }
+
+    // Final progress update
+    if (onProgress) {
+      onProgress(totalTiles, totalTiles);
+    }
+
     return syncZip.generateAsync({ type: "blob" });
   }
 
@@ -891,7 +914,7 @@ export class Block {
     );
     const regionChar1 = String.fromCharCode(
       (((this.extraData[0] & 0x7) << 2) | ((this.extraData[1] & 0xc0) >> 6)) +
-        "?".charCodeAt(0)
+      "?".charCodeAt(0)
     );
     return regionChar0 + regionChar1;
   }

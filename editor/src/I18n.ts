@@ -55,6 +55,7 @@ i18n
           "fog-concentration-low": "Low",
           "fog-concentration-medium": "Medium",
           "fog-concentration-high": "High",
+          "exporting": "Exporting",
         },
       },
       zh: {
@@ -92,6 +93,7 @@ i18n
           "fog-concentration-low": "低",
           "fog-concentration-medium": "中",
           "fog-concentration-high": "高",
+          "exporting": "导出中",
         },
       },
     },
