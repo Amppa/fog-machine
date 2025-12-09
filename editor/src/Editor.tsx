@@ -1,7 +1,6 @@
 import { ControlMode, MapController } from "./utils/MapController";
 import { ReactComponent as IconEraserSquare } from "./assets/svg/eraser-bg-square.svg";
 import { ReactComponent as IconEraserBlocks } from "./assets/svg/earser-3blocks.svg";
-import { ReactComponent as IconMove } from "./assets/svg/move.svg";
 import { useEffect, useState } from "react";
 import Mousetrap from "mousetrap";
 import MainMenu from "./MainMenu";
@@ -51,18 +50,11 @@ function Editor(props: Props): JSX.Element {
     mapController.toggleGrid();
   });
 
+  const toggleMode = (modeToToggle: ControlMode) => {
+    setControlMode(controlMode !== modeToToggle ? modeToToggle : ControlMode.View);
+  };
+
   const toolButtons = [
-    {
-      key: "view",
-      icon: <IconMove className="w-full h-full" />,
-      clickable: true,
-      enabled: controlMode === ControlMode.View,
-      onClick: () => {
-        if (controlMode !== ControlMode.View) {
-          setControlMode(ControlMode.View);
-        }
-      },
-    },
     {
       key: "move-map",
       icon: iconFlyTo,
@@ -72,7 +64,6 @@ function Editor(props: Props): JSX.Element {
         setIsFlyToDialogOpen(true);
       },
     },
-    null,
     {
       key: "undo",
       icon: iconUndo,
@@ -97,57 +88,35 @@ function Editor(props: Props): JSX.Element {
       icon: iconLine,
       clickable: true,
       enabled: controlMode === ControlMode.DrawLine,
-      onClick: () => {
-        if (controlMode !== ControlMode.DrawLine) {
-          setControlMode(ControlMode.DrawLine);
-        }
-      },
+      onClick: () => toggleMode(ControlMode.DrawLine),
     },
     {
       key: "scribbleLine",
       icon: iconScribbleLine,
       clickable: true,
       enabled: controlMode === ControlMode.DrawScribble,
-      onClick: () => {
-        if (controlMode !== ControlMode.DrawScribble) {
-          setControlMode(ControlMode.DrawScribble);
-        }
-      },
+      onClick: () => toggleMode(ControlMode.DrawScribble)
     },
     {
       key: "eraser",
       icon: <IconEraserSquare className="w-full h-full" />,
       clickable: true,
       enabled: controlMode === ControlMode.Eraser,
-      onClick: () => {
-        if (controlMode !== ControlMode.Eraser) {
-          setControlMode(ControlMode.Eraser);
-        }
-      },
+      onClick: () => toggleMode(ControlMode.Eraser),
     },
     {
       key: "deleteBlock",
       icon: <IconEraserBlocks className="w-full h-full" />,
       clickable: true,
       enabled: controlMode === ControlMode.DeleteBlock,
-      onClick: () => {
-        if (controlMode !== ControlMode.DeleteBlock) {
-          setControlMode(ControlMode.DeleteBlock);
-        }
-      },
+      onClick: () => toggleMode(ControlMode.DeleteBlock)
     },
     {
       key: "deletePixel",
       icon: iconEraser,
       clickable: true,
       enabled: controlMode === ControlMode.DeletePixel,
-      onClick: () => {
-        if (controlMode !== ControlMode.DeletePixel) {
-          setControlMode(ControlMode.DeletePixel);
-        } else {
-          mapController.cycleDeletePixelSize();
-        }
-      },
+      onClick: () => toggleMode(ControlMode.DeletePixel)
     },
   ];
 
