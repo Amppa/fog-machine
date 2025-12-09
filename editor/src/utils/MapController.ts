@@ -98,15 +98,12 @@ export class MapController {
   }
 
   private setMapboxLanguage(): void {
+    if (!this.map) return;
     const mapboxLanguage = this.resolvedLanguage == "zh" ? "zh-Hans" : "en";
-    const map = this.map;
-    if (!map) {
-      return;
-    }
 
-    map.getStyle().layers.forEach(function (thisLayer) {
+    this.map?.getStyle().layers.forEach((thisLayer) => {
       if (thisLayer.id.indexOf("-label") > 0) {
-        map.setLayoutProperty(thisLayer.id, "text-field", [
+        this.map?.setLayoutProperty(thisLayer.id, "text-field", [
           "get",
           "name_" + mapboxLanguage,
         ]);
@@ -134,8 +131,7 @@ export class MapController {
 
   private initMapStyle(): void {
     // Set the default atmosphere style for globe mode
-    if (!this.map) return;
-    this.map.setFog({});
+    this.map?.setFog({});
     this.setMapboxLanguage();
   }
 
@@ -577,16 +573,16 @@ export class MapController {
   }
 
   private handleEraserRelease(e: mapboxgl.MapMouseEvent): void {
-    if (!this.eraserArea) return;
-    const startPoint = this.eraserArea[0];
+    if (!this.map || !this.eraserArea) return;
+    const [startPoint, eraserSource] = this.eraserArea;
     const west = Math.min(e.lngLat.lng, startPoint.lng);
     const north = Math.max(e.lngLat.lat, startPoint.lat);
     const east = Math.max(e.lngLat.lng, startPoint.lng);
     const south = Math.min(e.lngLat.lat, startPoint.lat);
 
-    this.map?.removeLayer("eraser");
-    this.map?.removeLayer("eraser-outline");
-    this.map?.removeSource("eraser");
+    this.map.removeLayer("eraser");
+    this.map.removeLayer("eraser-outline");
+    this.map.removeSource("eraser");
 
     const bbox = new Bbox(west, south, east, north);
 
