@@ -64,6 +64,16 @@ function Editor(props: Props): JSX.Element {
       },
     },
     {
+      key: "move-map",
+      icon: iconFlyTo,
+      clickable: true,
+      enabled: false,
+      onClick: () => {
+        setIsFlyToDialogOpen(true);
+      },
+    },
+    null,
+    {
       key: "undo",
       icon: iconUndo,
       clickable: historyStatus.canUndo,
@@ -81,16 +91,29 @@ function Editor(props: Props): JSX.Element {
         mapController.redo();
       },
     },
+    null,
     {
-      key: "move-map",
-      icon: iconFlyTo,
+      key: "line",
+      icon: iconLine,
       clickable: true,
-      enabled: false,
+      enabled: controlMode === ControlMode.DrawLine,
       onClick: () => {
-        setIsFlyToDialogOpen(true);
+        if (controlMode !== ControlMode.DrawLine) {
+          setControlMode(ControlMode.DrawLine);
+        }
       },
     },
-    null,
+    {
+      key: "scribbleLine",
+      icon: iconScribbleLine,
+      clickable: true,
+      enabled: controlMode === ControlMode.DrawScribble,
+      onClick: () => {
+        if (controlMode !== ControlMode.DrawScribble) {
+          setControlMode(ControlMode.DrawScribble);
+        }
+      },
+    },
     {
       key: "eraser",
       icon: <IconEraserSquare className="w-full h-full" />,
@@ -121,28 +144,6 @@ function Editor(props: Props): JSX.Element {
       onClick: () => {
         if (controlMode !== ControlMode.DeletePixel) {
           setControlMode(ControlMode.DeletePixel);
-        }
-      },
-    },
-    {
-      key: "line",
-      icon: iconLine,
-      clickable: true,
-      enabled: controlMode === ControlMode.DrawLine,
-      onClick: () => {
-        if (controlMode !== ControlMode.DrawLine) {
-          setControlMode(ControlMode.DrawLine);
-        }
-      },
-    },
-    {
-      key: "scribbleLine",
-      icon: iconScribbleLine,
-      clickable: true,
-      enabled: controlMode === ControlMode.DrawScribble,
-      onClick: () => {
-        if (controlMode !== ControlMode.DrawScribble) {
-          setControlMode(ControlMode.DrawScribble);
         }
       },
     },
