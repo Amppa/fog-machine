@@ -45,7 +45,8 @@ export class MapController {
   private onChangeCallback: { [key: string]: () => void };
   public historyManager: HistoryManager;
   private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
-  private scribbleLastPos: mapboxgl.LngLat | null;
+  private drawScribbleLastPos: mapboxgl.LngLat | null;
+  private deletePixelLastPos: mapboxgl.LngLat | null;
   private scribbleStrokeBbox: Bbox | null;
   private deleteBlockCursor: mapboxgl.Marker | null;
   private deleteBlockState: DeleteBlockState;
@@ -70,7 +71,8 @@ export class MapController {
     this.onChangeCallback = {};
     this.historyManager = new HistoryManager(this.fogMap);
     this.eraserArea = null;
-    this.scribbleLastPos = null;
+    this.drawScribbleLastPos = null;
+    this.deletePixelLastPos = null;
     this.scribbleStrokeBbox = null;
     this.deleteBlockCursor = null;
     this.deleteBlockCursor = null;
@@ -375,7 +377,7 @@ export class MapController {
 
   private handleDrawScribblePress(e: mapboxgl.MapMouseEvent): void {
     this.map?.dragPan.disable();
-    this.scribbleLastPos = e.lngLat;
+    this.drawScribbleLastPos = e.lngLat;
     this.scribbleStrokeBbox = new Bbox(
       e.lngLat.lng,
       e.lngLat.lat,
@@ -440,7 +442,7 @@ export class MapController {
 
   private handleDeletePixelPress(e: mapboxgl.MapMouseEvent): void {
     this.map?.dragPan.disable();
-    this.scribbleLastPos = e.lngLat;
+    this.deletePixelLastPos = e.lngLat;
     this.eraserStrokeBbox = new Bbox(
       e.lngLat.lng,
       e.lngLat.lat,
@@ -515,12 +517,12 @@ export class MapController {
   }
 
   private handleDrawScribbleMove(e: mapboxgl.MapMouseEvent): void {
-    if (!this.scribbleLastPos) return;
+    if (!this.drawScribbleLastPos) return;
 
     const currentPos = e.lngLat;
     const newMap = this.fogMap.addLine(
-      this.scribbleLastPos.lng,
-      this.scribbleLastPos.lat,
+      this.drawScribbleLastPos.lng,
+      this.drawScribbleLastPos.lat,
       currentPos.lng,
       currentPos.lat
     );
@@ -528,10 +530,10 @@ export class MapController {
     // TODO: the computation below cannot handle anti-meridian crossing correctly.
     // It is tricky and most people don't need it.
     const segmentBbox = new Bbox(
-      Math.min(this.scribbleLastPos.lng, currentPos.lng),
-      Math.min(this.scribbleLastPos.lat, currentPos.lat),
-      Math.max(this.scribbleLastPos.lng, currentPos.lng),
-      Math.max(this.scribbleLastPos.lat, currentPos.lat)
+      Math.min(this.drawScribbleLastPos.lng, currentPos.lng),
+      Math.min(this.drawScribbleLastPos.lat, currentPos.lat),
+      Math.max(this.drawScribbleLastPos.lng, currentPos.lng),
+      Math.max(this.drawScribbleLastPos.lat, currentPos.lat)
     );
 
     if (this.scribbleStrokeBbox) {
@@ -544,7 +546,7 @@ export class MapController {
     }
 
     this.updateFogMap(newMap, segmentBbox, true);
-    this.scribbleLastPos = currentPos;
+    this.drawScribbleLastPos = currentPos;
   }
 
   private handleDeleteBlockMove(e: mapboxgl.MapMouseEvent): void {
@@ -556,7 +558,7 @@ export class MapController {
 
   private handleDeletePixelMove(e: mapboxgl.MapMouseEvent): void {
     this.updateDeletePixelCursor(e.lngLat);
-    if (e.originalEvent.buttons === 1 && this.scribbleLastPos) {
+    if (e.originalEvent.buttons === 1 && this.deletePixelLastPos) {
       this.handleDeletePixelInteraction(e.lngLat);
     }
   }
@@ -598,7 +600,7 @@ export class MapController {
     if (this.scribbleStrokeBbox) {
       this.historyManager.append(this.fogMap, this.scribbleStrokeBbox);
     }
-    this.scribbleLastPos = null;
+    this.drawScribbleLastPos = null;
     this.scribbleStrokeBbox = null;
     this.map?.dragPan.enable();
   }
@@ -629,7 +631,7 @@ export class MapController {
       }
       this.drawingSession = null;
     }
-    this.scribbleLastPos = null;
+    this.deletePixelLastPos = null;
     if (this.showGrid) {
       this.updateGridLayer();
     }
@@ -648,8 +650,8 @@ export class MapController {
   setDeletePixelSize(size: number): void {
     if (size > 0) {
       this.currentDeletePixelSize = size;
-      if (this.controlMode === ControlMode.DeletePixel && this.scribbleLastPos) {
-        this.updateDeletePixelCursor(this.scribbleLastPos);
+      if (this.controlMode === ControlMode.DeletePixel && this.deletePixelLastPos) {
+        this.updateDeletePixelCursor(this.deletePixelLastPos);
       }
       this.onChange();
     }
@@ -667,7 +669,7 @@ export class MapController {
         this.mapDraw?.deactivate();
         break;
       case ControlMode.DrawScribble:
-        this.scribbleLastPos = null;
+        this.drawScribbleLastPos = null;
         break;
       case ControlMode.Eraser:
         if (this.eraserArea) {
@@ -762,12 +764,12 @@ export class MapController {
   }
 
   private handleDeletePixelInteraction(lngLat: mapboxgl.LngLat) {
-    if (!this.map || !this.scribbleLastPos || !this.drawingSession) return;
+    if (!this.map || !this.deletePixelLastPos || !this.drawingSession) return;
 
     const result = MapEraserUtils.handleDeletePixelInteraction(
       this.fogMap,
       this.drawingSession,
-      this.scribbleLastPos,
+      this.deletePixelLastPos,
       lngLat,
       this.currentDeletePixelSize
     );
@@ -776,7 +778,7 @@ export class MapController {
       this.updateFogMap(result.newMap, result.segmentBbox, true, true);
     }
 
-    this.scribbleLastPos = lngLat;
+    this.deletePixelLastPos = lngLat;
   }
 
   getCenter(): { lng: number; lat: number; zoom: number } | null {
