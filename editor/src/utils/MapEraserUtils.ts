@@ -11,7 +11,7 @@ export interface DrawingSession {
     erasedArea: Bbox | null;
 }
 
-export function getEraserCursorPolygon(
+export function getDeletePixelCursor(
     lngLat: mapboxgl.LngLat,
     pixelSize: number
 ): GeoJSON.Geometry {
@@ -455,4 +455,10 @@ export function cleanupDeleteBlockLayers(map: mapboxgl.Map | null) {
     const pendingLayerId = "pending-delete-layer";
     if (map.getLayer(pendingLayerId)) map.removeLayer(pendingLayerId);
     if (map.getSource(pendingLayerId)) map.removeSource(pendingLayerId);
+}
+
+export function cleanupDeletePixelLayer(map: mapboxgl.Map | null, layerId: string) {
+    if (!map) return;
+    if (map.getLayer(layerId)) map.removeLayer(layerId);
+    if (map.getSource(layerId)) map.removeSource(layerId);
 }

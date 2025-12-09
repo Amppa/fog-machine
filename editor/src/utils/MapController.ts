@@ -543,10 +543,10 @@ export class MapController {
     const source = this.map.getSource(this.deletePixelCursorLayerId) as mapboxgl.GeoJSONSource;
     if (source) {
       const size = this.deletePixelSizes[this.currentDeletePixelSizeIndex];
-      const polygon = MapEraserUtils.getEraserCursorPolygon(lngLat, size);
+      const cursor = MapEraserUtils.getDeletePixelCursor(lngLat, size);
       source.setData({
         type: "Feature",
-        geometry: polygon,
+        geometry: cursor,
         properties: {},
       });
     }
@@ -679,12 +679,10 @@ export class MapController {
         };
         break;
       case ControlMode.DeletePixel:
-        if (this.map?.getLayer(this.deletePixelCursorLayerId)) {
-          this.map?.removeLayer(this.deletePixelCursorLayerId);
-        }
-        if (this.map?.getSource(this.deletePixelCursorLayerId)) {
-          this.map?.removeSource(this.deletePixelCursorLayerId);
-        }
+        MapEraserUtils.cleanupDeletePixelLayer(
+          this.map,
+          this.deletePixelCursorLayerId
+        );
         break;
     }
 
