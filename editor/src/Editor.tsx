@@ -1,6 +1,7 @@
 import { ControlMode, MapController } from "./utils/MapController";
 import { ReactComponent as IconEraserSquare } from "./assets/svg/eraser-bg-square.svg";
 import { ReactComponent as IconEraserBlocks } from "./assets/svg/earser-3blocks.svg";
+import { ReactComponent as IconEraserScribble } from "./assets/svg/earser-scribble.svg";
 import { useEffect, useState } from "react";
 import Mousetrap from "mousetrap";
 import MainMenu from "./MainMenu";
@@ -40,15 +41,9 @@ function Editor(props: Props): JSX.Element {
     };
   }, []);
 
-  Mousetrap.bind(["mod+z"], (_) => {
-    mapController.undo();
-  });
-  Mousetrap.bind(["mod+shift+z"], (_) => {
-    mapController.redo();
-  });
-  Mousetrap.bind(["b"], (_) => {
-    mapController.toggleGrid();
-  });
+  Mousetrap.bind(["mod+z"], (_) => mapController.undo());
+  Mousetrap.bind(["mod+shift+z"], (_) => mapController.redo());
+  Mousetrap.bind(["b"], (_) => mapController.toggleGrid());
 
   const toggleMode = (modeToToggle: ControlMode) => {
     setControlMode(controlMode !== modeToToggle ? modeToToggle : ControlMode.View);
@@ -60,27 +55,21 @@ function Editor(props: Props): JSX.Element {
       icon: iconFlyTo,
       clickable: true,
       enabled: false,
-      onClick: () => {
-        setIsFlyToDialogOpen(true);
-      },
+      onClick: () => setIsFlyToDialogOpen(true),
     },
     {
       key: "undo",
       icon: iconUndo,
       clickable: historyStatus.canUndo,
       enabled: false,
-      onClick: () => {
-        mapController.undo();
-      },
+      onClick: () => mapController.undo(),
     },
     {
       key: "redo",
       icon: iconRedo,
       clickable: historyStatus.canRedo,
       enabled: false,
-      onClick: () => {
-        mapController.redo();
-      },
+      onClick: () => mapController.redo(),
     },
     null,
     {
@@ -113,7 +102,7 @@ function Editor(props: Props): JSX.Element {
     },
     {
       key: "deletePixel",
-      icon: iconEraser,
+      icon: <IconEraserScribble className="w-full h-full" />,
       clickable: true,
       enabled: controlMode === ControlMode.DeletePixel,
       onClick: () => toggleMode(ControlMode.DeletePixel)
