@@ -135,34 +135,41 @@ export class MapController {
     this.setMapboxLanguage();
   }
 
+  private getFogMapForDraw = (): fogMap.FogMap => {
+    return this.fogMap;
+  };
+
+  private handleDrawUpdate = (newMap: fogMap.FogMap, areaChanged: Bbox | "all"): void => {
+    this.updateFogMap(newMap, areaChanged);
+  };
+
   private initMapDraw(map: mapboxgl.Map): void {
     this.mapDraw = new MapDraw(
       map,
-      () => {
-        return this.fogMap;
-      },
-      (newMap, areaChanged) => {
-        this.updateFogMap(newMap, areaChanged);
-      }
+      this.getFogMapForDraw,
+      this.handleDrawUpdate
     );
   }
+
+  private getFogMapForRenderer = (): fogMap.FogMap => {
+    return this.fogMap;
+  };
+
+  private getFogOpacity = (): number => {
+    const opacityMap: Record<FogConcentration, number> = {
+      high: 0.8,
+      medium: 0.6,
+      low: 0.4,
+    };
+    return opacityMap[this.fogConcentration];
+  };
 
   private initMapRenderer(map: mapboxgl.Map): void {
     this.mapRenderer = new MapRenderer(
       map,
       0,
-      () => {
-        return this.fogMap;
-      },
-      () => {
-        if (this.fogConcentration == "high") {
-          return 0.8;
-        } else if (this.fogConcentration == "medium") {
-          return 0.6;
-        } else {
-          return 0.4;
-        }
-      }
+      this.getFogMapForRenderer,
+      this.getFogOpacity
     );
   }
 
