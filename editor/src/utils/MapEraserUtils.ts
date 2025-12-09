@@ -11,41 +11,6 @@ export interface DrawingSession {
     erasedArea: Bbox | null;
 }
 
-export function getDeletePixelCursor(
-    lngLat: mapboxgl.LngLat,
-    pixelSize: number
-): GeoJSON.Geometry {
-    const [gx, gy] = fogMap.FogMap.LngLatToGlobalXY(lngLat.lng, lngLat.lat);
-    const half = pixelSize / 2;
-    const gx1 = gx - half;
-    const gx2 = gx + half;
-    const gy1 = gy - half;
-    const gy2 = gy + half;
-
-    const scale = fogMap.TILE_WIDTH * fogMap.BITMAP_WIDTH;
-
-    const x1 = gx1 / scale;
-    const y1 = gy1 / scale;
-    const x2 = gx2 / scale;
-    const y2 = gy2 / scale;
-
-    const nw = fogMap.Tile.XYToLngLat(x1, y1);
-    const ne = fogMap.Tile.XYToLngLat(x2, y1);
-    const se = fogMap.Tile.XYToLngLat(x2, y2);
-    const sw = fogMap.Tile.XYToLngLat(x1, y2);
-
-    return {
-        type: "Polygon",
-        coordinates: [[
-            [nw[0], nw[1]],
-            [ne[0], ne[1]],
-            [se[0], se[1]],
-            [sw[0], sw[1]],
-            [nw[0], nw[1]]
-        ]]
-    };
-}
-
 export interface DeleteBlockState {
     blocks: { [tileKey: string]: Set<string> };
     features: GeoJSON.Feature<GeoJSON.Polygon>[];
@@ -115,32 +80,6 @@ export function updateDeleteBlockCursor(
     }
     return marker;
 }
-
-export function initDeletePixelCursorLayer(
-    map: mapboxgl.Map | null,
-    layerId: string
-) {
-    if (!map) return;
-    if (!map.getSource(layerId)) {
-        map.addSource(layerId, {
-            type: "geojson",
-            data: {
-                type: "FeatureCollection",
-                features: []
-            }
-        });
-        map.addLayer({
-            id: layerId,
-            type: "line",
-            source: layerId,
-            paint: {
-                "line-color": "#0000FF",
-                "line-width": 2
-            }
-        });
-    }
-}
-
 
 export function handleDeleteBlockInteraction(
     map: mapboxgl.Map | null,
@@ -243,6 +182,66 @@ export function handleDeleteBlockInteraction(
             bbox: pendingBbox,
         },
         changed,
+    };
+}
+
+export function initDeletePixelCursorLayer(
+    map: mapboxgl.Map | null,
+    layerId: string
+) {
+    if (!map) return;
+    if (!map.getSource(layerId)) {
+        map.addSource(layerId, {
+            type: "geojson",
+            data: {
+                type: "FeatureCollection",
+                features: []
+            }
+        });
+        map.addLayer({
+            id: layerId,
+            type: "line",
+            source: layerId,
+            paint: {
+                "line-color": "#0000FF",
+                "line-width": 2
+            }
+        });
+    }
+}
+
+export function getDeletePixelCursor(
+    lngLat: mapboxgl.LngLat,
+    pixelSize: number
+): GeoJSON.Geometry {
+    const [gx, gy] = fogMap.FogMap.LngLatToGlobalXY(lngLat.lng, lngLat.lat);
+    const half = pixelSize / 2;
+    const gx1 = gx - half;
+    const gx2 = gx + half;
+    const gy1 = gy - half;
+    const gy2 = gy + half;
+
+    const scale = fogMap.TILE_WIDTH * fogMap.BITMAP_WIDTH;
+
+    const x1 = gx1 / scale;
+    const y1 = gy1 / scale;
+    const x2 = gx2 / scale;
+    const y2 = gy2 / scale;
+
+    const nw = fogMap.Tile.XYToLngLat(x1, y1);
+    const ne = fogMap.Tile.XYToLngLat(x2, y1);
+    const se = fogMap.Tile.XYToLngLat(x2, y2);
+    const sw = fogMap.Tile.XYToLngLat(x1, y2);
+
+    return {
+        type: "Polygon",
+        coordinates: [[
+            [nw[0], nw[1]],
+            [ne[0], ne[1]],
+            [se[0], se[1]],
+            [sw[0], sw[1]],
+            [nw[0], nw[1]]
+        ]]
     };
 }
 
@@ -429,18 +428,6 @@ export function handleDeletePixelInteraction(
             changed: false,
         };
     }
-}
-
-export function finishEraserSession(
-    drawingSession: DrawingSession
-): { recordedBbox: Bbox | null } {
-    // Finalize the session
-    // We should already have the visual state in fogMap (baseMap + modifiedBlocks applied)
-    // We just need to return the info needed for history.
-
-    return {
-        recordedBbox: drawingSession.erasedArea,
-    };
 }
 
 export function cleanupDeleteBlockLayers(map: mapboxgl.Map | null) {
