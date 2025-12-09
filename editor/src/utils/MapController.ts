@@ -53,6 +53,9 @@ export class MapController {
   private drawingSession: DrawingSession | null;
   private gridRenderer: GridRenderer;
   private _showGrid = false;
+  private deletePixelSizes = [40, 10, 4];
+  private currentDeletePixelSizeIndex = 0;
+  private deletePixelCursorLayerId = "delete-pixel-cursor";
 
   private constructor() {
     this.map = null;
@@ -424,6 +427,9 @@ export class MapController {
         e.lngLat.lat
       ),
     };
+
+    // Initial interaction on press
+    this.handleDeletePixelInteraction(e.lngLat);
   }
 
   handleMouseMove(e: mapboxgl.MapMouseEvent): void {
@@ -505,8 +511,23 @@ export class MapController {
   }
 
   private handleDeletePixelMove(e: mapboxgl.MapMouseEvent): void {
+    this.updateDeletePixelCursor(e.lngLat);
     if (e.originalEvent.buttons === 1 && this.scribbleLastPos) {
       this.handleDeletePixelInteraction(e.lngLat);
+    }
+  }
+
+  private updateDeletePixelCursor(lngLat: mapboxgl.LngLat) {
+    if (!this.map) return;
+    const source = this.map.getSource(this.deletePixelCursorLayerId) as mapboxgl.GeoJSONSource;
+    if (source) {
+      const size = this.deletePixelSizes[this.currentDeletePixelSizeIndex];
+      const polygon = MapEraserUtils.getEraserCursorPolygon(lngLat, size);
+      source.setData({
+        type: "Feature",
+        geometry: polygon,
+        properties: {},
+      });
     }
   }
 
@@ -613,6 +634,12 @@ export class MapController {
         };
         break;
       case ControlMode.DeletePixel:
+        if (this.map?.getLayer(this.deletePixelCursorLayerId)) {
+          this.map?.removeLayer(this.deletePixelCursorLayerId);
+        }
+        if (this.map?.getSource(this.deletePixelCursorLayerId)) {
+          this.map?.removeSource(this.deletePixelCursorLayerId);
+        }
         break;
       case ControlMode.DrawLine:
         this.mapDraw?.deactivate();
@@ -640,11 +667,8 @@ export class MapController {
       case ControlMode.DeletePixel:
         mapboxCanvas.style.cursor = "crosshair";
         this.map?.dragPan.disable();
-        break;
-      case ControlMode.DrawLine:
-        mapboxCanvas.style.cursor = "crosshair";
-        this.map?.dragPan.disable();
-        this.mapDraw?.activate();
+        this.currentDeletePixelSizeIndex = 0;
+        MapEraserUtils.initDeletePixelCursorLayer(this.map, this.deletePixelCursorLayerId);
         break;
       case ControlMode.DrawScribble:
         mapboxCanvas.style.cursor = "crosshair";
@@ -692,7 +716,8 @@ export class MapController {
       this.fogMap,
       this.drawingSession,
       this.scribbleLastPos,
-      lngLat
+      lngLat,
+      this.deletePixelSizes[this.currentDeletePixelSizeIndex]
     );
 
     if (result && result.changed) {
