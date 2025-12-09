@@ -670,6 +670,11 @@ export class MapController {
         this.currentDeletePixelSizeIndex = 0;
         MapEraserUtils.initDeletePixelCursorLayer(this.map, this.deletePixelCursorLayerId);
         break;
+      case ControlMode.DrawLine:
+        mapboxCanvas.style.cursor = "crosshair";
+        this.map?.dragPan.disable();
+        this.mapDraw?.activate();
+        break;
       case ControlMode.DrawScribble:
         mapboxCanvas.style.cursor = "crosshair";
         this.map?.dragPan.disable();
