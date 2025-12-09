@@ -144,6 +144,8 @@ function Editor(props: Props): JSX.Element {
       onClick: () => {
         if (controlMode !== ControlMode.DeletePixel) {
           setControlMode(ControlMode.DeletePixel);
+        } else {
+          mapController.cycleDeletePixelSize();
         }
       },
     },

@@ -606,6 +606,13 @@ export class MapController {
     this.map?.dragPan.enable();
   }
 
+  cycleDeletePixelSize(): void {
+    if (this.controlMode === ControlMode.DeletePixel) {
+      this.currentDeletePixelSizeIndex = (this.currentDeletePixelSizeIndex + 1) % this.deletePixelSizes.length;
+      console.log(`Cycled erazer size to: ${this.deletePixelSizes[this.currentDeletePixelSizeIndex]}`);
+    }
+  }
+
   setControlMode(mode: ControlMode): void {
     const mapboxCanvas = this.map?.getCanvasContainer();
     if (!mapboxCanvas) return;
