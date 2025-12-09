@@ -613,7 +613,6 @@ export class MapController {
         };
         break;
       case ControlMode.DeletePixel:
-        this.showGrid = false;
         break;
       case ControlMode.DrawLine:
         this.mapDraw?.deactivate();
@@ -641,7 +640,6 @@ export class MapController {
       case ControlMode.DeletePixel:
         mapboxCanvas.style.cursor = "crosshair";
         this.map?.dragPan.disable();
-        this.showGrid = true;
         break;
       case ControlMode.DrawLine:
         mapboxCanvas.style.cursor = "crosshair";
