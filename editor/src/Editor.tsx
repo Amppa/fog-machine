@@ -1,5 +1,6 @@
 import { ControlMode, MapController } from "./utils/MapController";
 import { useEffect, useState } from "react";
+const DELETE_PIXEL_SIZES = [4, 10, 40];
 import Mousetrap from "mousetrap";
 import MainMenu from "./MainMenu";
 import FlyToDialog from "./FlyToDialog";
@@ -31,6 +32,11 @@ function Editor(props: Props): JSX.Element {
     canUndo: false,
   });
 
+  const [eraserSize, setEraserSize] = useState(
+    mapController.getDeletePixelSize()
+  );
+  const [isDeletingPixel, setIsDeletingPixel] = useState(false);
+
   const [isFlyToDialogOpen, setIsFlyToDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -39,6 +45,8 @@ function Editor(props: Props): JSX.Element {
         canRedo: mapController.historyManager.canRedo(),
         canUndo: mapController.historyManager.canUndo(),
       });
+      setEraserSize(mapController.getDeletePixelSize());
+      setIsDeletingPixel(mapController.getIsDeletingPixel());
     });
     props.setLoaded(true);
 
@@ -132,23 +140,55 @@ function Editor(props: Props): JSX.Element {
       <div className="absolute bottom-0 pb-4 z-10 pointer-events-none flex justify-center w-full">
         {toolButtons.map((toolButton) =>
           toolButton !== null ? (
-            <button
-              key={toolButton.key}
-              className={
-                "flex items-center justify-center mx-2 w-9 h-9 p-2 bg-white shadow rounded-lg hover:bg-gray-200 active:bg-gray-400" +
-                (toolButton.enabled ? " ring-4 ring-gray-700" : "") +
-                (toolButton.clickable
-                  ? " pointer-events-auto"
-                  : " text-gray-300 opacity-40")
-              }
-              onClick={() => {
-                if (toolButton.clickable) {
-                  toolButton.onClick();
+            <div key={toolButton.key} className="relative flex flex-col items-center justify-end">
+
+              {toolButton.key === "deletePixel" &&
+                controlMode === ControlMode.DeletePixel &&
+                !isDeletingPixel ? (
+                <div className="absolute bottom-full mb-3 bg-white shadow-lg rounded-lg p-1 flex space-x-1 pointer-events-auto ring-1 ring-gray-200">
+                  {DELETE_PIXEL_SIZES.map((sizeValue, index) => (
+                    <div
+                      key={index}
+                      className={
+                        "flex items-center justify-center w-6 h-6 rounded hover:bg-gray-100 cursor-pointer" +
+                        (eraserSize === sizeValue
+                          ? " bg-gray-200 ring-2 ring-gray-400"
+                          : "")
+                      }
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        mapController.setDeletePixelSize(sizeValue);
+                      }}
+                    >
+                      <div
+                        className="bg-gray-800 rounded-full"
+                        style={{
+                          width: `${4 + index * 4}px`, // 4, 8, 12 px visual size
+                          height: `${4 + index * 4}px`,
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
+              <button
+                className={
+                  "flex items-center justify-center mx-2 w-9 h-9 p-2 bg-white shadow rounded-lg hover:bg-gray-200 active:bg-gray-400" +
+                  (toolButton.enabled ? " ring-4 ring-gray-700" : "") +
+                  (toolButton.clickable
+                    ? " pointer-events-auto"
+                    : " text-gray-300 opacity-40")
                 }
-              }}
-            >
-              {toolButton.icon}
-            </button>
+                onClick={() => {
+                  if (toolButton.clickable) {
+                    toolButton.onClick();
+                  }
+                }}
+              >
+                {toolButton.icon}
+              </button>
+            </div>
           ) : (
             <div
               key="|"

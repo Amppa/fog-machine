@@ -53,8 +53,7 @@ export class MapController {
   private drawingSession: DrawingSession | null;
   private gridRenderer: GridRenderer;
   private _showGrid = false;
-  private deletePixelSizes = [40, 10, 4];
-  private currentDeletePixelSizeIndex = 0;
+  private currentDeletePixelSize = 40;    // default eraser size 40, 10, 4
   private deletePixelCursorLayerId = "delete-pixel-cursor";
 
   private constructor() {
@@ -351,6 +350,29 @@ export class MapController {
     }
   }
 
+  handleMouseRelease(e: mapboxgl.MapMouseEvent): void {
+    switch (this.controlMode) {
+      case ControlMode.View:
+        break;
+      case ControlMode.DrawLine:
+        break;
+      case ControlMode.DrawScribble:
+        this.handleDrawScribbleRelease(e);
+        break;
+      case ControlMode.Eraser:
+        this.handleEraserRelease(e);
+        break;
+      case ControlMode.DeleteBlock:
+        this.handleDeleteBlockRelease(e);
+        break;
+      case ControlMode.DeletePixel:
+        this.handleDeletePixelRelease(e);
+        break;
+      default:
+        break;
+    }
+  }
+
   private handleDrawScribblePress(e: mapboxgl.MapMouseEvent): void {
     this.map?.dragPan.disable();
     this.scribbleLastPos = e.lngLat;
@@ -440,6 +462,7 @@ export class MapController {
 
     // Initial interaction on press
     this.handleDeletePixelInteraction(e.lngLat);
+    this.onChange();
   }
 
   handleMouseMove(e: mapboxgl.MapMouseEvent): void {
@@ -542,37 +565,12 @@ export class MapController {
     if (!this.map) return;
     const source = this.map.getSource(this.deletePixelCursorLayerId) as mapboxgl.GeoJSONSource;
     if (source) {
-      const size = this.deletePixelSizes[this.currentDeletePixelSizeIndex];
-      const cursor = MapEraserUtils.getDeletePixelCursor(lngLat, size);
+      const cursor = MapEraserUtils.getDeletePixelCursor(lngLat, this.currentDeletePixelSize);
       source.setData({
         type: "Feature",
         geometry: cursor,
         properties: {},
       });
-    }
-  }
-
-  handleMouseRelease(e: mapboxgl.MapMouseEvent): void {
-    console.log(`[Mouse Release] at ${e.lngLat}`);
-    switch (this.controlMode) {
-      case ControlMode.View:
-        break;
-      case ControlMode.DrawLine:
-        break;
-      case ControlMode.DrawScribble:
-        this.handleDrawScribbleRelease(e);
-        break;
-      case ControlMode.Eraser:
-        this.handleEraserRelease(e);
-        break;
-      case ControlMode.DeleteBlock:
-        this.handleDeleteBlockRelease(e);
-        break;
-      case ControlMode.DeletePixel:
-        this.handleDeletePixelRelease(e);
-        break;
-      default:
-        break;
     }
   }
 
@@ -636,12 +634,24 @@ export class MapController {
       this.updateGridLayer();
     }
     this.map?.dragPan.enable();
+    this.onChange();
   }
 
-  cycleDeletePixelSize(): void {
-    if (this.controlMode === ControlMode.DeletePixel) {
-      this.currentDeletePixelSizeIndex += 1;
-      this.currentDeletePixelSizeIndex %= this.deletePixelSizes.length;
+  getIsDeletingPixel(): boolean {
+    return this.drawingSession !== null;
+  }
+
+  getDeletePixelSize(): number {
+    return this.currentDeletePixelSize;
+  }
+
+  setDeletePixelSize(size: number): void {
+    if (size > 0) {
+      this.currentDeletePixelSize = size;
+      if (this.controlMode === ControlMode.DeletePixel && this.scribbleLastPos) {
+        this.updateDeletePixelCursor(this.scribbleLastPos);
+      }
+      this.onChange();
     }
   }
 
@@ -713,7 +723,7 @@ export class MapController {
       case ControlMode.DeletePixel:
         mapboxCanvas.style.cursor = "crosshair";
         this.map?.dragPan.disable();
-        this.currentDeletePixelSizeIndex = 0;
+
         MapEraserUtils.initDeletePixelCursorLayer(this.map, this.deletePixelCursorLayerId);
         break;
     }
@@ -759,7 +769,7 @@ export class MapController {
       this.drawingSession,
       this.scribbleLastPos,
       lngLat,
-      this.deletePixelSizes[this.currentDeletePixelSizeIndex]
+      this.currentDeletePixelSize
     );
 
     if (result && result.changed) {
