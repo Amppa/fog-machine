@@ -15,11 +15,11 @@ type FogConcentration = "low" | "medium" | "high";
 
 export enum ControlMode {
   View,
+  DrawLine,
+  DrawScribble,
   Eraser,
   DeleteBlock,
   DeletePixel,
-  DrawLine,
-  DrawScribble,
 }
 
 interface DrawingSession {
@@ -328,17 +328,38 @@ export class MapController {
 
   handleMousePress(e: mapboxgl.MapMouseEvent): void {
     console.log(`[Mouse Press] at ${e.lngLat}`);
-    if (this.controlMode === ControlMode.Eraser) {
-      this.handleEraserPress(e);
-    } else if (this.controlMode === ControlMode.DeleteBlock) {
-      this.handleDeleteBlockPress(e);
-    } else if (this.controlMode === ControlMode.DeletePixel) {
-      this.handleDeletePixelPress(e);
-    } else if (this.controlMode === ControlMode.DrawLine) {
-      // pass. -> setControlMode(ControlMode.DrawLine) -> @mapbox/mapbox-gl-draw 
-    } else if (this.controlMode === ControlMode.DrawScribble) {
-      this.handleDrawScribblePress(e);
+    switch (this.controlMode) {
+      case ControlMode.View:
+        break;
+      case ControlMode.DrawLine:
+        // pass. -> setControlMode(ControlMode.DrawLine) -> @mapbox/mapbox-gl-draw
+        break;
+      case ControlMode.DrawScribble:
+        this.handleDrawScribblePress(e);
+        break;
+      case ControlMode.Eraser:
+        this.handleEraserPress(e);
+        break;
+      case ControlMode.DeleteBlock:
+        this.handleDeleteBlockPress(e);
+        break;
+      case ControlMode.DeletePixel:
+        this.handleDeletePixelPress(e);
+        break;
+      default:
+        break;
     }
+  }
+
+  private handleDrawScribblePress(e: mapboxgl.MapMouseEvent): void {
+    this.map?.dragPan.disable();
+    this.scribbleLastPos = e.lngLat;
+    this.scribbleStrokeBbox = new Bbox(
+      e.lngLat.lng,
+      e.lngLat.lat,
+      e.lngLat.lng,
+      e.lngLat.lat
+    );
   }
 
   private handleEraserPress(e: mapboxgl.MapMouseEvent): void {
@@ -386,17 +407,6 @@ export class MapController {
     }
   }
 
-  private handleDrawScribblePress(e: mapboxgl.MapMouseEvent): void {
-    this.map?.dragPan.disable();
-    this.scribbleLastPos = e.lngLat;
-    this.scribbleStrokeBbox = new Bbox(
-      e.lngLat.lng,
-      e.lngLat.lat,
-      e.lngLat.lng,
-      e.lngLat.lat
-    );
-  }
-
   private handleDeleteBlockPress(e: mapboxgl.MapMouseEvent): void {
     this.deleteBlockState = {
       blocks: {},
@@ -433,14 +443,25 @@ export class MapController {
   }
 
   handleMouseMove(e: mapboxgl.MapMouseEvent): void {
-    if (this.controlMode === ControlMode.Eraser) {
-      this.handleEraserMove(e);
-    } else if (this.controlMode === ControlMode.DrawScribble) {
-      this.handleDrawScribbleMove(e);
-    } else if (this.controlMode === ControlMode.DeleteBlock) {
-      this.handleDeleteBlockMove(e);
-    } else if (this.controlMode === ControlMode.DeletePixel) {
-      this.handleDeletePixelMove(e);
+    switch (this.controlMode) {
+      case ControlMode.View:
+        break;
+      case ControlMode.DrawLine:
+        break;
+      case ControlMode.DrawScribble:
+        this.handleDrawScribbleMove(e);
+        break;
+      case ControlMode.Eraser:
+        this.handleEraserMove(e);
+        break;
+      case ControlMode.DeleteBlock:
+        this.handleDeleteBlockMove(e);
+        break;
+      case ControlMode.DeletePixel:
+        this.handleDeletePixelMove(e);
+        break;
+      default:
+        break;
     }
   }
 
@@ -533,14 +554,25 @@ export class MapController {
 
   handleMouseRelease(e: mapboxgl.MapMouseEvent): void {
     console.log(`[Mouse Release] at ${e.lngLat}`);
-    if (this.controlMode === ControlMode.Eraser) {
-      this.handleEraserRelease(e);
-    } else if (this.controlMode === ControlMode.DrawScribble) {
-      this.handleDrawScribbleRelease(e);
-    } else if (this.controlMode === ControlMode.DeleteBlock) {
-      this.handleDeleteBlockRelease(e);
-    } else if (this.controlMode === ControlMode.DeletePixel) {
-      this.handleDeletePixelRelease(e);
+    switch (this.controlMode) {
+      case ControlMode.View:
+        break;
+      case ControlMode.DrawLine:
+        break;
+      case ControlMode.DrawScribble:
+        this.handleDrawScribbleRelease(e);
+        break;
+      case ControlMode.Eraser:
+        this.handleEraserRelease(e);
+        break;
+      case ControlMode.DeleteBlock:
+        this.handleDeleteBlockRelease(e);
+        break;
+      case ControlMode.DeletePixel:
+        this.handleDeletePixelRelease(e);
+        break;
+      default:
+        break;
     }
   }
 
@@ -608,18 +640,24 @@ export class MapController {
 
   cycleDeletePixelSize(): void {
     if (this.controlMode === ControlMode.DeletePixel) {
-      this.currentDeletePixelSizeIndex = (this.currentDeletePixelSizeIndex + 1) % this.deletePixelSizes.length;
-      console.log(`Cycled erazer size to: ${this.deletePixelSizes[this.currentDeletePixelSizeIndex]}`);
+      this.currentDeletePixelSizeIndex += 1;
+      this.currentDeletePixelSizeIndex %= this.deletePixelSizes.length;
     }
   }
 
-  setControlMode(mode: ControlMode): void {
+  setControlMode(newMode: ControlMode): void {
     const mapboxCanvas = this.map?.getCanvasContainer();
     if (!mapboxCanvas) return;
 
     // disable the current active mode
     switch (this.controlMode) {
       case ControlMode.View:
+        break;
+      case ControlMode.DrawLine:
+        this.mapDraw?.deactivate();
+        break;
+      case ControlMode.DrawScribble:
+        this.scribbleLastPos = null;
         break;
       case ControlMode.Eraser:
         if (this.eraserArea) {
@@ -648,19 +686,22 @@ export class MapController {
           this.map?.removeSource(this.deletePixelCursorLayerId);
         }
         break;
-      case ControlMode.DrawLine:
-        this.mapDraw?.deactivate();
-        break;
-      case ControlMode.DrawScribble:
-        this.scribbleLastPos = null;
-        break;
     }
 
     // enable the new mode
-    switch (mode) {
+    switch (newMode) {
       case ControlMode.View:
         mapboxCanvas.style.cursor = "grab";
         this.map?.dragPan.enable();
+        break;
+      case ControlMode.DrawLine:
+        mapboxCanvas.style.cursor = "crosshair";
+        this.map?.dragPan.disable();
+        this.mapDraw?.activate();
+        break;
+      case ControlMode.DrawScribble:
+        mapboxCanvas.style.cursor = "crosshair";
+        this.map?.dragPan.disable();
         break;
       case ControlMode.Eraser:
         mapboxCanvas.style.cursor = "cell";
@@ -677,17 +718,8 @@ export class MapController {
         this.currentDeletePixelSizeIndex = 0;
         MapEraserUtils.initDeletePixelCursorLayer(this.map, this.deletePixelCursorLayerId);
         break;
-      case ControlMode.DrawLine:
-        mapboxCanvas.style.cursor = "crosshair";
-        this.map?.dragPan.disable();
-        this.mapDraw?.activate();
-        break;
-      case ControlMode.DrawScribble:
-        mapboxCanvas.style.cursor = "crosshair";
-        this.map?.dragPan.disable();
-        break;
     }
-    this.controlMode = mode;
+    this.controlMode = newMode;
   }
 
   private updatePendingDeleteLayer() {
