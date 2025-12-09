@@ -1,4 +1,6 @@
 import { ControlMode, MapController } from "./utils/MapController";
+import { ReactComponent as IconEraserSquare } from "./assets/svg/eraser-bg-square.svg";
+import { ReactComponent as IconEraserBlocks } from "./assets/svg/earser-3blocks.svg";
 import { useEffect, useState } from "react";
 import Mousetrap from "mousetrap";
 import MainMenu from "./MainMenu";
@@ -79,7 +81,7 @@ function Editor(props: Props): JSX.Element {
     null,
     {
       key: "eraser",
-      icon: iconEraser,
+      icon: <IconEraserSquare className="w-full h-full" />,
       clickable: true,
       enabled: controlMode === ControlMode.Eraser,
       onClick: () => {
@@ -92,7 +94,7 @@ function Editor(props: Props): JSX.Element {
     },
     {
       key: "deleteBlock",
-      icon: iconEraser,
+      icon: <IconEraserBlocks className="w-full h-full" />,
       clickable: true,
       enabled: controlMode === ControlMode.DeleteBlock,
       onClick: () => {
