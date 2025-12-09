@@ -1,6 +1,7 @@
 import { ControlMode, MapController } from "./utils/MapController";
 import { ReactComponent as IconEraserSquare } from "./assets/svg/eraser-bg-square.svg";
 import { ReactComponent as IconEraserBlocks } from "./assets/svg/earser-3blocks.svg";
+import { ReactComponent as IconMove } from "./assets/svg/move.svg";
 import { useEffect, useState } from "react";
 import Mousetrap from "mousetrap";
 import MainMenu from "./MainMenu";
@@ -52,6 +53,17 @@ function Editor(props: Props): JSX.Element {
 
   const toolButtons = [
     {
+      key: "view",
+      icon: <IconMove className="w-full h-full" />,
+      clickable: true,
+      enabled: controlMode === ControlMode.View,
+      onClick: () => {
+        if (controlMode !== ControlMode.View) {
+          setControlMode(ControlMode.View);
+        }
+      },
+    },
+    {
       key: "undo",
       icon: iconUndo,
       clickable: historyStatus.canUndo,
@@ -85,9 +97,7 @@ function Editor(props: Props): JSX.Element {
       clickable: true,
       enabled: controlMode === ControlMode.Eraser,
       onClick: () => {
-        if (controlMode === ControlMode.Eraser) {
-          setControlMode(ControlMode.View);
-        } else {
+        if (controlMode !== ControlMode.Eraser) {
           setControlMode(ControlMode.Eraser);
         }
       },
@@ -98,9 +108,7 @@ function Editor(props: Props): JSX.Element {
       clickable: true,
       enabled: controlMode === ControlMode.DeleteBlock,
       onClick: () => {
-        if (controlMode === ControlMode.DeleteBlock) {
-          setControlMode(ControlMode.View);
-        } else {
+        if (controlMode !== ControlMode.DeleteBlock) {
           setControlMode(ControlMode.DeleteBlock);
         }
       },
@@ -111,9 +119,7 @@ function Editor(props: Props): JSX.Element {
       clickable: true,
       enabled: controlMode === ControlMode.DeletePixel,
       onClick: () => {
-        if (controlMode === ControlMode.DeletePixel) {
-          setControlMode(ControlMode.View);
-        } else {
+        if (controlMode !== ControlMode.DeletePixel) {
           setControlMode(ControlMode.DeletePixel);
         }
       },
@@ -124,9 +130,7 @@ function Editor(props: Props): JSX.Element {
       clickable: true,
       enabled: controlMode === ControlMode.DrawLine,
       onClick: () => {
-        if (controlMode === ControlMode.DrawLine) {
-          setControlMode(ControlMode.View);
-        } else {
+        if (controlMode !== ControlMode.DrawLine) {
           setControlMode(ControlMode.DrawLine);
         }
       },
@@ -137,9 +141,7 @@ function Editor(props: Props): JSX.Element {
       clickable: true,
       enabled: controlMode === ControlMode.DrawScribble,
       onClick: () => {
-        if (controlMode === ControlMode.DrawScribble) {
-          setControlMode(ControlMode.View);
-        } else {
+        if (controlMode !== ControlMode.DrawScribble) {
           setControlMode(ControlMode.DrawScribble);
         }
       },
@@ -312,3 +314,5 @@ const iconFlyTo = (
     ></path>
   </svg>
 );
+
+
