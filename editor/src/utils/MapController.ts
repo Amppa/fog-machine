@@ -75,7 +75,6 @@ export class MapController {
     this.deletePixelLastPos = null;
     this.scribbleStrokeBbox = null;
     this.deleteBlockCursor = null;
-    this.deleteBlockCursor = null;
     this.deleteBlockState = {
       blocks: {},
       features: [],
@@ -99,7 +98,7 @@ export class MapController {
 
   private setMapboxLanguage(): void {
     if (!this.map) return;
-    const mapboxLanguage = this.resolvedLanguage == "zh" ? "zh-Hans" : "en";
+    const mapboxLanguage = this.resolvedLanguage === "zh" ? "zh-Hans" : "en";
 
     this.map?.getStyle().layers.forEach((thisLayer) => {
       if (thisLayer.id.indexOf("-label") > 0) {
@@ -112,13 +111,13 @@ export class MapController {
   }
 
   mapboxStyleURL(): string {
-    if (this.mapStyle == "standard" || this.mapStyle == "none") {
-      return "mapbox://styles/mapbox/streets-v11";
-    } else if (this.mapStyle == "satellite") {
-      return "mapbox://styles/mapbox/satellite-v9";
-    } else {
-      return "mapbox://styles/mapbox/satellite-streets-v11";
-    }
+    const styleMap: Record<MapStyle, string> = {
+      standard: "mapbox://styles/mapbox/streets-v11",
+      none: "mapbox://styles/mapbox/streets-v11",
+      satellite: "mapbox://styles/mapbox/satellite-v9",
+      hybrid: "mapbox://styles/mapbox/satellite-streets-v11",
+    };
+    return styleMap[this.mapStyle];
   }
 
   private setMapVisibility(visibility: "visible" | "none"): void {
@@ -135,24 +134,12 @@ export class MapController {
     this.setMapboxLanguage();
   }
 
-  private getFogMapForDraw = (): fogMap.FogMap => {
+  private getFogMap = (): fogMap.FogMap => {
     return this.fogMap;
   };
 
   private handleDrawUpdate = (newMap: fogMap.FogMap, areaChanged: Bbox | "all"): void => {
     this.updateFogMap(newMap, areaChanged);
-  };
-
-  private initMapDraw(map: mapboxgl.Map): void {
-    this.mapDraw = new MapDraw(
-      map,
-      this.getFogMapForDraw,
-      this.handleDrawUpdate
-    );
-  }
-
-  private getFogMapForRenderer = (): fogMap.FogMap => {
-    return this.fogMap;
   };
 
   private getFogOpacity = (): number => {
@@ -164,22 +151,30 @@ export class MapController {
     return opacityMap[this.fogConcentration];
   };
 
+  private initMapDraw(map: mapboxgl.Map): void {
+    this.mapDraw = new MapDraw(
+      map,
+      this.getFogMap,
+      this.handleDrawUpdate
+    );
+  }
+
   private initMapRenderer(map: mapboxgl.Map): void {
     this.mapRenderer = new MapRenderer(
       map,
       0,
-      this.getFogMapForRenderer,
+      this.getFogMap,
       this.getFogOpacity
     );
   }
 
   setMapStyle(style: MapStyle): void {
-    if (style != this.mapStyle) {
-      if (style == "none") {
+    if (style !== this.mapStyle) {
+      if (style === "none") {
         this.mapStyle = style;
         this.setMapVisibility("none");
       } else {
-        if (this.mapStyle == "none") {
+        if (this.mapStyle === "none") {
           this.setMapVisibility("visible");
         }
         this.mapStyle = style;
@@ -193,7 +188,7 @@ export class MapController {
   }
 
   setMapProjection(projection: MapProjection): void {
-    if (projection != this.mapProjection) {
+    if (projection !== this.mapProjection) {
       this.mapProjection = projection;
       this.map?.setProjection(projection);
       this.mapRenderer?.maybeRenderOnce();
@@ -205,7 +200,7 @@ export class MapController {
   }
 
   setFogConcentration(fogConcentration: FogConcentration): void {
-    if (fogConcentration != this.fogConcentration) {
+    if (fogConcentration !== this.fogConcentration) {
       this.fogConcentration = fogConcentration;
       this.redrawArea("all");
     }
@@ -216,10 +211,7 @@ export class MapController {
   }
 
   private onChange() {
-    Object.keys(this.onChangeCallback).map((key) => {
-      const callback = this.onChangeCallback[key];
-      callback();
-    });
+    Object.values(this.onChangeCallback).forEach((callback) => callback());
   }
 
   registerMap(map: mapboxgl.Map, resolvedLanguage: string): void {
@@ -238,7 +230,7 @@ export class MapController {
   }
 
   setResolvedLanguage(resolvedLanguage: string) {
-    if (resolvedLanguage != this.resolvedLanguage) {
+    if (resolvedLanguage !== this.resolvedLanguage) {
       this.resolvedLanguage = resolvedLanguage;
       this.setMapboxLanguage();
     }
@@ -297,10 +289,7 @@ export class MapController {
     if (!skipGridUpdate && this.showGrid) {
       this.updateGridLayer();
     }
-
-    if (this.onChange) {
-      this.onChange();
-    }
+    this.onChange();
   }
 
   private updateFogMap(
