@@ -187,7 +187,7 @@ function Editor(props: Props): JSX.Element {
             <div
               key="|"
               className={
-                "flex items-center justify-center rounded mx-7 w-1 h-9 bg-black shadow"
+                "flex items-center justify-center rounded mx-2 w-1 h-9 bg-black shadow"
               }
             ></div>
           )
