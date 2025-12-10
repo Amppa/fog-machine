@@ -449,3 +449,59 @@ export function cleanupDeletePixelLayer(map: mapboxgl.Map | null, layerId: strin
     if (map.getLayer(layerId)) map.removeLayer(layerId);
     if (map.getSource(layerId)) map.removeSource(layerId);
 }
+
+export function initEraserLayers(
+    map: mapboxgl.Map | null,
+    layerId: string,
+    outlineLayerId: string,
+    color: string,
+    fillOpacity: number,
+    lineWidth: number
+): void {
+    if (!map) return;
+
+    map.addSource(layerId, {
+        type: "geojson",
+        data: {
+            type: "Feature",
+            properties: {},
+            geometry: {
+                type: "Polygon",
+                coordinates: [[]],
+            },
+        },
+    });
+
+    map.addLayer({
+        id: layerId,
+        type: "fill",
+        source: layerId,
+        layout: {},
+        paint: {
+            "fill-color": color,
+            "fill-opacity": fillOpacity,
+        },
+    });
+
+    map.addLayer({
+        id: outlineLayerId,
+        type: "line",
+        source: layerId,
+        layout: {},
+        paint: {
+            "line-color": color,
+            "line-width": lineWidth,
+        },
+    });
+}
+
+export function cleanupEraserLayers(
+    map: mapboxgl.Map | null,
+    layerId: string,
+    outlineLayerId: string
+): void {
+    if (!map) return;
+    if (map.getLayer(layerId)) map.removeLayer(layerId);
+    if (map.getLayer(outlineLayerId)) map.removeLayer(outlineLayerId);
+    if (map.getSource(layerId)) map.removeSource(layerId);
+}
