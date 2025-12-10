@@ -538,24 +538,18 @@ export class MapController {
   }
 
   private handleDeletePixelMove(e: mapboxgl.MapMouseEvent): void {
-    this.updateDeletePixelCursor(e.lngLat);
+    MapEraserUtils.updateDeletePixelCursorLayer(
+      this.map,
+      this.deletePixelCursorLayerId,
+      e.lngLat,
+      this.currentDeletePixelSize
+    );
     if (e.originalEvent.buttons === 1 && this.deletePixelLastPos) {
       this.handleDeletePixelInteraction(e.lngLat);
     }
   }
 
-  private updateDeletePixelCursor(lngLat: mapboxgl.LngLat) {
-    if (!this.map) return;
-    const source = this.map.getSource(this.deletePixelCursorLayerId) as mapboxgl.GeoJSONSource;
-    if (source) {
-      const cursor = MapEraserUtils.getDeletePixelCursor(lngLat, this.currentDeletePixelSize);
-      source.setData({
-        type: "Feature",
-        geometry: cursor,
-        properties: {},
-      });
-    }
-  }
+
 
   private handleEraserRelease(e: mapboxgl.MapMouseEvent): void {
     if (!this.map || !this.eraserArea) return;
@@ -590,7 +584,10 @@ export class MapController {
     this.updateFogMap(newMap, this.deleteBlockState.bbox || "all");
 
     this.deleteBlockState = this.resetDeleteBlockState();
-    this.updatePendingDeleteLayer();
+    MapEraserUtils.updatePendingDeleteLayer(
+      this.map,
+      this.deleteBlockState.features
+    );
   }
 
   private handleDeletePixelRelease(e: mapboxgl.MapMouseEvent): void {
@@ -627,7 +624,12 @@ export class MapController {
     if (size > 0) {
       this.currentDeletePixelSize = size;
       if (this.controlMode === ControlMode.DeletePixel && this.deletePixelLastPos) {
-        this.updateDeletePixelCursor(this.deletePixelLastPos);
+        MapEraserUtils.updateDeletePixelCursorLayer(
+          this.map,
+          this.deletePixelCursorLayerId,
+          this.deletePixelLastPos,
+          this.currentDeletePixelSize
+        );
       }
       this.onChange();
     }
@@ -706,12 +708,7 @@ export class MapController {
     this.controlMode = newMode;
   }
 
-  private updatePendingDeleteLayer() {
-    MapEraserUtils.updatePendingDeleteLayer(
-      this.map,
-      this.deleteBlockState.features
-    );
-  }
+
 
   private updateDeleteBlockCursor(lngLat: mapboxgl.LngLat) {
     this.deleteBlockCursor = MapEraserUtils.updateDeleteBlockCursor(
@@ -733,7 +730,10 @@ export class MapController {
     this.deleteBlockState = result.newState;
 
     if (result.changed) {
-      this.updatePendingDeleteLayer();
+      MapEraserUtils.updatePendingDeleteLayer(
+        this.map,
+        this.deleteBlockState.features
+      );
     }
   }
 

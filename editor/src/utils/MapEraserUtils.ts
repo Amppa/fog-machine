@@ -505,3 +505,21 @@ export function cleanupEraserLayers(
     if (map.getLayer(outlineLayerId)) map.removeLayer(outlineLayerId);
     if (map.getSource(layerId)) map.removeSource(layerId);
 }
+
+export function updateDeletePixelCursorLayer(
+    map: mapboxgl.Map | null,
+    layerId: string,
+    lngLat: mapboxgl.LngLat,
+    pixelSize: number
+): void {
+    if (!map) return;
+    const source = map.getSource(layerId) as mapboxgl.GeoJSONSource;
+    if (source) {
+        const cursor = getDeletePixelCursor(lngLat, pixelSize);
+        source.setData({
+            type: "Feature",
+            geometry: cursor,
+            properties: {},
+        });
+    }
+}
