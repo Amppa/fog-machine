@@ -406,40 +406,51 @@ export class MapController {
     this.scribbleStrokeBbox = this.createBbox(e.lngLat);
   }
 
+  private initEraserLayers(): void {
+    this.map?.addSource(MapController.LAYER_IDS.ERASER, {
+      type: "geojson",
+      data: {
+        type: "Feature",
+        properties: {},
+        geometry: {
+          type: "Polygon",
+          coordinates: [[]],
+        },
+      },
+    });
+
+    this.map?.addLayer({
+      id: MapController.LAYER_IDS.ERASER,
+      type: "fill",
+      source: MapController.LAYER_IDS.ERASER,
+      layout: {},
+      paint: {
+        "fill-color": MapController.ERASER_STYLE.COLOR,
+        "fill-opacity": MapController.ERASER_STYLE.FILL_OPACITY,
+      },
+    });
+
+    this.map?.addLayer({
+      id: MapController.LAYER_IDS.ERASER_OUTLINE,
+      type: "line",
+      source: MapController.LAYER_IDS.ERASER,
+      layout: {},
+      paint: {
+        "line-color": MapController.ERASER_STYLE.COLOR,
+        "line-width": MapController.ERASER_STYLE.LINE_WIDTH,
+      },
+    });
+  }
+
+  private cleanupEraserLayers(): void {
+    this.map?.removeLayer(MapController.LAYER_IDS.ERASER);
+    this.map?.removeLayer(MapController.LAYER_IDS.ERASER_OUTLINE);
+    this.map?.removeSource(MapController.LAYER_IDS.ERASER);
+  }
+
   private handleEraserPress(e: mapboxgl.MapMouseEvent): void {
     if (!this.eraserArea) {
-      this.map?.addSource(MapController.LAYER_IDS.ERASER, {
-        type: "geojson",
-        data: {
-          type: "Feature",
-          properties: {},
-          geometry: {
-            type: "Polygon",
-            coordinates: [[]],
-          },
-        },
-      });
-
-      this.map?.addLayer({
-        id: MapController.LAYER_IDS.ERASER,
-        type: "fill",
-        source: MapController.LAYER_IDS.ERASER,
-        layout: {},
-        paint: {
-          "fill-color": MapController.ERASER_STYLE.COLOR,
-          "fill-opacity": MapController.ERASER_STYLE.FILL_OPACITY,
-        },
-      });
-      this.map?.addLayer({
-        id: MapController.LAYER_IDS.ERASER_OUTLINE,
-        type: "line",
-        source: MapController.LAYER_IDS.ERASER,
-        layout: {},
-        paint: {
-          "line-color": MapController.ERASER_STYLE.COLOR,
-          "line-width": MapController.ERASER_STYLE.LINE_WIDTH,
-        },
-      });
+      this.initEraserLayers();
 
       const eraserSource = this.map?.getSource(
         MapController.LAYER_IDS.ERASER
@@ -584,9 +595,7 @@ export class MapController {
     const [startPoint, eraserSource] = this.eraserArea;
     const { west, north, east, south } = this.calculateBounds(e.lngLat, startPoint);
 
-    this.map.removeLayer(MapController.LAYER_IDS.ERASER);
-    this.map.removeLayer(MapController.LAYER_IDS.ERASER_OUTLINE);
-    this.map.removeSource(MapController.LAYER_IDS.ERASER);
+    this.cleanupEraserLayers();
 
     const bbox = new Bbox(west, south, east, north);
 
@@ -669,9 +678,7 @@ export class MapController {
         break;
       case ControlMode.Eraser:
         if (this.eraserArea) {
-          this.map?.removeLayer(MapController.LAYER_IDS.ERASER);
-          this.map?.removeLayer(MapController.LAYER_IDS.ERASER_OUTLINE);
-          this.map?.removeSource(MapController.LAYER_IDS.ERASER);
+          this.cleanupEraserLayers();
           this.eraserArea = null;
         }
         break;
