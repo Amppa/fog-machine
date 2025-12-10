@@ -7,7 +7,7 @@ import { MapRenderer, MAPBOX_MAIN_CANVAS_LAYER } from "./MapRenderer";
 import { GridRenderer } from "./GridRenderer";
 import { Bbox } from "./CommonTypes";
 import * as MapEraserUtils from "./MapEraserUtils";
-import { DeleteBlockState } from "./MapEraserUtils";
+import { DeleteBlockState, DrawingSession } from "./MapEraserUtils";
 
 type MapStyle = "standard" | "satellite" | "hybrid" | "none";
 type MapProjection = "globe" | "mercator";
@@ -22,14 +22,7 @@ export enum ControlMode {
   DeletePixel,
 }
 
-interface DrawingSession {
-  baseMap: fogMap.FogMap; // The state before drawing started
-  modifiedBlocks: {
-    [tileKey: string]: { [blockKey: string]: fogMap.Block | null };
-  }; // Mutable Blocks
-  blockCounts: { [tileKey: string]: { [blockKey: string]: number } };
-  erasedArea: Bbox | null;
-}
+
 
 export class MapController {
   // Constants
