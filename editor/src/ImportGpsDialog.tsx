@@ -1,9 +1,8 @@
-import { Dialog, Transition } from "@headlessui/react";
-import { Fragment } from "react";
+import { useTranslation } from "react-i18next";
+import BaseDialog from "./components/BaseDialog";
 import { readFileAsync } from "./Utils";
 import { MapController } from "./utils/MapController";
 import { useDropzone } from "react-dropzone";
-import { useTranslation } from "react-i18next";
 import { importGpxToFogMap } from "./utils/GpxImport";
 import { importKmlToFogMap, importKmzToFogMap } from "./utils/KmlImport";
 
@@ -133,81 +132,40 @@ export default function ImportGpsDialog(props: Props): JSX.Element {
     }
 
     return (
-        <Transition appear show={isOpen} as={Fragment}>
-            <Dialog
-                as="div"
-                className="fixed inset-0 z-40 overflow-y-auto"
-                onClose={closeModal}
-            >
-                <div className="min-h-screen px-4 text-center">
-                    <Transition.Child
-                        as={Fragment}
-                        enter="ease-out duration-300"
-                        enterFrom="opacity-0"
-                        enterTo="opacity-100"
-                        leave="ease-in duration-200"
-                        leaveFrom="opacity-100"
-                        leaveTo="opacity-0"
-                    >
-                        <Dialog.Overlay className="fixed inset-0" />
-                    </Transition.Child>
-
-                    {/* This element is to trick the browser into centering the modal contents. */}
-                    <span
-                        className="inline-block h-screen align-middle"
-                        aria-hidden="true"
-                    >
-                        &#8203;
-                    </span>
-                    <Transition.Child
-                        as={Fragment}
-                        enter="ease-out duration-300"
-                        enterFrom="opacity-0 scale-95"
-                        enterTo="opacity-100 scale-100"
-                        leave="ease-in duration-200"
-                        leaveFrom="opacity-100 scale-100"
-                        leaveTo="opacity-0 scale-95"
-                    >
-                        <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
-                            <Dialog.Title
-                                as="h3"
-                                className="text-lg font-medium leading-6 text-gray-900"
-                            >
-                                {t("import-gps")}
-                            </Dialog.Title>
-                            <div className="mt-2">
-                                <p
-                                    className="text-sm text-gray-500"
-                                    style={{ whiteSpace: "pre-wrap" }}
-                                >
-                                    {t("import-gps-dialog-description")}
-                                </p>
+        <BaseDialog
+            isOpen={isOpen}
+            onClose={closeModal}
+            title={t("import-gps")}
+        >
+            <div className="mt-2">
+                <p
+                    className="text-sm text-gray-500"
+                    style={{ whiteSpace: "pre-wrap" }}
+                >
+                    {t("import-gps-dialog-description")}
+                </p>
+            </div>
+            <div className="pt-4">
+                <div className="border-2 border-dashed border-gray-300 border-opacity-100 rounded-lg">
+                    <div {...getRootProps({ className: "dropzone" })}>
+                        <input {...getInputProps()} />
+                        <div className="py-4 w-min mx-auto">
+                            <div className="mb-4 whitespace-nowrap">
+                                {t("import-gps-dialog-drag-and-drop")}
                             </div>
-                            <div className="pt-4">
-                                <div className="border-2 border-dashed border-gray-300 border-opacity-100 rounded-lg">
-                                    <div {...getRootProps({ className: "dropzone" })}>
-                                        <input {...getInputProps()} />
-                                        <div className="py-4 w-min mx-auto">
-                                            <div className="mb-4 whitespace-nowrap">
-                                                {t("import-gps-dialog-drag-and-drop")}
-                                            </div>
-                                            <div className="w-min mx-auto">
-                                                <button
-                                                    type="button"
-                                                    className="whitespace-nowrap px-4 py-2 text-sm font-medium text-blue-900 bg-blue-100 border border-transparent rounded-md hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
-                                                    onClick={openFileSelector}
-                                                >
-                                                    {t("import-dialog-select")}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div className="w-min mx-auto">
+                                <button
+                                    type="button"
+                                    className="whitespace-nowrap px-4 py-2 text-sm font-medium text-blue-900 bg-blue-100 border border-transparent rounded-md hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+                                    onClick={openFileSelector}
+                                >
+                                    {t("import-dialog-select")}
+                                </button>
                             </div>
                         </div>
-                    </Transition.Child>
+                    </div>
                 </div>
-            </Dialog>
-        </Transition>
+            </div>
+        </BaseDialog>
     );
 }
