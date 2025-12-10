@@ -383,15 +383,14 @@ export class MapController {
     }
   }
 
+  private createBbox(lngLat: mapboxgl.LngLat): Bbox {
+    return new Bbox(lngLat.lng, lngLat.lat, lngLat.lng, lngLat.lat);
+  }
+
   private handleDrawScribblePress(e: mapboxgl.MapMouseEvent): void {
     this.map?.dragPan.disable();
     this.drawScribbleLastPos = e.lngLat;
-    this.scribbleStrokeBbox = new Bbox(
-      e.lngLat.lng,
-      e.lngLat.lat,
-      e.lngLat.lng,
-      e.lngLat.lat
-    );
+    this.scribbleStrokeBbox = this.createBbox(e.lngLat);
   }
 
   private handleEraserPress(e: mapboxgl.MapMouseEvent): void {
@@ -451,23 +450,13 @@ export class MapController {
   private handleDeletePixelPress(e: mapboxgl.MapMouseEvent): void {
     this.map?.dragPan.disable();
     this.deletePixelLastPos = e.lngLat;
-    this.eraserStrokeBbox = new Bbox(
-      e.lngLat.lng,
-      e.lngLat.lat,
-      e.lngLat.lng,
-      e.lngLat.lat
-    );
+    this.eraserStrokeBbox = this.createBbox(e.lngLat);
 
     this.drawingSession = {
       baseMap: this.fogMap,
       modifiedBlocks: {},
       blockCounts: {},
-      erasedArea: new Bbox(
-        e.lngLat.lng,
-        e.lngLat.lat,
-        e.lngLat.lng,
-        e.lngLat.lat
-      ),
+      erasedArea: this.createBbox(e.lngLat),
     };
 
     // Initial interaction on press
