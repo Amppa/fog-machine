@@ -1,4 +1,3 @@
-// TODO: consider reactify this?
 import mapboxgl from "mapbox-gl";
 import * as fogMap from "./FogMap";
 import { HistoryManager } from "./HistoryManager";
@@ -21,8 +20,6 @@ export enum ControlMode {
   DeleteBlock,
   DeletePixel,
 }
-
-
 
 export class MapController {
   // ============================================================================
