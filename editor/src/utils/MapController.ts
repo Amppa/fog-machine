@@ -40,6 +40,15 @@ export class MapController {
 
   private static readonly DEFAULT_DELETE_PIXEL_SIZE = 40;
 
+  private static readonly CURSOR_STYLES: Record<ControlMode, string> = {
+    [ControlMode.View]: 'grab',
+    [ControlMode.DrawLine]: 'crosshair',
+    [ControlMode.DrawScribble]: 'crosshair',
+    [ControlMode.Eraser]: 'cell',
+    [ControlMode.DeleteBlock]: 'none',
+    [ControlMode.DeletePixel]: 'crosshair',
+  } as const;
+
   // Instance fields
   private static instance: MapController | null = null;
   private map: mapboxgl.Map | null;
@@ -643,29 +652,29 @@ export class MapController {
     // enable the new mode
     switch (newMode) {
       case ControlMode.View:
-        mapboxCanvas.style.cursor = "grab";
+        mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.View];
         this.map?.dragPan.enable();
         break;
       case ControlMode.DrawLine:
-        mapboxCanvas.style.cursor = "crosshair";
+        mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DrawLine];
         this.map?.dragPan.disable();
         this.mapDraw?.activate();
         break;
       case ControlMode.DrawScribble:
-        mapboxCanvas.style.cursor = "crosshair";
+        mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DrawScribble];
         this.map?.dragPan.disable();
         break;
       case ControlMode.Eraser:
-        mapboxCanvas.style.cursor = "cell";
+        mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.Eraser];
         this.map?.dragPan.disable();
         break;
       case ControlMode.DeleteBlock:
-        mapboxCanvas.style.cursor = "none";   // hide mouse cursor, show blue rectangle
+        mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DeleteBlock];   // hide mouse cursor, show blue rectangle
         this.map?.dragPan.disable();
         this.showGrid = true;
         break;
       case ControlMode.DeletePixel:
-        mapboxCanvas.style.cursor = "crosshair";
+        mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DeletePixel];
         this.map?.dragPan.disable();
 
         MapEraserUtils.initDeletePixelCursorLayer(this.map, this.deletePixelCursorLayerId);

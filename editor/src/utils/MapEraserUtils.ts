@@ -17,6 +17,24 @@ export interface DeleteBlockState {
     bbox: Bbox | null;
 }
 
+const DELETE_BLOCK_CURSOR = {
+    SIZE: 20,
+    BORDER_WIDTH: 2,
+    BORDER_COLOR: 'blue',
+    BG_COLOR: 'rgba(0, 0, 255, 0.2)',
+} as const;
+
+const LAYER_STYLES = {
+    PENDING_DELETE: {
+        COLOR: '#2200AA',
+        WIDTH: 2,
+    },
+    DELETE_PIXEL_CURSOR: {
+        COLOR: '#0000FF',
+        WIDTH: 2,
+    },
+} as const;
+
 export function updatePendingDeleteLayer(
     map: mapboxgl.Map | null,
     pendingFeatures: GeoJSON.Feature<GeoJSON.Polygon>[]
@@ -43,8 +61,8 @@ export function updatePendingDeleteLayer(
             type: "line",
             source: sourceId,
             paint: {
-                "line-color": "#2200AA",
-                "line-width": 2,
+                "line-color": LAYER_STYLES.PENDING_DELETE.COLOR,
+                "line-width": LAYER_STYLES.PENDING_DELETE.WIDTH,
             },
         });
     }
@@ -62,10 +80,10 @@ export function updateDeleteBlockCursor(
     if (!cursorRef) {
         const el = document.createElement('div');
         el.className = 'delete-block-cursor-dom'; // use css
-        el.style.width = '20px';
-        el.style.height = '20px';
-        el.style.border = '2px solid blue';
-        el.style.backgroundColor = 'rgba(0, 0, 255, 0.2)';
+        el.style.width = `${DELETE_BLOCK_CURSOR.SIZE}px`;
+        el.style.height = `${DELETE_BLOCK_CURSOR.SIZE}px`;
+        el.style.border = `${DELETE_BLOCK_CURSOR.BORDER_WIDTH}px solid ${DELETE_BLOCK_CURSOR.BORDER_COLOR}`;
+        el.style.backgroundColor = DELETE_BLOCK_CURSOR.BG_COLOR;
 
         marker = new mapboxgl.Marker({
             element: el,
@@ -89,9 +107,9 @@ export function handleDeleteBlockInteraction(
 ): { newState: DeleteBlockState; changed: boolean } {
     if (!map) return { newState: pendingState, changed: false };
 
-    // Calculate bbox from 20px cursor logic
+    // Calculate bbox from cursor size
     const point = map.project(lngLat);
-    const halfSize = 10;
+    const halfSize = DELETE_BLOCK_CURSOR.SIZE / 2;
     const nwPoint = new mapboxgl.Point(point.x - halfSize, point.y - halfSize);
     const sePoint = new mapboxgl.Point(point.x + halfSize, point.y + halfSize);
 
@@ -203,8 +221,8 @@ export function initDeletePixelCursorLayer(
             type: "line",
             source: layerId,
             paint: {
-                "line-color": "#0000FF",
-                "line-width": 2
+                "line-color": LAYER_STYLES.DELETE_PIXEL_CURSOR.COLOR,
+                "line-width": LAYER_STYLES.DELETE_PIXEL_CURSOR.WIDTH
             }
         });
     }
