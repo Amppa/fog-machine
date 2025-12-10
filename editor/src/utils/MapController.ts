@@ -391,6 +391,15 @@ export class MapController {
     };
   }
 
+  private calculateBounds(point1: mapboxgl.LngLat, point2: mapboxgl.LngLat) {
+    return {
+      west: Math.min(point1.lng, point2.lng),
+      north: Math.max(point1.lat, point2.lat),
+      east: Math.max(point1.lng, point2.lng),
+      south: Math.min(point1.lat, point2.lat),
+    };
+  }
+
   private handleDrawScribblePress(e: mapboxgl.MapMouseEvent): void {
     this.map?.dragPan.disable();
     this.drawScribbleLastPos = e.lngLat;
@@ -490,10 +499,7 @@ export class MapController {
   private handleEraserMove(e: mapboxgl.MapMouseEvent): void {
     if (!this.eraserArea) return;
     const [startPoint, eraserSource] = this.eraserArea;
-    const west = Math.min(e.lngLat.lng, startPoint.lng);
-    const north = Math.max(e.lngLat.lat, startPoint.lat);
-    const east = Math.max(e.lngLat.lng, startPoint.lng);
-    const south = Math.min(e.lngLat.lat, startPoint.lat);
+    const { west, north, east, south } = this.calculateBounds(e.lngLat, startPoint);
 
     eraserSource.setData({
       type: "Feature",
@@ -576,10 +582,7 @@ export class MapController {
   private handleEraserRelease(e: mapboxgl.MapMouseEvent): void {
     if (!this.map || !this.eraserArea) return;
     const [startPoint, eraserSource] = this.eraserArea;
-    const west = Math.min(e.lngLat.lng, startPoint.lng);
-    const north = Math.max(e.lngLat.lat, startPoint.lat);
-    const east = Math.max(e.lngLat.lng, startPoint.lng);
-    const south = Math.min(e.lngLat.lat, startPoint.lat);
+    const { west, north, east, south } = this.calculateBounds(e.lngLat, startPoint);
 
     this.map.removeLayer(MapController.LAYER_IDS.ERASER);
     this.map.removeLayer(MapController.LAYER_IDS.ERASER_OUTLINE);
