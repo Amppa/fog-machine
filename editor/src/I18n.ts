@@ -14,7 +14,13 @@ i18n
     resources: {
       en: {
         translation: {
+          // ===== Common =====
           "main-title": "FogMachine",
+          language: "Language",
+          "confirm": "Confirm",
+          "cancel": "Cancel",
+
+          // ===== Import / Export =====
           import: "Import",
           "import-description": "Import data from [Fog of World]",
           "import-gps": "Import GPS Tracks",
@@ -24,26 +30,36 @@ i18n
           "export-description": "Export data in [Fog of World] format",
           "export-description-gpx":
             "Export data in [GPX] format. [Experimental]",
-          language: "Language",
+          "exporting": "Exporting",
+
+          // ===== Import Dialog =====
+          "import-dialog-description":
+            'All your data will be handled locally.\n\nAccept data format:\n- The "Sync" folder.\n- Files in the "Sync" folder.\n- A zip archive contains the "Sync" folder.\n\n',
+          "import-dialog-drag-and-drop":
+            "drag and drop [Fog of World] sync data",
+          "import-dialog-select": "Select manually",
+
+          // ===== Import GPS Dialog =====
+          "import-gps-dialog-description":
+            "Import GPS track data from GPX, KML, or KMZ files.",
+          "import-gps-dialog-drag-and-drop": "drag and drop GPS track files",
+          "import-gps-success": "GPS track imported successfully",
+
+          // ===== Export Messages =====
+          "export-done-message":
+            'Exported successfully.\n\nPlease use the "Sync" folder in the exported zip archive to replace the original folder. You also need to reset the [Fog of World] app to remove the existing data.',
+          "export-done-message-gpx": "Exported successfully.",
+
+          // ===== Errors & Info =====
           error: "Error",
           "error-already-imported":
             "You already imported data from [Fog of World]. Refresh the page if you want to start over.",
           "error-invalid-format": "Invalid format.",
           "error-failed-to-load-snapshot": "Failed to load snapshot.",
-          "import-dialog-description":
-            'All your data will be handled locally.\n\nAccept data format:\n- The "Sync" folder.\n- Files in the "Sync" folder.\n- A zip archive contains the "Sync" folder.\n\n',
-          "import-gps-dialog-description":
-            "Import GPS track data from GPX, KML, or KMZ files.",
-          "import-dialog-drag-and-drop":
-            "drag and drop [Fog of World] sync data",
-          "import-gps-dialog-drag-and-drop": "drag and drop GPS track files",
-          "import-dialog-select": "Select manually",
-          "import-gps-success": "GPS track imported successfully",
           "error-invalid-gps": "Invalid GPS file format",
           info: "Info",
-          "export-done-message":
-            'Exported successfully.\n\nPlease use the "Sync" folder in the exported zip archive to replace the original folder. You also need to reset the [Fog of World] app to remove the existing data.',
-          "export-done-message-gpx": "Exported successfully.",
+
+          // ===== Map Settings =====
           "map-type": "Map type",
           "map-type-standard": "Standard",
           "map-type-satellite": "Satellite",
@@ -62,14 +78,15 @@ i18n
           "fog-concentration-low": "Low",
           "fog-concentration-medium": "Medium",
           "fog-concentration-high": "High",
-          "exporting": "Exporting",
-          "confirm": "Confirm",
-          "cancel": "Cancel",
+
+          // ===== Fly To Dialog =====
           "fly-to": "Fly to",
           "fly-to-coordinates": "Coordinates (lat, lng, zoom)",
           "fly-to-url-parser": "URL Parser",
           "fly-to-error-invalid-format": "Invalid format. Must be 'lat, lng' or 'lat, lng, zoom'. Numbers only.",
           "fly-to-error-invalid-coordinates": "Invalid coordinates format. Use: lat, lng, zoom",
+
+          // ===== URL Parser Dialog =====
           "url-parser-title": "URL Parser",
           "url-parser-paste-url": "Paste URL",
           "url-parser-placeholder": "https://...",
@@ -81,7 +98,13 @@ i18n
       },
       zh: {
         translation: {
+          // ===== 通用 =====
           "main-title": "迷雾机器",
+          language: "语言",
+          "confirm": "確認",
+          "cancel": "取消",
+
+          // ===== 匯入 / 匯出 =====
           import: "导入",
           "import-description": "从 [世界迷雾] 中导入数据。",
           "import-gps": "匯入 GPS 軌跡",
@@ -90,25 +113,35 @@ i18n
           "export-gpx": "导出 GPX",
           "export-description": "以 [世界迷雾] 的格式导出数据。",
           "export-description-gpx": "以 [GPX] 的格式导出数据。[实验性功能]",
-          language: "语言",
+          "exporting": "导出中",
+
+          // ===== 匯入對話框 =====
+          "import-dialog-description":
+            '你的数据将完全在本地处理。\n\n接受的数据格式:\n- "Sync" 文件夹\n-  "Sync" 文件夹中的全部文件\n- 包含 "Sync" 文件夹的 zip 压缩包\n\n',
+          "import-dialog-drag-and-drop": "拖入 [世界迷雾] 同步数据",
+          "import-dialog-select": "手动选择",
+
+          // ===== 匯入 GPS 對話框 =====
+          "import-gps-dialog-description":
+            "從 GPX、KML 或 KMZ 檔案匯入 GPS 軌跡資料。",
+          "import-gps-dialog-drag-and-drop": "拖入 GPS 軌跡檔案",
+          "import-gps-success": "GPS 軌跡匯入成功",
+
+          // ===== 匯出訊息 =====
+          "export-done-message":
+            '导出成功。\n\n请使用导出的 zip 压缩包中的 "Sync" 文件夹替换原有文件夹，并重置 [世界迷雾] app 以清除已有数据。',
+          "export-done-message-gpx": "导出成功。",
+
+          // ===== 錯誤 & 提示 =====
           error: "错误",
           "error-already-imported":
             "无法多次导入 [世界迷雾] 数据。可通过刷新页面重置。",
           "error-invalid-format": "无效文件格式。",
           "error-failed-to-load-snapshot": "载入快照失败。",
-          "import-dialog-description":
-            '你的数据将完全在本地处理。\n\n接受的数据格式:\n- "Sync" 文件夹\n-  "Sync" 文件夹中的全部文件\n- 包含 "Sync" 文件夹的 zip 压缩包\n\n',
-          "import-gps-dialog-description":
-            "從 GPX、KML 或 KMZ 檔案匯入 GPS 軌跡資料。",
-          "import-dialog-drag-and-drop": "拖入 [世界迷雾] 同步数据",
-          "import-gps-dialog-drag-and-drop": "拖入 GPS 軌跡檔案",
-          "import-dialog-select": "手动选择",
-          "import-gps-success": "GPS 軌跡匯入成功",
           "error-invalid-gps": "無效的 GPS 檔案格式",
           info: "提示",
-          "export-done-message":
-            '导出成功。\n\n请使用导出的 zip 压缩包中的 "Sync" 文件夹替换原有文件夹，并重置 [世界迷雾] app 以清除已有数据。',
-          "export-done-message-gpx": "导出成功。",
+
+          // ===== 地圖設定 =====
           "map-type": "地图模式",
           "map-type-standard": "标准",
           "map-type-satellite": "卫星",
@@ -121,14 +154,15 @@ i18n
           "fog-concentration-low": "低",
           "fog-concentration-medium": "中",
           "fog-concentration-high": "高",
-          "exporting": "导出中",
-          "confirm": "確認",
-          "cancel": "取消",
+
+          // ===== 座標跳轉對話框 =====
           "fly-to": "座標跳轉",
           "fly-to-coordinates": "座標 (緯度, 經度, 縮放)",
           "fly-to-url-parser": "貼上 URL 網址",
           "fly-to-error-invalid-format": "格式無效。必須是 '緯度, 經度' 或 '緯度, 經度, 縮放'。僅限數字。",
           "fly-to-error-invalid-coordinates": "座標格式無效。請使用：緯度, 經度, 縮放",
+
+          // ===== URL 解析器對話框 =====
           "url-parser-title": "URL 解析器",
           "url-parser-paste-url": "貼上 URL 網址",
           "url-parser-placeholder": "https://...",
