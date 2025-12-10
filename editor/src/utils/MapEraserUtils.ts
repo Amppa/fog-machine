@@ -2,6 +2,9 @@ import mapboxgl from "mapbox-gl";
 import * as fogMap from "./FogMap";
 import { Bbox } from "./CommonTypes";
 
+// ============================================================================
+// Types and Interfaces
+// ============================================================================
 export interface DrawingSession {
     baseMap: fogMap.FogMap; // The state before drawing started
     modifiedBlocks: {
@@ -17,6 +20,9 @@ export interface DeleteBlockState {
     bbox: Bbox | null;
 }
 
+// ============================================================================
+// Constants
+// ============================================================================
 const DELETE_BLOCK_CURSOR = {
     SIZE: 20,
     BORDER_WIDTH: 2,
@@ -35,39 +41,68 @@ const LAYER_STYLES = {
     },
 } as const;
 
-export function updatePendingDeleteLayer(
+// ============================================================================
+// Eraser Mode Functions (Rectangle Eraser)
+// ============================================================================
+export function initEraserLayers(
     map: mapboxgl.Map | null,
-    pendingFeatures: GeoJSON.Feature<GeoJSON.Polygon>[]
-) {
+    layerId: string,
+    outlineLayerId: string,
+    color: string,
+    fillOpacity: number,
+    lineWidth: number
+): void {
     if (!map) return;
-    const layerId = "pending-delete-layer";
-    const sourceId = "pending-delete-layer";
 
-    const data: GeoJSON.FeatureCollection<GeoJSON.Polygon> = {
-        type: "FeatureCollection",
-        features: pendingFeatures,
-    };
-
-    const source = map.getSource(sourceId) as mapboxgl.GeoJSONSource;
-    if (source) {
-        source.setData(data);
-    } else {
-        map.addSource(sourceId, {
-            type: "geojson",
-            data: data,
-        });
-        map.addLayer({
-            id: layerId,
-            type: "line",
-            source: sourceId,
-            paint: {
-                "line-color": LAYER_STYLES.PENDING_DELETE.COLOR,
-                "line-width": LAYER_STYLES.PENDING_DELETE.WIDTH,
+    map.addSource(layerId, {
+        type: "geojson",
+        data: {
+            type: "Feature",
+            properties: {},
+            geometry: {
+                type: "Polygon",
+                coordinates: [[]],
             },
-        });
-    }
+        },
+    });
+
+    map.addLayer({
+        id: layerId,
+        type: "fill",
+        source: layerId,
+        layout: {},
+        paint: {
+            "fill-color": color,
+            "fill-opacity": fillOpacity,
+        },
+    });
+
+    map.addLayer({
+        id: outlineLayerId,
+        type: "line",
+        source: layerId,
+        layout: {},
+        paint: {
+            "line-color": color,
+            "line-width": lineWidth,
+        },
+    });
 }
 
+export function cleanupEraserLayers(
+    map: mapboxgl.Map | null,
+    layerId: string,
+    outlineLayerId: string
+): void {
+    if (!map) return;
+    if (map.getLayer(layerId)) map.removeLayer(layerId);
+    if (map.getLayer(outlineLayerId)) map.removeLayer(outlineLayerId);
+    if (map.getSource(layerId)) map.removeSource(layerId);
+}
+
+// ============================================================================
+// DeleteBlock Mode Functions
+// ============================================================================
 export function updateDeleteBlockCursor(
     map: mapboxgl.Map | null,
     cursorRef: mapboxgl.Marker | null,
@@ -203,31 +238,56 @@ export function handleDeleteBlockInteraction(
     };
 }
 
-export function initDeletePixelCursorLayer(
+export function updatePendingDeleteLayer(
     map: mapboxgl.Map | null,
-    layerId: string
+    pendingFeatures: GeoJSON.Feature<GeoJSON.Polygon>[]
 ) {
     if (!map) return;
-    if (!map.getSource(layerId)) {
-        map.addSource(layerId, {
+    const layerId = "pending-delete-layer";
+    const sourceId = "pending-delete-layer";
+
+    const data: GeoJSON.FeatureCollection<GeoJSON.Polygon> = {
+        type: "FeatureCollection",
+        features: pendingFeatures,
+    };
+
+    const source = map.getSource(sourceId) as mapboxgl.GeoJSONSource;
+    if (source) {
+        source.setData(data);
+    } else {
+        map.addSource(sourceId, {
             type: "geojson",
-            data: {
-                type: "FeatureCollection",
-                features: []
-            }
+            data: data,
         });
         map.addLayer({
             id: layerId,
             type: "line",
-            source: layerId,
+            source: sourceId,
             paint: {
-                "line-color": LAYER_STYLES.DELETE_PIXEL_CURSOR.COLOR,
-                "line-width": LAYER_STYLES.DELETE_PIXEL_CURSOR.WIDTH
-            }
+                "line-color": LAYER_STYLES.PENDING_DELETE.COLOR,
+                "line-width": LAYER_STYLES.PENDING_DELETE.WIDTH,
+            },
         });
     }
 }
 
+export function cleanupDeleteBlockLayers(map: mapboxgl.Map | null) {
+    if (!map) return;
+
+    const cursorLayerId = "delete-block-cursor";
+    if (map.getLayer(cursorLayerId)) map.removeLayer(cursorLayerId);
+    if (map.getLayer(cursorLayerId + "-outline"))
+        map.removeLayer(cursorLayerId + "-outline");
+    if (map.getSource(cursorLayerId)) map.removeSource(cursorLayerId);
+
+    const pendingLayerId = "pending-delete-layer";
+    if (map.getLayer(pendingLayerId)) map.removeLayer(pendingLayerId);
+    if (map.getSource(pendingLayerId)) map.removeSource(pendingLayerId);
+}
+
+// ============================================================================
+// DeletePixel Mode - Helper Functions
+// ============================================================================
 export function getDeletePixelCursor(
     lngLat: mapboxgl.LngLat,
     pixelSize: number
@@ -263,6 +323,51 @@ export function getDeletePixelCursor(
     };
 }
 
+// ============================================================================
+// DeletePixel Mode - Main Functions
+// ============================================================================
+export function initDeletePixelCursorLayer(
+    map: mapboxgl.Map | null,
+    layerId: string
+) {
+    if (!map) return;
+    if (!map.getSource(layerId)) {
+        map.addSource(layerId, {
+            type: "geojson",
+            data: {
+                type: "FeatureCollection",
+                features: []
+            }
+        });
+        map.addLayer({
+            id: layerId,
+            type: "line",
+            source: layerId,
+            paint: {
+                "line-color": LAYER_STYLES.DELETE_PIXEL_CURSOR.COLOR,
+                "line-width": LAYER_STYLES.DELETE_PIXEL_CURSOR.WIDTH
+            }
+        });
+    }
+}
+
+export function updateDeletePixelCursorLayer(
+    map: mapboxgl.Map | null,
+    layerId: string,
+    lngLat: mapboxgl.LngLat,
+    pixelSize: number
+): void {
+    if (!map) return;
+    const source = map.getSource(layerId) as mapboxgl.GeoJSONSource;
+    if (source) {
+        const cursor = getDeletePixelCursor(lngLat, pixelSize);
+        source.setData({
+            type: "Feature",
+            geometry: cursor,
+            properties: {},
+        });
+    }
+}
 
 export function handleDeletePixelInteraction(
     fogMapInstance: fogMap.FogMap,
@@ -448,96 +553,8 @@ export function handleDeletePixelInteraction(
     }
 }
 
-export function cleanupDeleteBlockLayers(map: mapboxgl.Map | null) {
-    if (!map) return;
-
-    const cursorLayerId = "delete-block-cursor";
-    if (map.getLayer(cursorLayerId)) map.removeLayer(cursorLayerId);
-    if (map.getLayer(cursorLayerId + "-outline"))
-        map.removeLayer(cursorLayerId + "-outline");
-    if (map.getSource(cursorLayerId)) map.removeSource(cursorLayerId);
-
-    const pendingLayerId = "pending-delete-layer";
-    if (map.getLayer(pendingLayerId)) map.removeLayer(pendingLayerId);
-    if (map.getSource(pendingLayerId)) map.removeSource(pendingLayerId);
-}
-
 export function cleanupDeletePixelLayer(map: mapboxgl.Map | null, layerId: string) {
     if (!map) return;
     if (map.getLayer(layerId)) map.removeLayer(layerId);
     if (map.getSource(layerId)) map.removeSource(layerId);
-}
-
-export function initEraserLayers(
-    map: mapboxgl.Map | null,
-    layerId: string,
-    outlineLayerId: string,
-    color: string,
-    fillOpacity: number,
-    lineWidth: number
-): void {
-    if (!map) return;
-
-    map.addSource(layerId, {
-        type: "geojson",
-        data: {
-            type: "Feature",
-            properties: {},
-            geometry: {
-                type: "Polygon",
-                coordinates: [[]],
-            },
-        },
-    });
-
-    map.addLayer({
-        id: layerId,
-        type: "fill",
-        source: layerId,
-        layout: {},
-        paint: {
-            "fill-color": color,
-            "fill-opacity": fillOpacity,
-        },
-    });
-
-    map.addLayer({
-        id: outlineLayerId,
-        type: "line",
-        source: layerId,
-        layout: {},
-        paint: {
-            "line-color": color,
-            "line-width": lineWidth,
-        },
-    });
-}
-
-export function cleanupEraserLayers(
-    map: mapboxgl.Map | null,
-    layerId: string,
-    outlineLayerId: string
-): void {
-    if (!map) return;
-    if (map.getLayer(layerId)) map.removeLayer(layerId);
-    if (map.getLayer(outlineLayerId)) map.removeLayer(outlineLayerId);
-    if (map.getSource(layerId)) map.removeSource(layerId);
-}
-
-export function updateDeletePixelCursorLayer(
-    map: mapboxgl.Map | null,
-    layerId: string,
-    lngLat: mapboxgl.LngLat,
-    pixelSize: number
-): void {
-    if (!map) return;
-    const source = map.getSource(layerId) as mapboxgl.GeoJSONSource;
-    if (source) {
-        const cursor = getDeletePixelCursor(lngLat, pixelSize);
-        source.setData({
-            type: "Feature",
-            geometry: cursor,
-            properties: {},
-        });
-    }
 }
