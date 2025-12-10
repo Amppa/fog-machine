@@ -45,8 +45,8 @@ export class MapController {
     [ControlMode.DrawLine]: 'crosshair',
     [ControlMode.DrawScribble]: 'crosshair',
     [ControlMode.Eraser]: 'cell',
-    [ControlMode.DeleteBlock]: 'none',
-    [ControlMode.DeletePixel]: 'crosshair',
+    [ControlMode.DeleteBlock]: 'none',         // hide cursor, user defined cursor
+    [ControlMode.DeletePixel]: 'crosshair',    // show cursor and delete pixel cursor due to the pixel is really small
   } as const;
 
   // Instance fields
@@ -650,33 +650,31 @@ export class MapController {
     }
 
     // enable the new mode
+    if (newMode === ControlMode.View)
+      this.map?.dragPan.enable();
+    else
+      this.map?.dragPan.disable();
+
     switch (newMode) {
       case ControlMode.View:
         mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.View];
-        this.map?.dragPan.enable();
         break;
       case ControlMode.DrawLine:
         mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DrawLine];
-        this.map?.dragPan.disable();
         this.mapDraw?.activate();
         break;
       case ControlMode.DrawScribble:
         mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DrawScribble];
-        this.map?.dragPan.disable();
         break;
       case ControlMode.Eraser:
         mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.Eraser];
-        this.map?.dragPan.disable();
         break;
       case ControlMode.DeleteBlock:
-        mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DeleteBlock];   // hide mouse cursor, show blue rectangle
-        this.map?.dragPan.disable();
+        mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DeleteBlock];
         this.showGrid = true;
         break;
       case ControlMode.DeletePixel:
         mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DeletePixel];
-        this.map?.dragPan.disable();
-
         MapEraserUtils.initDeletePixelCursorLayer(this.map, this.deletePixelCursorLayerId);
         break;
     }
