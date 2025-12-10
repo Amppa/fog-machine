@@ -1,5 +1,6 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment, useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { MapController } from "./utils/MapController";
 import UrlParserDialog from "./UrlParserDialog";
 
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export default function FlyToDialog(props: Props): JSX.Element {
+  const { t } = useTranslation();
   const { isOpen, setIsOpen, mapController } = props;
   const [coordinates, setCoordinatesState] = useState("");
   const [coordError, setCoordError] = useState("");
@@ -50,9 +52,7 @@ export default function FlyToDialog(props: Props): JSX.Element {
     if (validateCoordinates(val)) {
       setCoordError("");
     } else {
-      setCoordError(
-        "Invalid format. Must be 'lat, lng' or 'lat, lng, zoom'. Numbers only."
-      );
+      setCoordError(String(t("fly-to-error-invalid-format")));
     }
   }
 
@@ -65,7 +65,7 @@ export default function FlyToDialog(props: Props): JSX.Element {
       mapController.flyTo(lng, lat, zoom);
       closeModal();
     } else {
-      setCoordError("Invalid coordinates format. Use: lat, lng, zoom");
+      setCoordError(String(t("fly-to-error-invalid-coordinates")));
     }
   }
 
@@ -117,11 +117,11 @@ export default function FlyToDialog(props: Props): JSX.Element {
                   as="h3"
                   className="text-lg font-medium leading-6 text-gray-900"
                 >
-                  Fly to
+                  {t("fly-to")}
                 </Dialog.Title>
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700">
-                    Coordinates (lat, lng, zoom)
+                    {t("fly-to-coordinates")}
                   </label>
                   <input
                     type="text"
@@ -140,7 +140,7 @@ export default function FlyToDialog(props: Props): JSX.Element {
                     className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500"
                     onClick={() => setIsUrlParserOpen(true)}
                   >
-                    URL Parser
+                    {t("fly-to-url-parser")}
                   </button>
                   <div className="flex space-x-3">
                     <button
@@ -148,14 +148,14 @@ export default function FlyToDialog(props: Props): JSX.Element {
                       className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
                       onClick={handleConfirm}
                     >
-                      Confirm
+                      {t("confirm")}
                     </button>
                     <button
                       type="button"
                       className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500"
                       onClick={closeModal}
                     >
-                      Cancel
+                      {t("cancel")}
                     </button>
                   </div>
                 </div>

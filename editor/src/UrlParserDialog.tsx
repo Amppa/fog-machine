@@ -1,5 +1,6 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { parseMapUrl } from "./utils/MapUrlUtils";
 
 type Props = {
@@ -9,6 +10,7 @@ type Props = {
 };
 
 export default function UrlParserDialog(props: Props): JSX.Element {
+  const { t } = useTranslation();
   const { isOpen, setIsOpen, onConfirm } = props;
   const [urlInput, setUrlInput] = useState("");
   const [urlError, setUrlError] = useState("");
@@ -32,7 +34,7 @@ export default function UrlParserDialog(props: Props): JSX.Element {
       setUrlError("");
     } else {
       setParsedResult(null);
-      setUrlError("Could not parse URL. Please check the format.");
+      setUrlError(String(t("url-parser-error")));
     }
   }
 
@@ -100,28 +102,28 @@ export default function UrlParserDialog(props: Props): JSX.Element {
                 as="h3"
                 className="text-lg font-medium leading-6 text-gray-900"
               >
-                URL Parser
+                {t("url-parser-title")}
               </Dialog.Title>
               <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700">
-                  Paste URL
+                  {t("url-parser-paste-url")}
                 </label>
                 <input
                   type="text"
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
                   value={urlInput}
                   onChange={(e) => handleUrlInputChange(e.target.value)}
-                  placeholder="https://..."
+                  placeholder={String(t("url-parser-placeholder"))}
                 />
                 <p className="mt-2 text-xs text-gray-500">
-                  Supports Google Maps, Apple Maps, OpenStreetMap, Bing Maps.
+                  {t("url-parser-supports")}
                 </p>
                 {parsedResult && (
                   <div className="mt-2 text-sm text-green-600">
-                    Parsed: {parsedResult.lat.toFixed(6)},{" "}
+                    {t("url-parser-parsed")}: {parsedResult.lat.toFixed(6)},{" "}
                     {parsedResult.lng.toFixed(6)}
                     {parsedResult.zoom !== undefined
-                      ? `, Zoom: ${parsedResult.zoom}`
+                      ? `, ${t("url-parser-zoom")}: ${parsedResult.zoom}`
                       : ""}
                   </div>
                 )}
@@ -136,14 +138,14 @@ export default function UrlParserDialog(props: Props): JSX.Element {
                   className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
                   onClick={handleConfirm}
                 >
-                  Confirm
+                  {t("confirm")}
                 </button>
                 <button
                   type="button"
                   className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500"
                   onClick={closeModal}
                 >
-                  Cancel
+                  {t("cancel")}
                 </button>
               </div>
             </div>

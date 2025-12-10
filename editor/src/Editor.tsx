@@ -4,7 +4,7 @@ const DELETE_PIXEL_SIZES = [4, 10, 40];
 import Mousetrap from "mousetrap";
 import MainMenu from "./MainMenu";
 import FlyToDialog from "./FlyToDialog";
-import { ReactComponent as IconFlyTo } from "./assets/svg/fly-to.svg";
+import { ReactComponent as IconFlyTo } from "./assets/svg/pin.svg";
 import { ReactComponent as IconRedo } from "./assets/svg/redo.svg";
 import { ReactComponent as IconUndo } from "./assets/svg/undo.svg";
 import { ReactComponent as IconPencil } from "./assets/svg/pencil.svg";
