@@ -33,7 +33,7 @@ i18n
           "import-dialog-description":
             'All your data will be handled locally.\n\nAccept data format:\n- The "Sync" folder.\n- Files in the "Sync" folder.\n- A zip archive contains the "Sync" folder.\n\n',
           "import-gps-dialog-description":
-            "Import GPS track data from GPX, KML, or KMZ files.\n\nAccepted formats:\n- GPX files (.gpx)\n- KML files (.kml)\n- KMZ files (.kmz)\n\nTracks will be merged into your existing map.",
+            "Import GPS track data from GPX, KML, or KMZ files.",
           "import-dialog-drag-and-drop":
             "drag and drop [Fog of World] sync data",
           "import-gps-dialog-drag-and-drop": "drag and drop GPS track files",
@@ -85,7 +85,7 @@ i18n
           "import-dialog-description":
             '你的数据将完全在本地处理。\n\n接受的数据格式:\n- "Sync" 文件夹\n-  "Sync" 文件夹中的全部文件\n- 包含 "Sync" 文件夹的 zip 压缩包\n\n',
           "import-gps-dialog-description":
-            "從 GPX、KML 或 KMZ 檔案匯入 GPS 軌跡資料。\n\n接受的格式：\n- GPX 檔案 (.gpx)\n- KML 檔案 (.kml)\n- KMZ 檔案 (.kmz)\n\n軌跡將合併到您現有的地圖中。",
+            "從 GPX、KML 或 KMZ 檔案匯入 GPS 軌跡資料。",
           "import-dialog-drag-and-drop": "拖入 [世界迷雾] 同步数据",
           "import-gps-dialog-drag-and-drop": "拖入 GPS 軌跡檔案",
           "import-dialog-select": "手动选择",
