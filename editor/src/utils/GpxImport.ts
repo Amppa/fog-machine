@@ -1,6 +1,10 @@
 import { parseGPX, Point } from "@we-gold/gpxjs";
 import { FogMap } from "./FogMap";
 
+function crossesAntimeridian(lon1: number, lon2: number): boolean {
+    return Math.abs(lon2 - lon1) > 180;
+}
+
 /**
  * Helper function to add a series of points to the FogMap as connected lines
  * @param fogMap Current FogMap instance
@@ -18,6 +22,12 @@ function addPointsToFogMap(fogMap: FogMap, points: Point[]): FogMap {
     for (let i = 0; i < points.length - 1; i++) {
         const pt1 = points[i];
         const pt2 = points[i + 1];
+
+        // Skip segments that cross the antimeridian to avoid drawing
+        // lines across the entire globe
+        if (crossesAntimeridian(pt1.longitude, pt2.longitude)) {
+            continue;
+        }
 
         updatedMap = updatedMap.addLine(
             pt1.longitude,

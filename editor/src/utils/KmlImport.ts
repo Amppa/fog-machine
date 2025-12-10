@@ -88,6 +88,10 @@ function extractGxTrackCoordinates(trackElement: Element): number[][] {
     return coords;
 }
 
+function crossesAntimeridian(lon1: number, lon2: number): boolean {
+    return Math.abs(lon2 - lon1) > 180;
+}
+
 /**
  * Convert coordinate sets to FogMap by drawing lines
  * @param coordinateSets Array of coordinate arrays
@@ -102,6 +106,12 @@ function coordinatesToFogMap(coordinateSets: number[][][]): FogMap {
             for (let i = 0; i < coords.length - 1; i++) {
                 const [lng1, lat1] = coords[i];
                 const [lng2, lat2] = coords[i + 1];
+
+                // Skip segments that cross the antimeridian to avoid drawing
+                // lines across the entire globe
+                if (crossesAntimeridian(lng1, lng2)) {
+                    continue;
+                }
 
                 fogMap = fogMap.addLine(lng1, lat1, lng2, lat2, true);
             }
