@@ -32,6 +32,22 @@ interface DrawingSession {
 }
 
 export class MapController {
+  // Constants
+  private static readonly LAYER_IDS = {
+    ERASER: 'eraser',
+    ERASER_OUTLINE: 'eraser-outline',
+    DELETE_PIXEL_CURSOR: 'delete-pixel-cursor',
+  } as const;
+
+  private static readonly ERASER_STYLE = {
+    COLOR: '#969696',
+    FILL_OPACITY: 0.5,
+    LINE_WIDTH: 1,
+  } as const;
+
+  private static readonly DEFAULT_DELETE_PIXEL_SIZE = 40;
+
+  // Instance fields
   private static instance: MapController | null = null;
   private map: mapboxgl.Map | null;
   private mapRenderer: MapRenderer | null;
@@ -54,8 +70,8 @@ export class MapController {
   private drawingSession: DrawingSession | null;
   private gridRenderer: GridRenderer;
   private _showGrid = false;
-  private currentDeletePixelSize = 40;    // default eraser size 40, 10, 4
-  private deletePixelCursorLayerId = "delete-pixel-cursor";
+  private currentDeletePixelSize = MapController.DEFAULT_DELETE_PIXEL_SIZE;
+  private deletePixelCursorLayerId = MapController.LAYER_IDS.DELETE_PIXEL_CURSOR;
 
   private constructor() {
     this.map = null;
@@ -380,7 +396,7 @@ export class MapController {
 
   private handleEraserPress(e: mapboxgl.MapMouseEvent): void {
     if (!this.eraserArea) {
-      this.map?.addSource("eraser", {
+      this.map?.addSource(MapController.LAYER_IDS.ERASER, {
         type: "geojson",
         data: {
           type: "Feature",
@@ -393,28 +409,28 @@ export class MapController {
       });
 
       this.map?.addLayer({
-        id: "eraser",
+        id: MapController.LAYER_IDS.ERASER,
         type: "fill",
-        source: "eraser",
+        source: MapController.LAYER_IDS.ERASER,
         layout: {},
         paint: {
-          "fill-color": "#969696",
-          "fill-opacity": 0.5,
+          "fill-color": MapController.ERASER_STYLE.COLOR,
+          "fill-opacity": MapController.ERASER_STYLE.FILL_OPACITY,
         },
       });
       this.map?.addLayer({
-        id: "eraser-outline",
+        id: MapController.LAYER_IDS.ERASER_OUTLINE,
         type: "line",
-        source: "eraser",
+        source: MapController.LAYER_IDS.ERASER,
         layout: {},
         paint: {
-          "line-color": "#969696",
-          "line-width": 1,
+          "line-color": MapController.ERASER_STYLE.COLOR,
+          "line-width": MapController.ERASER_STYLE.LINE_WIDTH,
         },
       });
 
       const eraserSource = this.map?.getSource(
-        "eraser"
+        MapController.LAYER_IDS.ERASER
       ) as mapboxgl.GeoJSONSource | null;
       if (eraserSource) {
         const startPoint = new mapboxgl.LngLat(e.lngLat.lng, e.lngLat.lat);
@@ -576,9 +592,9 @@ export class MapController {
     const east = Math.max(e.lngLat.lng, startPoint.lng);
     const south = Math.min(e.lngLat.lat, startPoint.lat);
 
-    this.map.removeLayer("eraser");
-    this.map.removeLayer("eraser-outline");
-    this.map.removeSource("eraser");
+    this.map.removeLayer(MapController.LAYER_IDS.ERASER);
+    this.map.removeLayer(MapController.LAYER_IDS.ERASER_OUTLINE);
+    this.map.removeSource(MapController.LAYER_IDS.ERASER);
 
     const bbox = new Bbox(west, south, east, north);
 
@@ -665,9 +681,9 @@ export class MapController {
         break;
       case ControlMode.Eraser:
         if (this.eraserArea) {
-          this.map?.removeLayer("eraser");
-          this.map?.removeLayer("eraser-outline");
-          this.map?.removeSource("eraser");
+          this.map?.removeLayer(MapController.LAYER_IDS.ERASER);
+          this.map?.removeLayer(MapController.LAYER_IDS.ERASER_OUTLINE);
+          this.map?.removeSource(MapController.LAYER_IDS.ERASER);
           this.eraserArea = null;
         }
         break;
