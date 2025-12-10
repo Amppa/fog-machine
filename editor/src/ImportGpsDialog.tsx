@@ -1,0 +1,213 @@
+import { Dialog, Transition } from "@headlessui/react";
+import { Fragment } from "react";
+import { readFileAsync } from "./Utils";
+import { MapController } from "./utils/MapController";
+import { useDropzone } from "react-dropzone";
+import { useTranslation } from "react-i18next";
+import { importGpxToFogMap } from "./utils/GpxImport";
+import { importKmlToFogMap, importKmzToFogMap } from "./utils/KmlImport";
+
+type Props = {
+    mapController: MapController;
+    isOpen: boolean;
+    setIsOpen(isOpen: boolean): void;
+    msgboxShow(title: string, msg: string): void;
+};
+
+function getFileExtension(filename: string): string {
+    return filename.slice(
+        (Math.max(0, filename.lastIndexOf(".")) || Infinity) + 1
+    ).toLowerCase();
+}
+
+export default function ImportGpsDialog(props: Props): JSX.Element {
+    const { t } = useTranslation();
+    const { isOpen, setIsOpen, msgboxShow } = props;
+
+    async function importFiles(files: File[]) {
+        const mapController = props.mapController;
+        closeModal();
+
+        if (files.length === 0) {
+            msgboxShow("error", "error-invalid-gps");
+            return;
+        }
+
+        try {
+            let importedMap = mapController.fogMap;
+
+            for (const file of files) {
+                const extension = getFileExtension(file.name);
+                const data = await readFileAsync(file);
+
+                let newMap;
+
+                if (extension === "gpx") {
+                    // Import GPX file
+                    if (typeof data === "string") {
+                        newMap = importGpxToFogMap(data);
+                    } else if (data instanceof ArrayBuffer) {
+                        // Convert ArrayBuffer to string
+                        const decoder = new TextDecoder("utf-8");
+                        const text = decoder.decode(data);
+                        newMap = importGpxToFogMap(text);
+                    } else {
+                        throw new Error("Invalid data format for GPX file");
+                    }
+                } else if (extension === "kml") {
+                    // Import KML file
+                    if (typeof data === "string") {
+                        newMap = importKmlToFogMap(data);
+                    } else if (data instanceof ArrayBuffer) {
+                        // Convert ArrayBuffer to string
+                        const decoder = new TextDecoder("utf-8");
+                        const text = decoder.decode(data);
+                        newMap = importKmlToFogMap(text);
+                    } else {
+                        throw new Error("Invalid data format for KML file");
+                    }
+                } else if (extension === "kmz") {
+                    // Import KMZ file
+                    if (data instanceof ArrayBuffer) {
+                        newMap = await importKmzToFogMap(data);
+                    } else {
+                        throw new Error("KMZ file must be read as ArrayBuffer");
+                    }
+                } else {
+                    msgboxShow("error", "error-invalid-gps");
+                    return;
+                }
+
+                // Merge the imported map with existing map
+                // We do this by merging the tiles
+                const mergedTiles = { ...importedMap.tiles };
+                Object.entries(newMap.tiles).forEach(([key, tile]) => {
+                    if (mergedTiles[key]) {
+                        // Merge blocks from both tiles
+                        const mergedBlocks = {
+                            ...mergedTiles[key].blocks,
+                            ...tile.blocks,
+                        };
+                        // Create new tile with merged blocks
+                        const Tile = (tile as any).constructor;
+                        mergedTiles[key] = new Tile(
+                            tile.filename,
+                            tile.id,
+                            tile.x,
+                            tile.y,
+                            mergedBlocks
+                        );
+                    } else {
+                        mergedTiles[key] = tile;
+                    }
+                });
+
+                // Create new FogMap with merged tiles
+                const FogMapConstructor = (importedMap as any).constructor;
+                importedMap = new FogMapConstructor(mergedTiles);
+            }
+
+            // Replace the fog map with the merged result
+            mapController.replaceFogMap(importedMap);
+            msgboxShow("info", "import-gps-success");
+        } catch (error) {
+            console.error("Error importing GPS file:", error);
+            msgboxShow("error", "error-invalid-gps");
+        }
+    }
+
+    const { open, getRootProps, getInputProps } = useDropzone({
+        noClick: true,
+        noKeyboard: true,
+        onDrop: (files) => importFiles(files),
+        accept: {
+            "application/gpx+xml": [".gpx"],
+            "application/vnd.google-earth.kml+xml": [".kml"],
+            "application/vnd.google-earth.kmz": [".kmz"],
+        },
+    });
+    const openFileSelector = open;
+
+    function closeModal() {
+        setIsOpen(false);
+    }
+
+    return (
+        <Transition appear show={isOpen} as={Fragment}>
+            <Dialog
+                as="div"
+                className="fixed inset-0 z-40 overflow-y-auto"
+                onClose={closeModal}
+            >
+                <div className="min-h-screen px-4 text-center">
+                    <Transition.Child
+                        as={Fragment}
+                        enter="ease-out duration-300"
+                        enterFrom="opacity-0"
+                        enterTo="opacity-100"
+                        leave="ease-in duration-200"
+                        leaveFrom="opacity-100"
+                        leaveTo="opacity-0"
+                    >
+                        <Dialog.Overlay className="fixed inset-0" />
+                    </Transition.Child>
+
+                    {/* This element is to trick the browser into centering the modal contents. */}
+                    <span
+                        className="inline-block h-screen align-middle"
+                        aria-hidden="true"
+                    >
+                        &#8203;
+                    </span>
+                    <Transition.Child
+                        as={Fragment}
+                        enter="ease-out duration-300"
+                        enterFrom="opacity-0 scale-95"
+                        enterTo="opacity-100 scale-100"
+                        leave="ease-in duration-200"
+                        leaveFrom="opacity-100 scale-100"
+                        leaveTo="opacity-0 scale-95"
+                    >
+                        <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+                            <Dialog.Title
+                                as="h3"
+                                className="text-lg font-medium leading-6 text-gray-900"
+                            >
+                                {t("import-gps")}
+                            </Dialog.Title>
+                            <div className="mt-2">
+                                <p
+                                    className="text-sm text-gray-500"
+                                    style={{ whiteSpace: "pre-wrap" }}
+                                >
+                                    {t("import-gps-dialog-description")}
+                                </p>
+                            </div>
+                            <div className="pt-4">
+                                <div className="border-2 border-dashed border-gray-300 border-opacity-100 rounded-lg">
+                                    <div {...getRootProps({ className: "dropzone" })}>
+                                        <input {...getInputProps()} />
+                                        <div className="py-4 w-min mx-auto">
+                                            <div className="mb-4 whitespace-nowrap">
+                                                {t("import-gps-dialog-drag-and-drop")}
+                                            </div>
+                                            <div className="w-min mx-auto">
+                                                <button
+                                                    type="button"
+                                                    className="whitespace-nowrap px-4 py-2 text-sm font-medium text-blue-900 bg-blue-100 border border-transparent rounded-md hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+                                                    onClick={openFileSelector}
+                                                >
+                                                    {t("import-dialog-select")}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </Transition.Child>
+                </div>
+            </Dialog>
+        </Transition>
+    );
+}

@@ -5,6 +5,7 @@ import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { MapController } from "./utils/MapController";
 import Import from "./Import";
+import ImportGpsDialog from "./ImportGpsDialog";
 
 function MapTap(props: { mapController: MapController }): JSX.Element {
   const { t } = useTranslation();
@@ -166,6 +167,7 @@ export default function MainMenu(props: Props): JSX.Element {
   const mapController = props.mapController;
 
   const [importDialog, setImportDialog] = useState(false);
+  const [importGpsDialog, setImportGpsDialog] = useState(false);
   const [exportProgress, setExportProgress] = useState<{
     current: number;
     total: number;
@@ -181,6 +183,14 @@ export default function MainMenu(props: Props): JSX.Element {
           description: t("import-description"),
           action: () => {
             setImportDialog(true);
+          },
+          icon: IconImport,
+        },
+        {
+          name: t("import-gps"),
+          description: t("import-gps-description"),
+          action: () => {
+            setImportGpsDialog(true);
           },
           icon: IconImport,
         },
@@ -261,6 +271,12 @@ export default function MainMenu(props: Props): JSX.Element {
         mapController={mapController}
         isOpen={importDialog}
         setIsOpen={setImportDialog}
+        msgboxShow={props.msgboxShow}
+      />
+      <ImportGpsDialog
+        mapController={mapController}
+        isOpen={importGpsDialog}
+        setIsOpen={setImportGpsDialog}
         msgboxShow={props.msgboxShow}
       />
       {exportProgress && (

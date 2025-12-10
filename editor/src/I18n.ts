@@ -17,6 +17,8 @@ i18n
           "main-title": "FogMachine",
           import: "Import",
           "import-description": "Import data from [Fog of World]",
+          "import-gps": "Import GPS Tracks",
+          "import-gps-description": "Import tracks from GPX, KML, or KMZ files",
           export: "Export",
           "export-gpx": "Export Gpx",
           "export-description": "Export data in [Fog of World] format",
@@ -30,9 +32,14 @@ i18n
           "error-failed-to-load-snapshot": "Failed to load snapshot.",
           "import-dialog-description":
             'All your data will be handled locally.\n\nAccept data format:\n- The "Sync" folder.\n- Files in the "Sync" folder.\n- A zip archive contains the "Sync" folder.\n\n',
+          "import-gps-dialog-description":
+            "Import GPS track data from GPX, KML, or KMZ files.\n\nAccepted formats:\n- GPX files (.gpx)\n- KML files (.kml)\n- KMZ files (.kmz)\n\nTracks will be merged into your existing map.",
           "import-dialog-drag-and-drop":
             "drag and drop [Fog of World] sync data",
+          "import-gps-dialog-drag-and-drop": "drag and drop GPS track files",
           "import-dialog-select": "Select manually",
+          "import-gps-success": "GPS track imported successfully",
+          "error-invalid-gps": "Invalid GPS file format",
           info: "Info",
           "export-done-message":
             'Exported successfully.\n\nPlease use the "Sync" folder in the exported zip archive to replace the original folder. You also need to reset the [Fog of World] app to remove the existing data.',
@@ -63,6 +70,8 @@ i18n
           "main-title": "迷雾机器",
           import: "导入",
           "import-description": "从 [世界迷雾] 中导入数据。",
+          "import-gps": "匯入 GPS 軌跡",
+          "import-gps-description": "從 GPX、KML 或 KMZ 檔案匯入軌跡",
           export: "导出",
           "export-gpx": "导出 GPX",
           "export-description": "以 [世界迷雾] 的格式导出数据。",
@@ -75,8 +84,13 @@ i18n
           "error-failed-to-load-snapshot": "载入快照失败。",
           "import-dialog-description":
             '你的数据将完全在本地处理。\n\n接受的数据格式:\n- "Sync" 文件夹\n-  "Sync" 文件夹中的全部文件\n- 包含 "Sync" 文件夹的 zip 压缩包\n\n',
+          "import-gps-dialog-description":
+            "從 GPX、KML 或 KMZ 檔案匯入 GPS 軌跡資料。\n\n接受的格式：\n- GPX 檔案 (.gpx)\n- KML 檔案 (.kml)\n- KMZ 檔案 (.kmz)\n\n軌跡將合併到您現有的地圖中。",
           "import-dialog-drag-and-drop": "拖入 [世界迷雾] 同步数据",
+          "import-gps-dialog-drag-and-drop": "拖入 GPS 軌跡檔案",
           "import-dialog-select": "手动选择",
+          "import-gps-success": "GPS 軌跡匯入成功",
+          "error-invalid-gps": "無效的 GPS 檔案格式",
           info: "提示",
           "export-done-message":
             '导出成功。\n\n请使用导出的 zip 压缩包中的 "Sync" 文件夹替换原有文件夹，并重置 [世界迷雾] app 以清除已有数据。',
