@@ -760,10 +760,6 @@ export class MapController {
       this.drawingSession = null;
     }
     this.deletePixelLastPos = null;
-    if (this.showGrid) {
-      this.updateGridLayer();
-    }
-    this.map?.dragPan.enable();
     this.onChange();
   }
 
