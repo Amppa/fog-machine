@@ -1,6 +1,6 @@
-import { Dialog, Transition } from "@headlessui/react";
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import BaseDialog from "./components/BaseDialog";
 import { parseMapUrl } from "./utils/MapUrlUtils";
 
 type Props = {
@@ -63,95 +63,55 @@ export default function UrlParserDialog(props: Props): JSX.Element {
   }
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog
-        as="div"
-        className="fixed inset-0 z-50 overflow-y-auto"
-        onClose={closeModal}
-      >
-        <div className="min-h-screen px-4 text-center">
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
+    <BaseDialog
+      isOpen={isOpen}
+      onClose={closeModal}
+      title={t("url-parser-title")}
+      zIndex={50}
+      footer={
+        <div className="flex justify-end space-x-3">
+          <button
+            type="button"
+            className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+            onClick={handleConfirm}
           >
-            <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
-          </Transition.Child>
-
-          <span
-            className="inline-block h-screen align-middle"
-            aria-hidden="true"
+            {t("confirm")}
+          </button>
+          <button
+            type="button"
+            className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500"
+            onClick={closeModal}
           >
-            &#8203;
-          </span>
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0 scale-95"
-            enterTo="opacity-100 scale-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100 scale-100"
-            leaveTo="opacity-0 scale-95"
-          >
-            <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
-              <Dialog.Title
-                as="h3"
-                className="text-lg font-medium leading-6 text-gray-900"
-              >
-                {t("url-parser-title")}
-              </Dialog.Title>
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700">
-                  {t("url-parser-paste-url")}
-                </label>
-                <input
-                  type="text"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
-                  value={urlInput}
-                  onChange={(e) => handleUrlInputChange(e.target.value)}
-                  placeholder={String(t("url-parser-placeholder"))}
-                />
-                <p className="mt-2 text-xs text-gray-500">
-                  {t("url-parser-supports")}
-                </p>
-                {parsedResult && (
-                  <div className="mt-2 text-sm text-green-600">
-                    {t("url-parser-parsed")}: {parsedResult.lat.toFixed(6)},{" "}
-                    {parsedResult.lng.toFixed(6)}
-                    {parsedResult.zoom !== undefined
-                      ? `, ${t("url-parser-zoom")}: ${parsedResult.zoom}`
-                      : ""}
-                  </div>
-                )}
-                {urlError && (
-                  <p className="mt-2 text-sm text-red-600">{urlError}</p>
-                )}
-              </div>
-
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
-                  onClick={handleConfirm}
-                >
-                  {t("confirm")}
-                </button>
-                <button
-                  type="button"
-                  className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500"
-                  onClick={closeModal}
-                >
-                  {t("cancel")}
-                </button>
-              </div>
-            </div>
-          </Transition.Child>
+            {t("cancel")}
+          </button>
         </div>
-      </Dialog>
-    </Transition>
+      }
+    >
+      <label className="block text-sm font-medium text-gray-700">
+        {t("url-parser-paste-url")}
+      </label>
+      <input
+        type="text"
+        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
+        value={urlInput}
+        onChange={(e) => handleUrlInputChange(e.target.value)}
+        placeholder={String(t("url-parser-placeholder"))}
+      />
+      <p className="mt-2 text-xs text-gray-500">
+        {t("url-parser-supports")}
+      </p>
+      {parsedResult && (
+        <div className="mt-2 text-sm text-green-600">
+          {t("url-parser-parsed")}: {parsedResult.lat.toFixed(6)},{" "}
+          {parsedResult.lng.toFixed(6)}
+          {parsedResult.zoom !== undefined
+            ? `, ${t("url-parser-zoom")}: ${parsedResult.zoom}`
+            : ""}
+        </div>
+      )}
+      {urlError && (
+        <p className="mt-2 text-sm text-red-600">{urlError}</p>
+      )}
+    </BaseDialog>
   );
 }
