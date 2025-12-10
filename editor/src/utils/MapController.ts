@@ -372,10 +372,6 @@ export class MapController {
     }
   }
 
-  private createBbox(lngLat: mapboxgl.LngLat): Bbox {
-    return new Bbox(lngLat.lng, lngLat.lat, lngLat.lng, lngLat.lat);
-  }
-
   private resetDeleteBlockState(): DeleteBlockState {
     return {
       blocks: {},
@@ -384,19 +380,10 @@ export class MapController {
     };
   }
 
-  private calculateBounds(point1: mapboxgl.LngLat, point2: mapboxgl.LngLat) {
-    return {
-      west: Math.min(point1.lng, point2.lng),
-      north: Math.max(point1.lat, point2.lat),
-      east: Math.max(point1.lng, point2.lng),
-      south: Math.min(point1.lat, point2.lat),
-    };
-  }
-
   private handleDrawScribblePress(e: mapboxgl.MapMouseEvent): void {
     this.map?.dragPan.disable();
     this.drawScribbleLastPos = e.lngLat;
-    this.scribbleStrokeBbox = this.createBbox(e.lngLat);
+    this.scribbleStrokeBbox = Bbox.fromPoint(e.lngLat);
   }
 
 
@@ -430,13 +417,13 @@ export class MapController {
   private handleDeletePixelPress(e: mapboxgl.MapMouseEvent): void {
     this.map?.dragPan.disable();
     this.deletePixelLastPos = e.lngLat;
-    this.eraserStrokeBbox = this.createBbox(e.lngLat);
+    this.eraserStrokeBbox = Bbox.fromPoint(e.lngLat);
 
     this.drawingSession = {
       baseMap: this.fogMap,
       modifiedBlocks: {},
       blockCounts: {},
-      erasedArea: this.createBbox(e.lngLat),
+      erasedArea: Bbox.fromPoint(e.lngLat),
     };
 
     // Initial interaction on press
@@ -470,7 +457,7 @@ export class MapController {
   private handleEraserMove(e: mapboxgl.MapMouseEvent): void {
     if (!this.eraserArea) return;
     const [startPoint, eraserSource] = this.eraserArea;
-    const { west, north, east, south } = this.calculateBounds(e.lngLat, startPoint);
+    const bounds = Bbox.fromTwoPoints(e.lngLat, startPoint);
 
     eraserSource.setData({
       type: "Feature",
@@ -479,11 +466,11 @@ export class MapController {
         type: "Polygon",
         coordinates: [
           [
-            [east, north],
-            [west, north],
-            [west, south],
-            [east, south],
-            [east, north],
+            [bounds.east, bounds.north],
+            [bounds.west, bounds.north],
+            [bounds.west, bounds.south],
+            [bounds.east, bounds.south],
+            [bounds.east, bounds.north],
           ],
         ],
       },
@@ -501,22 +488,10 @@ export class MapController {
       currentPos.lat
     );
 
-    // TODO: the computation below cannot handle anti-meridian crossing correctly.
-    // It is tricky and most people don't need it.
-    const segmentBbox = new Bbox(
-      Math.min(this.drawScribbleLastPos.lng, currentPos.lng),
-      Math.min(this.drawScribbleLastPos.lat, currentPos.lat),
-      Math.max(this.drawScribbleLastPos.lng, currentPos.lng),
-      Math.max(this.drawScribbleLastPos.lat, currentPos.lat)
-    );
+    const segmentBbox = Bbox.fromTwoPoints(this.drawScribbleLastPos, currentPos);
 
     if (this.scribbleStrokeBbox) {
-      this.scribbleStrokeBbox = new Bbox(
-        Math.min(this.scribbleStrokeBbox.west, segmentBbox.west),
-        Math.min(this.scribbleStrokeBbox.south, segmentBbox.south),
-        Math.max(this.scribbleStrokeBbox.east, segmentBbox.east),
-        Math.max(this.scribbleStrokeBbox.north, segmentBbox.north)
-      );
+      this.scribbleStrokeBbox = Bbox.merge(this.scribbleStrokeBbox, segmentBbox);
     }
 
     this.updateFogMap(newMap, segmentBbox, true);
@@ -547,7 +522,7 @@ export class MapController {
   private handleEraserRelease(e: mapboxgl.MapMouseEvent): void {
     if (!this.map || !this.eraserArea) return;
     const [startPoint, eraserSource] = this.eraserArea;
-    const { west, north, east, south } = this.calculateBounds(e.lngLat, startPoint);
+    const bounds = Bbox.fromTwoPoints(e.lngLat, startPoint);
 
     MapEraserUtils.cleanupEraserLayers(
       this.map,
@@ -555,10 +530,8 @@ export class MapController {
       MapController.LAYER_IDS.ERASER_OUTLINE
     );
 
-    const bbox = new Bbox(west, south, east, north);
-
-    const newMap = this.fogMap.clearBbox(bbox);
-    this.updateFogMap(newMap, bbox);
+    const newMap = this.fogMap.clearBbox(bounds);
+    this.updateFogMap(newMap, bounds);
 
     this.eraserArea = null;
   }
