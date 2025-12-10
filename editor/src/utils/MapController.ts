@@ -91,11 +91,7 @@ export class MapController {
     this.deletePixelLastPos = null;
     this.scribbleStrokeBbox = null;
     this.deleteBlockCursor = null;
-    this.deleteBlockState = {
-      blocks: {},
-      features: [],
-      bbox: null,
-    };
+    this.deleteBlockState = this.resetDeleteBlockState();
     this.eraserStrokeBbox = null;
     this.drawingSession = null;
     this.gridRenderer = new GridRenderer();
@@ -387,6 +383,14 @@ export class MapController {
     return new Bbox(lngLat.lng, lngLat.lat, lngLat.lng, lngLat.lat);
   }
 
+  private resetDeleteBlockState(): DeleteBlockState {
+    return {
+      blocks: {},
+      features: [],
+      bbox: null,
+    };
+  }
+
   private handleDrawScribblePress(e: mapboxgl.MapMouseEvent): void {
     this.map?.dragPan.disable();
     this.drawScribbleLastPos = e.lngLat;
@@ -439,11 +443,7 @@ export class MapController {
   }
 
   private handleDeleteBlockPress(e: mapboxgl.MapMouseEvent): void {
-    this.deleteBlockState = {
-      blocks: {},
-      features: [],
-      bbox: null,
-    };
+    this.deleteBlockState = this.resetDeleteBlockState();
     this.handleDeleteBlockInteraction(e.lngLat);
   }
 
@@ -606,11 +606,7 @@ export class MapController {
     const newMap = this.fogMap.removeBlocks(this.deleteBlockState.blocks);
     this.updateFogMap(newMap, this.deleteBlockState.bbox || "all");
 
-    this.deleteBlockState = {
-      blocks: {},
-      features: [],
-      bbox: null,
-    };
+    this.deleteBlockState = this.resetDeleteBlockState();
     this.updatePendingDeleteLayer();
   }
 
@@ -681,11 +677,7 @@ export class MapController {
         MapEraserUtils.cleanupDeleteBlockLayers(this.map);
         this.deleteBlockCursor?.remove();
         this.deleteBlockCursor = null;
-        this.deleteBlockState = {
-          blocks: {},
-          features: [],
-          bbox: null,
-        };
+        this.deleteBlockState = this.resetDeleteBlockState();
         break;
       case ControlMode.DeletePixel:
         MapEraserUtils.cleanupDeletePixelLayer(
