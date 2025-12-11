@@ -38,8 +38,7 @@ export const ERASER_STYLE = {
 const DELETE_BLOCK_CURSOR = {
     SIZE: 20,
     BORDER_WIDTH: 2,
-    BORDER_COLOR: 'blue',
-    BG_COLOR: 'rgba(0, 0, 255, 0.2)',
+    BORDER_COLOR: '#000000',
 } as const;
 
 const LAYER_STYLES = {
@@ -48,7 +47,7 @@ const LAYER_STYLES = {
         WIDTH: 2,
     },
     DELETE_PIXEL_CURSOR: {
-        COLOR: '#0000FF',
+        COLOR: '#000000',
         WIDTH: 2,
     },
 } as const;
@@ -148,7 +147,6 @@ export function updateDeleteBlockCursor(
         el.style.width = `${DELETE_BLOCK_CURSOR.SIZE}px`;
         el.style.height = `${DELETE_BLOCK_CURSOR.SIZE}px`;
         el.style.border = `${DELETE_BLOCK_CURSOR.BORDER_WIDTH}px solid ${DELETE_BLOCK_CURSOR.BORDER_COLOR}`;
-        el.style.backgroundColor = DELETE_BLOCK_CURSOR.BG_COLOR;
 
         marker = new mapboxgl.Marker({
             element: el,
