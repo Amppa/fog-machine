@@ -7,8 +7,8 @@ export class GridRenderer {
   private readonly TILES_LAYER_ID = "tiles-layer";
   private readonly TILES_SOURCE_ID = "tiles-source";
 
-  private readonly TILE_COLOR = "#8822D8";
-  private readonly BLOCK_COLOR = "#00AAFF";
+  private readonly TILE_COLOR = "#33724a";
+  private readonly BLOCK_COLOR = "#4fb173";
 
   private stats = {
     tiles: { visible: 0, total: 0 },
