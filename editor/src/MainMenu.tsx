@@ -22,7 +22,7 @@ function MapTap(props: { mapController: MapController }): JSX.Element {
             {t("map-type")}
           </span>
         </span>
-        <div className="w-full pt-4 grid lg:grid-cols-2">
+        <div className="w-full pt-4">
           <Tab.Group
             onChange={(index) => {
               const style = mapStyles[index];
@@ -61,7 +61,7 @@ function MapTap(props: { mapController: MapController }): JSX.Element {
             {t("fog-concentration")}
           </span>
         </span>
-        <div className="w-full pt-4 grid lg:grid-cols-2">
+        <div className="w-full pt-4">
           <Tab.Group
             onChange={(index) => {
               const fogConcentration = fogConcentrations[index];
@@ -101,7 +101,7 @@ function MapTap(props: { mapController: MapController }): JSX.Element {
             {t("map-projection")}
           </span>
         </span>
-        <div className="w-full pt-4 grid lg:grid-cols-2">
+        <div className="w-full pt-4">
           <Tab.Group
             onChange={(index) => {
               const mapProjection = mapProjections[index];
@@ -235,7 +235,7 @@ export default function MainMenu(props: Props): JSX.Element {
       ];
 
   const languageTab = (
-    <div className="w-full pt-4 grid lg:grid-cols-2">
+    <div className="w-full pt-4">
       <Tab.Group
         onChange={(index) => {
           if (index === 0) {
@@ -325,9 +325,9 @@ export default function MainMenu(props: Props): JSX.Element {
                   leaveFrom="opacity-100 translate-y-0"
                   leaveTo="opacity-0 translate-y-1"
                 >
-                  <Popover.Panel className="absolute z-10 w-screen max-w-sm mt-3 transform lg:max-w-3xl">
+                  <Popover.Panel className="absolute z-10 w-screen max-w-sm mt-3 transform">
                     <div className="overflow-hidden rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
-                      <div className="relative grid gap-8 bg-white p-7 lg:grid-cols-2">
+                      <div className="relative grid gap-8 bg-white p-7 grid-cols-1">
                         {menuItems.map((item) => (
                           <a
                             key={item.name}
