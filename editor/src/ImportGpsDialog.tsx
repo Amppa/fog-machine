@@ -55,26 +55,6 @@ async function importGpsFile(file: File): Promise<GpsImportResult> {
     }
 }
 
-function zoomToView(
-    mapController: MapController,
-    boundingBox: Bbox | null,
-    firstCoordinate: [number, number] | null
-): void {
-    if (boundingBox) {
-        const isSinglePoint =
-            boundingBox.west === boundingBox.east &&
-            boundingBox.south === boundingBox.north;
-
-        if (isSinglePoint) {
-            mapController.flyTo(boundingBox.west, boundingBox.south, 20);
-        } else {
-            mapController.fitBounds(boundingBox);
-        }
-    } else if (firstCoordinate) {
-        mapController.flyTo(firstCoordinate[0], firstCoordinate[1]);
-    }
-}
-
 export default function ImportGpsDialog(props: Props): JSX.Element {
     const { t } = useTranslation();
     const { isOpen, setIsOpen, msgboxShow } = props;
@@ -110,7 +90,7 @@ export default function ImportGpsDialog(props: Props): JSX.Element {
             }
 
             mapController.replaceFogMap(importedMap);
-            zoomToView(mapController, combinedBoundingBox, firstCoordinate);
+            mapController.zoomToBoundingBox(combinedBoundingBox, firstCoordinate);
 
             msgboxShow("info", "import-gps-success");
         } catch (error) {

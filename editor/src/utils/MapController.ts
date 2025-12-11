@@ -341,6 +341,25 @@ export class MapController {
     );
   }
 
+  zoomToBoundingBox(
+    boundingBox: Bbox | null,
+    firstCoordinate: [number, number] | null
+  ): void {
+    if (boundingBox) {
+      const isSinglePoint =
+        boundingBox.west === boundingBox.east &&
+        boundingBox.south === boundingBox.north;
+
+      if (isSinglePoint) {
+        this.flyTo(boundingBox.west, boundingBox.south, 20);
+      } else {
+        this.fitBounds(boundingBox);
+      }
+    } else if (firstCoordinate) {
+      this.flyTo(firstCoordinate[0], firstCoordinate[1]);
+    }
+  }
+
   // ============================================================================
   // Callback Management
   // ============================================================================
