@@ -34,6 +34,7 @@ export default function ImportGpsDialog(props: Props): JSX.Element {
 
         try {
             let importedMap = mapController.fogMap;
+            let firstCoordinate: [number, number] | null = null;
 
             for (const file of files) {
                 const extension = getFileExtension(file.name);
@@ -56,19 +57,25 @@ export default function ImportGpsDialog(props: Props): JSX.Element {
                 } else if (extension === "kml") {
                     // Import KML file
                     if (typeof data === "string") {
-                        newMap = importKmlToFogMap(data);
+                        const result = importKmlToFogMap(data);
+                        newMap = result.fogMap;
+                        if (!firstCoordinate) firstCoordinate = result.firstCoordinate;
                     } else if (data instanceof ArrayBuffer) {
                         // Convert ArrayBuffer to string
                         const decoder = new TextDecoder("utf-8");
                         const text = decoder.decode(data);
-                        newMap = importKmlToFogMap(text);
+                        const result = importKmlToFogMap(text);
+                        newMap = result.fogMap;
+                        if (!firstCoordinate) firstCoordinate = result.firstCoordinate;
                     } else {
                         throw new Error("Invalid data format for KML file");
                     }
                 } else if (extension === "kmz") {
                     // Import KMZ file
                     if (data instanceof ArrayBuffer) {
-                        newMap = await importKmzToFogMap(data);
+                        const result = await importKmzToFogMap(data);
+                        newMap = result.fogMap;
+                        if (!firstCoordinate) firstCoordinate = result.firstCoordinate;
                     } else {
                         throw new Error("KMZ file must be read as ArrayBuffer");
                     }
@@ -108,6 +115,12 @@ export default function ImportGpsDialog(props: Props): JSX.Element {
 
             // Replace the fog map with the merged result
             mapController.replaceFogMap(importedMap);
+
+            // Move camera to first coordinate if available
+            if (firstCoordinate) {
+                mapController.flyTo(firstCoordinate[0], firstCoordinate[1]);
+            }
+
             msgboxShow("info", "import-gps-success");
         } catch (error) {
             console.error("Error importing GPS file:", error);

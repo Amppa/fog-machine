@@ -93,6 +93,24 @@ function crossesAntimeridian(lon1: number, lon2: number): boolean {
 }
 
 /**
+ * Get the first coordinate from coordinate sets
+ * @param coordinateSets Array of coordinate arrays
+ * @returns First [lng, lat] pair or null if no coordinates found
+ */
+function getFirstCoordinate(coordinateSets: number[][][]): [number, number] | null {
+    if (coordinateSets.length === 0) return null;
+
+    for (const coords of coordinateSets) {
+        if (coords.length > 0) {
+            const [lng, lat] = coords[0];
+            return [lng, lat];
+        }
+    }
+
+    return null;
+}
+
+/**
  * Convert coordinate sets to FogMap by drawing lines
  * @param coordinateSets Array of coordinate arrays
  * @returns FogMap with drawn tracks
@@ -124,9 +142,12 @@ function coordinatesToFogMap(coordinateSets: number[][][]): FogMap {
 /**
  * Import KML file and convert track data to FogMap
  * @param kmlData KML file content as string
- * @returns FogMap with imported tracks
+ * @returns Object with FogMap and first coordinate
  */
-export function importKmlToFogMap(kmlData: string): FogMap {
+export function importKmlToFogMap(kmlData: string): {
+    fogMap: FogMap;
+    firstCoordinate: [number, number] | null;
+} {
     try {
         // Parse KML XML
         const parser = new DOMParser();
@@ -145,8 +166,13 @@ export function importKmlToFogMap(kmlData: string): FogMap {
             throw new Error("No track data found in KML file");
         }
 
+        // Get first coordinate for camera positioning
+        const firstCoordinate = getFirstCoordinate(coordinateSets);
+
         // Convert to FogMap
-        return coordinatesToFogMap(coordinateSets);
+        const fogMap = coordinatesToFogMap(coordinateSets);
+
+        return { fogMap, firstCoordinate };
     } catch (error) {
         console.error("Error parsing KML file:", error);
         throw new Error("Invalid KML file format");
@@ -156,9 +182,12 @@ export function importKmlToFogMap(kmlData: string): FogMap {
 /**
  * Import KMZ file (compressed KML) and convert track data to FogMap
  * @param kmzData KMZ file content as ArrayBuffer
- * @returns Promise<FogMap> with imported tracks
+ * @returns Promise with FogMap and first coordinate
  */
-export async function importKmzToFogMap(kmzData: ArrayBuffer): Promise<FogMap> {
+export async function importKmzToFogMap(kmzData: ArrayBuffer): Promise<{
+    fogMap: FogMap;
+    firstCoordinate: [number, number] | null;
+}> {
     try {
         // Unzip KMZ file
         const zip = await new JSZip().loadAsync(kmzData);
