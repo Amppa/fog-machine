@@ -7,6 +7,9 @@ export class GridRenderer {
   private readonly TILES_LAYER_ID = "tiles-layer";
   private readonly TILES_SOURCE_ID = "tiles-source";
 
+  private readonly TILE_COLOR = "#8822D8";
+  private readonly BLOCK_COLOR = "#00AAFF";
+
   private stats = {
     tiles: { visible: 0, total: 0 },
     blocks: { visible: 0, total: 0 },
@@ -125,7 +128,7 @@ export class GridRenderer {
       this.TILES_SOURCE_ID,
       this.TILES_LAYER_ID,
       tileFeatures,
-      "#8822D8"
+      this.TILE_COLOR
     );
   }
 
@@ -189,7 +192,7 @@ export class GridRenderer {
       this.BLOCKS_SOURCE_ID,
       this.BLOCKS_LAYER_ID,
       blockFeatures,
-      "#00AAFF"
+      this.BLOCK_COLOR
     );
   }
 
@@ -200,7 +203,7 @@ export class GridRenderer {
       this.TILES_SOURCE_ID,
       this.TILES_LAYER_ID,
       [],
-      "#8822D8"
+      this.TILE_COLOR
     );
   }
 
@@ -211,7 +214,7 @@ export class GridRenderer {
       this.BLOCKS_SOURCE_ID,
       this.BLOCKS_LAYER_ID,
       [],
-      "#00AAFF"
+      this.BLOCK_COLOR
     );
   }
 
