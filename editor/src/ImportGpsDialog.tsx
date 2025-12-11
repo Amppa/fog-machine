@@ -6,6 +6,8 @@ import { useDropzone } from "react-dropzone";
 import { importGpxToFogMap } from "./utils/GpxImport";
 import { importKmlToFogMap, importKmzToFogMap } from "./utils/KmlImport";
 import { Bbox } from "./utils/CommonTypes";
+import { GpsImportResult } from "./utils/GpsImportTypes";
+import { arrayBufferToString, mergeFogMaps } from "./utils/GpsImportUtils";
 
 type Props = {
     mapController: MapController;
@@ -18,6 +20,59 @@ function getFileExtension(filename: string): string {
     return filename.slice(
         (Math.max(0, filename.lastIndexOf(".")) || Infinity) + 1
     ).toLowerCase();
+}
+
+function convertToString(data: string | ArrayBuffer): string {
+    if (typeof data === "string") {
+        return data;
+    }
+    if (data instanceof ArrayBuffer) {
+        return arrayBufferToString(data);
+    }
+    throw new Error("Invalid data format");
+}
+
+async function importGpsFile(file: File): Promise<GpsImportResult> {
+    const extension = getFileExtension(file.name);
+    const data = await readFileAsync(file);
+
+    if (!data) {
+        throw new Error("Failed to read file");
+    }
+
+    switch (extension) {
+        case "gpx":
+            return importGpxToFogMap(convertToString(data));
+        case "kml":
+            return importKmlToFogMap(convertToString(data));
+        case "kmz":
+            if (!(data instanceof ArrayBuffer)) {
+                throw new Error("KMZ file must be read as ArrayBuffer");
+            }
+            return await importKmzToFogMap(data);
+        default:
+            throw new Error(`Unsupported file type: ${extension}`);
+    }
+}
+
+function zoomToView(
+    mapController: MapController,
+    boundingBox: Bbox | null,
+    firstCoordinate: [number, number] | null
+): void {
+    if (boundingBox) {
+        const isSinglePoint =
+            boundingBox.west === boundingBox.east &&
+            boundingBox.south === boundingBox.north;
+
+        if (isSinglePoint) {
+            mapController.flyTo(boundingBox.west, boundingBox.south, 20);
+        } else {
+            mapController.fitBounds(boundingBox);
+        }
+    } else if (firstCoordinate) {
+        mapController.flyTo(firstCoordinate[0], firstCoordinate[1]);
+    }
 }
 
 export default function ImportGpsDialog(props: Props): JSX.Element {
@@ -39,123 +94,23 @@ export default function ImportGpsDialog(props: Props): JSX.Element {
             let combinedBoundingBox: Bbox | null = null;
 
             for (const file of files) {
-                const extension = getFileExtension(file.name);
-                const data = await readFileAsync(file);
+                const result = await importGpsFile(file);
 
-                let newMap;
-                let boundingBox: Bbox | null = null;
-
-                if (extension === "gpx") {
-                    // Import GPX file
-                    if (typeof data === "string") {
-                        const result = importGpxToFogMap(data);
-                        newMap = result.fogMap;
-                        if (!firstCoordinate) firstCoordinate = result.firstCoordinate;
-                        boundingBox = result.boundingBox;
-                    } else if (data instanceof ArrayBuffer) {
-                        // Convert ArrayBuffer to string
-                        const decoder = new TextDecoder("utf-8");
-                        const text = decoder.decode(data);
-                        const result = importGpxToFogMap(text);
-                        newMap = result.fogMap;
-                        if (!firstCoordinate) firstCoordinate = result.firstCoordinate;
-                        boundingBox = result.boundingBox;
-                    } else {
-                        throw new Error("Invalid data format for GPX file");
-                    }
-                } else if (extension === "kml") {
-                    // Import KML file
-                    if (typeof data === "string") {
-                        const result = importKmlToFogMap(data);
-                        newMap = result.fogMap;
-                        if (!firstCoordinate) firstCoordinate = result.firstCoordinate;
-                        boundingBox = result.boundingBox;
-                    } else if (data instanceof ArrayBuffer) {
-                        // Convert ArrayBuffer to string
-                        const decoder = new TextDecoder("utf-8");
-                        const text = decoder.decode(data);
-                        const result = importKmlToFogMap(text);
-                        newMap = result.fogMap;
-                        if (!firstCoordinate) firstCoordinate = result.firstCoordinate;
-                        boundingBox = result.boundingBox;
-                    } else {
-                        throw new Error("Invalid data format for KML file");
-                    }
-                } else if (extension === "kmz") {
-                    // Import KMZ file
-                    if (data instanceof ArrayBuffer) {
-                        const result = await importKmzToFogMap(data);
-                        newMap = result.fogMap;
-                        if (!firstCoordinate) firstCoordinate = result.firstCoordinate;
-                        boundingBox = result.boundingBox;
-                    } else {
-                        throw new Error("KMZ file must be read as ArrayBuffer");
-                    }
-                } else {
-                    msgboxShow("error", "error-invalid-gps");
-                    return;
+                if (!firstCoordinate) {
+                    firstCoordinate = result.firstCoordinate;
                 }
 
-                // Merge bounding boxes
-                if (boundingBox) {
-                    if (!combinedBoundingBox) {
-                        combinedBoundingBox = boundingBox;
-                    } else {
-                        combinedBoundingBox = Bbox.merge(combinedBoundingBox, boundingBox);
-                    }
+                if (result.boundingBox) {
+                    combinedBoundingBox = combinedBoundingBox
+                        ? Bbox.merge(combinedBoundingBox, result.boundingBox)
+                        : result.boundingBox;
                 }
 
-                // Merge the imported map with existing map
-                // We do this by merging the tiles
-                const mergedTiles = { ...importedMap.tiles };
-                Object.entries(newMap.tiles).forEach(([key, tile]) => {
-                    if (mergedTiles[key]) {
-                        // Merge blocks from both tiles
-                        const mergedBlocks = {
-                            ...mergedTiles[key].blocks,
-                            ...tile.blocks,
-                        };
-                        // Create new tile with merged blocks
-                        const Tile = (tile as any).constructor;
-                        mergedTiles[key] = new Tile(
-                            tile.filename,
-                            tile.id,
-                            tile.x,
-                            tile.y,
-                            mergedBlocks
-                        );
-                    } else {
-                        mergedTiles[key] = tile;
-                    }
-                });
-
-                // Create new FogMap with merged tiles
-                const FogMapConstructor = (importedMap as any).constructor;
-                importedMap = new FogMapConstructor(mergedTiles);
+                importedMap = mergeFogMaps(importedMap, result.fogMap);
             }
 
-            // Replace the fog map with the merged result
             mapController.replaceFogMap(importedMap);
-
-            // Zoom to appropriate view
-            if (combinedBoundingBox) {
-                const isSinglePoint =
-                    combinedBoundingBox.west === combinedBoundingBox.east &&
-                    combinedBoundingBox.south === combinedBoundingBox.north;
-
-                if (isSinglePoint) {
-                    mapController.flyTo(
-                        combinedBoundingBox.west,
-                        combinedBoundingBox.south,
-                        20
-                    );
-                } else {
-                    mapController.fitBounds(combinedBoundingBox);
-                }
-            } else if (firstCoordinate) {
-                // Fallback: if no bounding box, use firstCoordinate
-                mapController.flyTo(firstCoordinate[0], firstCoordinate[1]);
-            }
+            zoomToView(mapController, combinedBoundingBox, firstCoordinate);
 
             msgboxShow("info", "import-gps-success");
         } catch (error) {
