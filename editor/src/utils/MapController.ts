@@ -623,7 +623,7 @@ export class MapController {
     this.drawScribbleLastPos = currentPos;
   }
 
-  private handleDrawScribbleRelease(e: mapboxgl.MapMouseEvent): void {
+  private handleDrawScribbleRelease(_e: mapboxgl.MapMouseEvent): void {
     if (this.scribbleStrokeBbox) {
       this.historyManager.append(this.fogMap, this.scribbleStrokeBbox);
     }
@@ -707,7 +707,7 @@ export class MapController {
     this.updateDelBlockCursor(e.lngLat);
   }
 
-  private handleDelBlockRelease(e: mapboxgl.MapMouseEvent): void {
+  private handleDelBlockRelease(_e: mapboxgl.MapMouseEvent): void {
     const newMap = this.fogMap.removeBlocks(this.delBlockState.blocks);
     this.updateFogMap(newMap, this.delBlockState.bbox || "all");
 
@@ -777,7 +777,7 @@ export class MapController {
     }
   }
 
-  private handleDelPixelRelease(e: mapboxgl.MapMouseEvent): void {
+  private handleDelPixelRelease(_e: mapboxgl.MapMouseEvent): void {
     if (this.drawingSession) {
       // Finalize the session
       // We should already have the visual state in this.fogMap thanks to mouseMove updates
