@@ -10,6 +10,9 @@ export class GridRenderer {
   private readonly TILE_COLOR = "#33724a";
   private readonly BLOCK_COLOR = "#4fb173";
 
+  private readonly ZOOM_THRESHOLD_SHOW_BLOCKS = 8.5;
+  private readonly ZOOM_THRESHOLD_SHOW_TILES = 3;
+
   private stats = {
     tiles: { visible: 0, total: 0 },
     blocks: { visible: 0, total: 0 },
@@ -41,10 +44,10 @@ export class GridRenderer {
 
     const zoom = map.getZoom();
 
-    if (zoom > 8.5) {
+    if (zoom > this.ZOOM_THRESHOLD_SHOW_BLOCKS) {
       this.showTile(map, currentFogMap);
       this.showBlock(map, currentFogMap);
-    } else if (zoom > 6) {
+    } else if (zoom > this.ZOOM_THRESHOLD_SHOW_TILES) {
       this.showTile(map, currentFogMap);
       this.clearBlockLayer(map);
     } else {
