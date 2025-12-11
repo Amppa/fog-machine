@@ -328,6 +328,19 @@ export class MapController {
     this.map?.flyTo(options);
   }
 
+  fitBounds(bounds: Bbox): void {
+    this.map?.fitBounds(
+      [
+        [bounds.west, bounds.south], // southwest
+        [bounds.east, bounds.north], // northeast
+      ],
+      {
+        padding: 50, // 50px padding
+        essential: true,
+      }
+    );
+  }
+
   // ============================================================================
   // Callback Management
   // ============================================================================

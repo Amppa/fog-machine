@@ -1,5 +1,6 @@
 import { parseGPX, Point } from "@we-gold/gpxjs";
 import { FogMap } from "./FogMap";
+import { Bbox } from "./CommonTypes";
 
 function crossesAntimeridian(lon1: number, lon2: number): boolean {
     return Math.abs(lon2 - lon1) > 180;
@@ -42,11 +43,77 @@ function addPointsToFogMap(fogMap: FogMap, points: Point[]): FogMap {
 }
 
 /**
+ * Get the first coordinate from GPX data
+ * @param gpx Parsed GPX object
+ * @returns First [lng, lat] pair or null if no coordinates found
+ */
+function getFirstCoordinate(gpx: any): [number, number] | null {
+    // Try to get first point from tracks
+    for (const track of gpx.tracks) {
+        if (track.points.length > 0) {
+            const point = track.points[0];
+            return [point.longitude, point.latitude];
+        }
+    }
+
+    // If no tracks, try routes
+    for (const route of gpx.routes) {
+        if (route.points.length > 0) {
+            const point = route.points[0];
+            return [point.longitude, point.latitude];
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Calculate bounding box from GPX data
+ * @param gpx Parsed GPX object
+ * @returns Bbox or null if no coordinates found
+ */
+function calculateBoundingBox(gpx: any): Bbox | null {
+    let minLng = Infinity;
+    let minLat = Infinity;
+    let maxLng = -Infinity;
+    let maxLat = -Infinity;
+    let hasPoints = false;
+
+    // Process all tracks
+    for (const track of gpx.tracks) {
+        for (const point of track.points) {
+            minLng = Math.min(minLng, point.longitude);
+            minLat = Math.min(minLat, point.latitude);
+            maxLng = Math.max(maxLng, point.longitude);
+            maxLat = Math.max(maxLat, point.latitude);
+            hasPoints = true;
+        }
+    }
+
+    // Process all routes
+    for (const route of gpx.routes) {
+        for (const point of route.points) {
+            minLng = Math.min(minLng, point.longitude);
+            minLat = Math.min(minLat, point.latitude);
+            maxLng = Math.max(maxLng, point.longitude);
+            maxLat = Math.max(maxLat, point.latitude);
+            hasPoints = true;
+        }
+    }
+
+    return hasPoints ? new Bbox(minLng, minLat, maxLng, maxLat) : null;
+}
+
+/**
  * Import GPX file and convert track data to FogMap
  * @param gpxData GPX file content as string
- * @returns FogMap with imported tracks
+ * @returns Object with FogMap, first coordinate, and bounding box
  */
-export function importGpxToFogMap(gpxData: string): FogMap {
+export function importGpxToFogMap(gpxData: string): {
+    fogMap: FogMap;
+    firstCoordinate: [number, number] | null;
+    boundingBox: Bbox | null;
+} {
     try {
         // Parse GPX data - parseGPX returns [ParsedGPX | null, Error | null]
         const [gpx, error] = parseGPX(gpxData);
@@ -67,7 +134,13 @@ export function importGpxToFogMap(gpxData: string): FogMap {
             fogMap = addPointsToFogMap(fogMap, route.points);
         }
 
-        return fogMap;
+        // Get first coordinate for camera positioning
+        const firstCoordinate = getFirstCoordinate(gpx);
+
+        // Calculate bounding box for auto-zoom
+        const boundingBox = calculateBoundingBox(gpx);
+
+        return { fogMap, firstCoordinate, boundingBox };
     } catch (error) {
         console.error("Error parsing GPX file:", error);
         throw new Error("Invalid GPX file format");

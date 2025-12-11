@@ -1,5 +1,6 @@
 import JSZip from "jszip";
 import { FogMap } from "./FogMap";
+import { Bbox } from "./CommonTypes";
 
 /**
  * Parse KML XML and extract coordinates from LineString elements
@@ -111,6 +112,31 @@ function getFirstCoordinate(coordinateSets: number[][][]): [number, number] | nu
 }
 
 /**
+ * Calculate bounding box from coordinate sets
+ * @param coordinateSets Array of coordinate arrays
+ * @returns Bbox or null if no coordinates found
+ */
+function calculateBoundingBox(coordinateSets: number[][][]): Bbox | null {
+    let minLng = Infinity;
+    let minLat = Infinity;
+    let maxLng = -Infinity;
+    let maxLat = -Infinity;
+    let hasPoints = false;
+
+    for (const coords of coordinateSets) {
+        for (const [lng, lat] of coords) {
+            minLng = Math.min(minLng, lng);
+            minLat = Math.min(minLat, lat);
+            maxLng = Math.max(maxLng, lng);
+            maxLat = Math.max(maxLat, lat);
+            hasPoints = true;
+        }
+    }
+
+    return hasPoints ? new Bbox(minLng, minLat, maxLng, maxLat) : null;
+}
+
+/**
  * Convert coordinate sets to FogMap by drawing lines
  * @param coordinateSets Array of coordinate arrays
  * @returns FogMap with drawn tracks
@@ -142,11 +168,12 @@ function coordinatesToFogMap(coordinateSets: number[][][]): FogMap {
 /**
  * Import KML file and convert track data to FogMap
  * @param kmlData KML file content as string
- * @returns Object with FogMap and first coordinate
+ * @returns Object with FogMap, first coordinate, and bounding box
  */
 export function importKmlToFogMap(kmlData: string): {
     fogMap: FogMap;
     firstCoordinate: [number, number] | null;
+    boundingBox: Bbox | null;
 } {
     try {
         // Parse KML XML
@@ -169,10 +196,13 @@ export function importKmlToFogMap(kmlData: string): {
         // Get first coordinate for camera positioning
         const firstCoordinate = getFirstCoordinate(coordinateSets);
 
+        // Calculate bounding box for auto-zoom
+        const boundingBox = calculateBoundingBox(coordinateSets);
+
         // Convert to FogMap
         const fogMap = coordinatesToFogMap(coordinateSets);
 
-        return { fogMap, firstCoordinate };
+        return { fogMap, firstCoordinate, boundingBox };
     } catch (error) {
         console.error("Error parsing KML file:", error);
         throw new Error("Invalid KML file format");
@@ -182,11 +212,12 @@ export function importKmlToFogMap(kmlData: string): {
 /**
  * Import KMZ file (compressed KML) and convert track data to FogMap
  * @param kmzData KMZ file content as ArrayBuffer
- * @returns Promise with FogMap and first coordinate
+ * @returns Promise with FogMap, first coordinate, and bounding box
  */
 export async function importKmzToFogMap(kmzData: ArrayBuffer): Promise<{
     fogMap: FogMap;
     firstCoordinate: [number, number] | null;
+    boundingBox: Bbox | null;
 }> {
     try {
         // Unzip KMZ file

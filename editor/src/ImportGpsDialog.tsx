@@ -5,6 +5,7 @@ import { MapController } from "./utils/MapController";
 import { useDropzone } from "react-dropzone";
 import { importGpxToFogMap } from "./utils/GpxImport";
 import { importKmlToFogMap, importKmzToFogMap } from "./utils/KmlImport";
+import { Bbox } from "./utils/CommonTypes";
 
 type Props = {
     mapController: MapController;
@@ -35,22 +36,30 @@ export default function ImportGpsDialog(props: Props): JSX.Element {
         try {
             let importedMap = mapController.fogMap;
             let firstCoordinate: [number, number] | null = null;
+            let combinedBoundingBox: Bbox | null = null;
 
             for (const file of files) {
                 const extension = getFileExtension(file.name);
                 const data = await readFileAsync(file);
 
                 let newMap;
+                let boundingBox: Bbox | null = null;
 
                 if (extension === "gpx") {
                     // Import GPX file
                     if (typeof data === "string") {
-                        newMap = importGpxToFogMap(data);
+                        const result = importGpxToFogMap(data);
+                        newMap = result.fogMap;
+                        if (!firstCoordinate) firstCoordinate = result.firstCoordinate;
+                        boundingBox = result.boundingBox;
                     } else if (data instanceof ArrayBuffer) {
                         // Convert ArrayBuffer to string
                         const decoder = new TextDecoder("utf-8");
                         const text = decoder.decode(data);
-                        newMap = importGpxToFogMap(text);
+                        const result = importGpxToFogMap(text);
+                        newMap = result.fogMap;
+                        if (!firstCoordinate) firstCoordinate = result.firstCoordinate;
+                        boundingBox = result.boundingBox;
                     } else {
                         throw new Error("Invalid data format for GPX file");
                     }
@@ -60,6 +69,7 @@ export default function ImportGpsDialog(props: Props): JSX.Element {
                         const result = importKmlToFogMap(data);
                         newMap = result.fogMap;
                         if (!firstCoordinate) firstCoordinate = result.firstCoordinate;
+                        boundingBox = result.boundingBox;
                     } else if (data instanceof ArrayBuffer) {
                         // Convert ArrayBuffer to string
                         const decoder = new TextDecoder("utf-8");
@@ -67,6 +77,7 @@ export default function ImportGpsDialog(props: Props): JSX.Element {
                         const result = importKmlToFogMap(text);
                         newMap = result.fogMap;
                         if (!firstCoordinate) firstCoordinate = result.firstCoordinate;
+                        boundingBox = result.boundingBox;
                     } else {
                         throw new Error("Invalid data format for KML file");
                     }
@@ -76,12 +87,22 @@ export default function ImportGpsDialog(props: Props): JSX.Element {
                         const result = await importKmzToFogMap(data);
                         newMap = result.fogMap;
                         if (!firstCoordinate) firstCoordinate = result.firstCoordinate;
+                        boundingBox = result.boundingBox;
                     } else {
                         throw new Error("KMZ file must be read as ArrayBuffer");
                     }
                 } else {
                     msgboxShow("error", "error-invalid-gps");
                     return;
+                }
+
+                // Merge bounding boxes
+                if (boundingBox) {
+                    if (!combinedBoundingBox) {
+                        combinedBoundingBox = boundingBox;
+                    } else {
+                        combinedBoundingBox = Bbox.merge(combinedBoundingBox, boundingBox);
+                    }
                 }
 
                 // Merge the imported map with existing map
@@ -116,8 +137,23 @@ export default function ImportGpsDialog(props: Props): JSX.Element {
             // Replace the fog map with the merged result
             mapController.replaceFogMap(importedMap);
 
-            // Move camera to first coordinate if available
-            if (firstCoordinate) {
+            // Zoom to appropriate view
+            if (combinedBoundingBox) {
+                const isSinglePoint =
+                    combinedBoundingBox.west === combinedBoundingBox.east &&
+                    combinedBoundingBox.south === combinedBoundingBox.north;
+
+                if (isSinglePoint) {
+                    mapController.flyTo(
+                        combinedBoundingBox.west,
+                        combinedBoundingBox.south,
+                        20
+                    );
+                } else {
+                    mapController.fitBounds(combinedBoundingBox);
+                }
+            } else if (firstCoordinate) {
+                // Fallback: if no bounding box, use firstCoordinate
                 mapController.flyTo(firstCoordinate[0], firstCoordinate[1]);
             }
 
