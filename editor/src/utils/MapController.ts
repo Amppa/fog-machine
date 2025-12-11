@@ -37,7 +37,7 @@ export class MapController {
     LINE_WIDTH: 1,
   } as const;
 
-  private static readonly DEFAULT_DELETE_PIXEL_SIZE = 40;
+  private static readonly DEFAULT_DELETE_PIXEL_SIZE = 16; // 4x4 pixels
 
   private static readonly CURSOR_STYLES: Record<ControlMode, string> = {
     [ControlMode.View]: 'grab',

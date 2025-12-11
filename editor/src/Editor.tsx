@@ -1,6 +1,6 @@
 import { ControlMode, MapController } from "./utils/MapController";
 import { useEffect, useState } from "react";
-const DELETE_PIXEL_SIZES = [4, 10, 40];
+const DELETE_PIXEL_SIZES = [2, 4, 8, 16, 32]; // Edge length pixels
 import Mousetrap from "mousetrap";
 import MainMenu from "./MainMenu";
 import FlyToDialog from "./FlyToDialog";
@@ -163,8 +163,8 @@ function Editor(props: Props): JSX.Element {
                       <div
                         className="bg-gray-800 rounded-full"
                         style={{
-                          width: `${4 + index * 4}px`, // 4, 8, 12 px visual size
-                          height: `${4 + index * 4}px`,
+                          width: `${4 + index * 3}px`, // 4, 7, 10, 13 px visual size
+                          height: `${4 + index * 3}px`,
                         }}
                       />
                     </div>
