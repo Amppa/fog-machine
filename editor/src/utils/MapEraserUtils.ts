@@ -24,29 +24,30 @@ export interface DeleteBlockState {
 // Constants
 // ============================================================================
 export const LAYER_IDS = {
-    ERASER: 'eraser',
-    ERASER_OUTLINE: 'eraser-outline',
-    DELETE_PIXEL_CURSOR: 'delete-pixel-cursor',
+    DEL_RECT: 'del-rect',
+    DEL_RECT_OUTLINE: 'del-rect-outline',
+    DEL_PIXEL_CURSOR: 'del-pixel-cursor',
+    DEL_BLOCK_PENDING: 'del-block-pending',
 } as const;
 
-export const ERASER_STYLE = {
+export const DEL_RECT_STYLE = {
     COLOR: '#969696',
     FILL_OPACITY: 0.5,
     LINE_WIDTH: 1,
 } as const;
 
-const DELETE_BLOCK_CURSOR = {
+export const DEL_BLOCK_CURSOR_STYLE = {
     SIZE: 20,
     BORDER_WIDTH: 2,
     BORDER_COLOR: '#000000',
 } as const;
 
-const LAYER_STYLES = {
-    PENDING_DELETE: {
+export const LAYER_PAINT_STYLES = {
+    DEL_BLOCK_PENDING: {
         COLOR: '#2200AA',
         WIDTH: 2,
     },
-    DELETE_PIXEL_CURSOR: {
+    DEL_PIXEL_CURSOR: {
         COLOR: '#000000',
         WIDTH: 2,
     },
@@ -82,8 +83,8 @@ export function initEraserLayers(
             visibility: 'none'
         },
         paint: {
-            "fill-color": ERASER_STYLE.COLOR,
-            "fill-opacity": ERASER_STYLE.FILL_OPACITY,
+            "fill-color": DEL_RECT_STYLE.COLOR,
+            "fill-opacity": DEL_RECT_STYLE.FILL_OPACITY,
         },
     });
 
@@ -95,8 +96,8 @@ export function initEraserLayers(
             visibility: 'none'
         },
         paint: {
-            "line-color": ERASER_STYLE.COLOR,
-            "line-width": ERASER_STYLE.LINE_WIDTH,
+            "line-color": DEL_RECT_STYLE.COLOR,
+            "line-width": DEL_RECT_STYLE.LINE_WIDTH,
         },
     });
 }
@@ -144,9 +145,9 @@ export function updateDeleteBlockCursor(
     if (!cursorRef) {
         const el = document.createElement('div');
         el.className = 'delete-block-cursor-dom'; // use css
-        el.style.width = `${DELETE_BLOCK_CURSOR.SIZE}px`;
-        el.style.height = `${DELETE_BLOCK_CURSOR.SIZE}px`;
-        el.style.border = `${DELETE_BLOCK_CURSOR.BORDER_WIDTH}px solid ${DELETE_BLOCK_CURSOR.BORDER_COLOR}`;
+        el.style.width = `${DEL_BLOCK_CURSOR_STYLE.SIZE}px`;
+        el.style.height = `${DEL_BLOCK_CURSOR_STYLE.SIZE}px`;
+        el.style.border = `${DEL_BLOCK_CURSOR_STYLE.BORDER_WIDTH}px solid ${DEL_BLOCK_CURSOR_STYLE.BORDER_COLOR}`;
 
         marker = new mapboxgl.Marker({
             element: el,
@@ -172,7 +173,7 @@ export function handleDeleteBlockInteraction(
 
     // Calculate bbox from cursor size
     const point = map.project(lngLat);
-    const halfSize = DELETE_BLOCK_CURSOR.SIZE / 2;
+    const halfSize = DEL_BLOCK_CURSOR_STYLE.SIZE / 2;
     const nwPoint = new mapboxgl.Point(point.x - halfSize, point.y - halfSize);
     const sePoint = new mapboxgl.Point(point.x + halfSize, point.y + halfSize);
 
@@ -292,8 +293,8 @@ export function updatePendingDeleteLayer(
             type: "line",
             source: sourceId,
             paint: {
-                "line-color": LAYER_STYLES.PENDING_DELETE.COLOR,
-                "line-width": LAYER_STYLES.PENDING_DELETE.WIDTH,
+                "line-color": LAYER_PAINT_STYLES.DEL_BLOCK_PENDING.COLOR,
+                "line-width": LAYER_PAINT_STYLES.DEL_BLOCK_PENDING.WIDTH,
             },
         });
     }
@@ -372,8 +373,8 @@ export function initDeletePixelCursorLayer(
             type: "line",
             source: layerId,
             paint: {
-                "line-color": LAYER_STYLES.DELETE_PIXEL_CURSOR.COLOR,
-                "line-width": LAYER_STYLES.DELETE_PIXEL_CURSOR.WIDTH
+                "line-color": LAYER_PAINT_STYLES.DEL_PIXEL_CURSOR.COLOR,
+                "line-width": LAYER_PAINT_STYLES.DEL_PIXEL_CURSOR.WIDTH
             }
         });
     }

@@ -62,7 +62,7 @@ export class MapController {
   private gridRenderer: GridRenderer;
   private _showGrid = false;
   private currentDeletePixelSize = MapController.DEFAULT_DELETE_PIXEL_SIZE;
-  private deletePixelCursorLayerId = MapEraserUtils.LAYER_IDS.DELETE_PIXEL_CURSOR;
+  private deletePixelCursorLayerId = MapEraserUtils.LAYER_IDS.DEL_PIXEL_CURSOR;
 
   // ============================================================================
   // Constructor and Factory
@@ -173,8 +173,8 @@ export class MapController {
   private initEraserLayers(map: mapboxgl.Map): void {
     MapEraserUtils.initEraserLayers(
       map,
-      MapEraserUtils.LAYER_IDS.ERASER,
-      MapEraserUtils.LAYER_IDS.ERASER_OUTLINE
+      MapEraserUtils.LAYER_IDS.DEL_RECT,
+      MapEraserUtils.LAYER_IDS.DEL_RECT_OUTLINE
     );
   }
 
@@ -458,8 +458,8 @@ export class MapController {
       case ControlMode.Eraser:
         MapEraserUtils.setEraserLayersVisibility(
           this.map,
-          MapEraserUtils.LAYER_IDS.ERASER,
-          MapEraserUtils.LAYER_IDS.ERASER_OUTLINE,
+          MapEraserUtils.LAYER_IDS.DEL_RECT,
+          MapEraserUtils.LAYER_IDS.DEL_RECT_OUTLINE,
           false
         );
         this.eraserArea = null;
@@ -500,8 +500,8 @@ export class MapController {
         mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.Eraser];
         MapEraserUtils.setEraserLayersVisibility(
           this.map,
-          MapEraserUtils.LAYER_IDS.ERASER,
-          MapEraserUtils.LAYER_IDS.ERASER_OUTLINE,
+          MapEraserUtils.LAYER_IDS.DEL_RECT,
+          MapEraserUtils.LAYER_IDS.DEL_RECT_OUTLINE,
           true
         );
         break;
@@ -636,7 +636,7 @@ export class MapController {
   private handleEraserPress(e: mapboxgl.MapMouseEvent): void {
     if (!this.eraserArea) {
       const eraserSource = this.map?.getSource(
-        MapEraserUtils.LAYER_IDS.ERASER
+        MapEraserUtils.LAYER_IDS.DEL_RECT
       ) as mapboxgl.GeoJSONSource | null;
 
       if (eraserSource) {
