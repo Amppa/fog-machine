@@ -8,6 +8,8 @@ import mapboxgl from "mapbox-gl";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import { Bbox } from "./CommonTypes";
 
+const DEBUG = false;
+
 export class MapDraw {
   private map: mapboxgl.Map;
   private mapboxDraw: MapboxDraw;
@@ -51,7 +53,7 @@ export class MapDraw {
 
     this.map.on("draw.create", (e: GeoJSON) => {
       // parse each line segments, apply to fogmap
-      console.log(e.features);
+      if (DEBUG) console.log(e.features);
       for (const geo of e.features) {
         if (geo.geometry.type == "LineString") {
           const coordinates = geo.geometry.coordinates;

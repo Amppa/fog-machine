@@ -8,6 +8,8 @@ import { Bbox } from "./CommonTypes";
 import * as MapEraserUtils from "./MapEraserUtils";
 import { DelBlockState, DrawingSession } from "./MapEraserUtils";
 
+const DEBUG = false;
+
 type MapStyle = "standard" | "satellite" | "hybrid" | "none";
 type MapProjection = "globe" | "mercator";
 type FogConcentration = "low" | "medium" | "high";
@@ -93,7 +95,7 @@ export class MapController {
 
   static create(): MapController {
     if (MapController.instance) {
-      console.log(
+      if (DEBUG) console.warn(
         "WARNING: One shouldn't create a second copy of `mapController`"
       );
     } else {
@@ -521,7 +523,7 @@ export class MapController {
   // Event Handling - Main Entry Points
   // ============================================================================
   handleMousePress(e: mapboxgl.MapMouseEvent): void {
-    console.log(`[Mouse Press] at ${e.lngLat}`);
+    if (DEBUG) console.log(`[Mouse Press] at ${e.lngLat}`);
     switch (this.controlMode) {
       case ControlMode.View:
         break;

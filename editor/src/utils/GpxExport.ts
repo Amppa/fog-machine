@@ -1,6 +1,8 @@
 import JSZip from "jszip";
 import { FogMap, Tile, BITMAP_WIDTH, TILE_WIDTH } from "./FogMap";
 
+const DEBUG = false;
+
 // TODO: tune the parameter
 const MAX_LENGTH_PER_GPX_FILE = 2000;
 const MAX_PIXCEL_BETWEEN_GPX_POINTS = 100;
@@ -65,11 +67,11 @@ export function exportToGpx(lngLatList: number[][]): Blob {
     <trk>
         <trkseg>
         ${lngLatList
-          .map((lngLat) => {
-            return `<trkpt lon="${lngLat[0]}" lat="${lngLat[1]}"></trkpt>
+      .map((lngLat) => {
+        return `<trkpt lon="${lngLat[0]}" lat="${lngLat[1]}"></trkpt>
             `;
-          })
-          .join("")}
+      })
+      .join("")}
         </trkseg>
     </trk>
     </gpx>
@@ -116,7 +118,7 @@ function generateGpxFromTile(tile: Tile): Blob[] {
 
   const result: Blob[] = [];
   const tracks = bitmapToTracks(bitmapGrid);
-  console.log(`# file count ${tracks.length}`);
+  if (DEBUG) console.log(`# file count ${tracks.length}`);
   // TODO: having one file per `trackSegment` seems a bit too much. One file
   // per track which contains multiple segments feels better.
   tracks.forEach((trackSegment) => {

@@ -1,6 +1,8 @@
 import mapboxgl from "mapbox-gl";
 import * as fogMap from "./FogMap";
 
+const DEBUG = false;
+
 export class GridRenderer {
   private readonly BLOCKS_LAYER_ID = "blocks-layer";
   private readonly BLOCKS_SOURCE_ID = "blocks-source";
@@ -23,6 +25,7 @@ export class GridRenderer {
   }
 
   public debugInfo(map: mapboxgl.Map): void {
+    if (!DEBUG) return;
     const zoom = map.getZoom();
     const stats = this.stats;
     console.log(

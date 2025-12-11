@@ -3,6 +3,8 @@ import JSZip from "jszip";
 import { Md5 } from "ts-md5";
 import { Bbox } from "./CommonTypes";
 
+const DEBUG = false;
+
 const FILENAME_MASK1 = "olhwjsktri";
 const FILENAME_MASK2 = "eizxdwknmo";
 const FILENAME_ENCODING: { [key: string]: number } = {};
@@ -56,8 +58,8 @@ export class FogMap {
         }
       } catch (e) {
         // TODO: handle error properly
-        console.log(`${filename} is not a valid tile file.`);
-        console.log(e);
+        console.error(`${filename} is not a valid tile file.`);
+        console.error(e);
       }
     });
     return new FogMap(mutableTiles);
@@ -128,7 +130,7 @@ export class FogMap {
     const syncZip = zip.folder("Sync");
     if (!syncZip) {
       // TODO: handle error
-      console.log("unable to create archive");
+      console.error("unable to create archive");
       return null;
     }
 
@@ -210,7 +212,7 @@ export class FogMap {
     endLat: number,
     val = true
   ): FogMap {
-    console.log(
+    if (DEBUG) console.log(
       `[${startLng},${startLat}] to [${endLng},${endLat}] (val=${val})`
     );
     const [x0, y0] = FogMap.LngLatToGlobalXY(startLng, startLat);
@@ -250,7 +252,7 @@ export class FogMap {
           tile = Tile.createEmptyTile(tileX, tileY);
         }
         if (tile) {
-          console.log(`tile draw: tileX: ${tileX}, tileY: ${tileY}`);
+          if (DEBUG) console.log(`tile draw: tileX: ${tileX}, tileY: ${tileY}`);
           let newTile;
           [newTile, x, y, px] = tile.addLine(
             x - (tileX << ALL_OFFSET),
@@ -300,7 +302,7 @@ export class FogMap {
           tile = Tile.createEmptyTile(tileX, tileY);
         }
         if (tile) {
-          console.log(`tile draw: tileX: ${tileX}, tileY: ${tileY}`);
+          if (DEBUG) console.log(`tile draw: tileX: ${tileX}, tileY: ${tileY}`);
           let newTile;
           [newTile, x, y, py] = tile.addLine(
             x - (tileX << ALL_OFFSET),
@@ -483,7 +485,7 @@ export class Tile {
 
   static createEmptyTile(x: number, y: number): Tile {
     const id = y * MAP_WIDTH + x;
-    console.log(`Creating tile. id: ${id}, x: ${x}, y: ${y}`);
+    if (DEBUG) console.log(`Creating tile. id: ${id}, x: ${x}, y: ${y}`);
 
     const digits = id.toString().split("").map(Number);
     const name0 = Md5.hashStr(id.toString()).substring(0, 4);
@@ -508,7 +510,7 @@ export class Tile {
     const x = id % MAP_WIDTH;
     const y = Math.floor(id / MAP_WIDTH);
 
-    console.log(`Loading tile. id: ${id}, x: ${x}, y: ${y}`);
+    if (DEBUG) console.log(`Loading tile. id: ${id}, x: ${x}, y: ${y}`);
 
     // TODO: try catch
     const actualData = pako.inflate(new Uint8Array(data));
@@ -625,7 +627,7 @@ export class Tile {
           block = Block.create(blockX, blockY, null);
         }
         if (block) {
-          console.log(
+          if (DEBUG) console.log(
             `block draw: blockx: ${blockX}, blocky: ${blockY} x: ${x}, y: ${y}`
           );
           let newBlock;
@@ -674,7 +676,7 @@ export class Tile {
           block = Block.create(blockX, blockY, null);
         }
         if (block) {
-          console.log(
+          if (DEBUG) console.log(
             `block draw: blockx: ${blockX}, blocky: ${blockY} x: ${x}, y: ${y}`
           );
           let newBlock;
@@ -712,7 +714,7 @@ export class Tile {
       if (Object.entries(mutableBlocks).length === 0) {
         return [null, x, y, p];
       } else {
-        console.log("return updated tile");
+        if (DEBUG) console.log("return updated tile");
         Object.freeze(mutableBlocks);
         return [
           new Tile(this.filename, this.id, this.x, this.y, mutableBlocks),
@@ -781,7 +783,7 @@ export class Tile {
   }
 
   clearRect(x: number, y: number, width: number, height: number): Tile | null {
-    console.log(
+    if (DEBUG) console.log(
       `clearRect: x: ${x}, y: ${y}, width: ${width}, height: ${height}`
     );
     const xMin = x;
@@ -973,7 +975,7 @@ export class Block {
     val: boolean
   ): [Block | null, number, number, number] {
     const mutableBitmap = new Uint8Array(this.bitmap);
-    console.log(`subblock draw: x:${x}, y:${y}, e:${e}`);
+    if (DEBUG) console.log(`subblock draw: x:${x}, y:${y}, e:${e}`);
     // Draw the first pixel
     Block.setPoint(mutableBitmap, x, y, val);
     if (xaxis) {

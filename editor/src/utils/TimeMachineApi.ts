@@ -7,6 +7,8 @@
 import axios from "axios";
 import lodash from "lodash";
 
+const DEBUG = false;
+
 // I really want ADT x2
 type Ok<T> = {
   status: number;
@@ -69,7 +71,7 @@ export default class TimeMachineApi {
     data?: { [key: string]: any }
   ): Promise<Result<any>> {
     try {
-      console.log("requesting api:", method, " ", url);
+      if (DEBUG) console.log("requesting api:", method, " ", url);
       const headers = needToken
         ? { Authorization: "Bearer " + this.getToken() }
         : undefined;
@@ -89,7 +91,8 @@ export default class TimeMachineApi {
           ? { status: status, error: knownError }
           : { status: status, unknownError: String(error) };
 
-      console.log("api error:", e);
+      // Always log errors
+      console.error("api error:", e);
       return e;
     }
   }
