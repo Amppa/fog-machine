@@ -25,18 +25,6 @@ export class MapController {
   // ============================================================================
   // Constants
   // ============================================================================
-  private static readonly LAYER_IDS = {
-    ERASER: 'eraser',
-    ERASER_OUTLINE: 'eraser-outline',
-    DELETE_PIXEL_CURSOR: 'delete-pixel-cursor',
-  } as const;
-
-  private static readonly ERASER_STYLE = {
-    COLOR: '#969696',
-    FILL_OPACITY: 0.5,
-    LINE_WIDTH: 1,
-  } as const;
-
   private static readonly DEFAULT_DELETE_PIXEL_SIZE = 16; // 4x4 pixels
 
   private static readonly CURSOR_STYLES: Record<ControlMode, string> = {
@@ -74,7 +62,7 @@ export class MapController {
   private gridRenderer: GridRenderer;
   private _showGrid = false;
   private currentDeletePixelSize = MapController.DEFAULT_DELETE_PIXEL_SIZE;
-  private deletePixelCursorLayerId = MapController.LAYER_IDS.DELETE_PIXEL_CURSOR;
+  private deletePixelCursorLayerId = MapEraserUtils.LAYER_IDS.DELETE_PIXEL_CURSOR;
 
   // ============================================================================
   // Constructor and Factory
@@ -161,6 +149,7 @@ export class MapController {
     this.resolvedLanguage = resolvedLanguage;
     this.initMapRenderer(map);
     this.initMapDraw(map);
+    this.initEraserLayers(map);
   }
 
   unregisterMap(_map: mapboxgl.Map): void {
@@ -178,6 +167,14 @@ export class MapController {
       map,
       this.getFogMap,
       this.handleDrawUpdate
+    );
+  }
+
+  private initEraserLayers(map: mapboxgl.Map): void {
+    MapEraserUtils.initEraserLayers(
+      map,
+      MapEraserUtils.LAYER_IDS.ERASER,
+      MapEraserUtils.LAYER_IDS.ERASER_OUTLINE
     );
   }
 
@@ -459,14 +456,13 @@ export class MapController {
         this.drawScribbleLastPos = null;
         break;
       case ControlMode.Eraser:
-        if (this.eraserArea) {
-          MapEraserUtils.cleanupEraserLayers(
-            this.map,
-            MapController.LAYER_IDS.ERASER,
-            MapController.LAYER_IDS.ERASER_OUTLINE
-          );
-          this.eraserArea = null;
-        }
+        MapEraserUtils.setEraserLayersVisibility(
+          this.map,
+          MapEraserUtils.LAYER_IDS.ERASER,
+          MapEraserUtils.LAYER_IDS.ERASER_OUTLINE,
+          false
+        );
+        this.eraserArea = null;
         break;
       case ControlMode.DeleteBlock:
         this.showGrid = false;
@@ -502,6 +498,12 @@ export class MapController {
         break;
       case ControlMode.Eraser:
         mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.Eraser];
+        MapEraserUtils.setEraserLayersVisibility(
+          this.map,
+          MapEraserUtils.LAYER_IDS.ERASER,
+          MapEraserUtils.LAYER_IDS.ERASER_OUTLINE,
+          true
+        );
         break;
       case ControlMode.DeleteBlock:
         mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DeleteBlock];
@@ -633,18 +635,10 @@ export class MapController {
   // ============================================================================
   private handleEraserPress(e: mapboxgl.MapMouseEvent): void {
     if (!this.eraserArea) {
-      MapEraserUtils.initEraserLayers(
-        this.map,
-        MapController.LAYER_IDS.ERASER,
-        MapController.LAYER_IDS.ERASER_OUTLINE,
-        MapController.ERASER_STYLE.COLOR,
-        MapController.ERASER_STYLE.FILL_OPACITY,
-        MapController.ERASER_STYLE.LINE_WIDTH
-      );
-
       const eraserSource = this.map?.getSource(
-        MapController.LAYER_IDS.ERASER
+        MapEraserUtils.LAYER_IDS.ERASER
       ) as mapboxgl.GeoJSONSource | null;
+
       if (eraserSource) {
         const startPoint = new mapboxgl.LngLat(e.lngLat.lng, e.lngLat.lat);
         this.eraserArea = [startPoint, eraserSource];
@@ -680,11 +674,15 @@ export class MapController {
     const [startPoint, eraserSource] = this.eraserArea;
     const bounds = Bbox.fromTwoPoints(e.lngLat, startPoint);
 
-    MapEraserUtils.cleanupEraserLayers(
-      this.map,
-      MapController.LAYER_IDS.ERASER,
-      MapController.LAYER_IDS.ERASER_OUTLINE
-    );
+    // 清空 layer 資料
+    eraserSource.setData({
+      type: "Feature",
+      properties: {},
+      geometry: {
+        type: "Polygon",
+        coordinates: [[]],
+      },
+    });
 
     const newMap = this.fogMap.clearBbox(bounds);
     this.updateFogMap(newMap, bounds);

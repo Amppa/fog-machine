@@ -23,6 +23,18 @@ export interface DeleteBlockState {
 // ============================================================================
 // Constants
 // ============================================================================
+export const LAYER_IDS = {
+    ERASER: 'eraser',
+    ERASER_OUTLINE: 'eraser-outline',
+    DELETE_PIXEL_CURSOR: 'delete-pixel-cursor',
+} as const;
+
+export const ERASER_STYLE = {
+    COLOR: '#969696',
+    FILL_OPACITY: 0.5,
+    LINE_WIDTH: 1,
+} as const;
+
 const DELETE_BLOCK_CURSOR = {
     SIZE: 20,
     BORDER_WIDTH: 2,
@@ -47,10 +59,7 @@ const LAYER_STYLES = {
 export function initEraserLayers(
     map: mapboxgl.Map | null,
     layerId: string,
-    outlineLayerId: string,
-    color: string,
-    fillOpacity: number,
-    lineWidth: number
+    outlineLayerId: string
 ): void {
     if (!map) return;
 
@@ -70,10 +79,12 @@ export function initEraserLayers(
         id: layerId,
         type: "fill",
         source: layerId,
-        layout: {},
+        layout: {
+            visibility: 'none'
+        },
         paint: {
-            "fill-color": color,
-            "fill-opacity": fillOpacity,
+            "fill-color": ERASER_STYLE.COLOR,
+            "fill-opacity": ERASER_STYLE.FILL_OPACITY,
         },
     });
 
@@ -81,12 +92,31 @@ export function initEraserLayers(
         id: outlineLayerId,
         type: "line",
         source: layerId,
-        layout: {},
+        layout: {
+            visibility: 'none'
+        },
         paint: {
-            "line-color": color,
-            "line-width": lineWidth,
+            "line-color": ERASER_STYLE.COLOR,
+            "line-width": ERASER_STYLE.LINE_WIDTH,
         },
     });
+}
+
+export function setEraserLayersVisibility(
+    map: mapboxgl.Map | null,
+    layerId: string,
+    outlineLayerId: string,
+    visible: boolean
+): void {
+    if (!map) return;
+    const visibility = visible ? 'visible' : 'none';
+
+    if (map.getLayer(layerId)) {
+        map.setLayoutProperty(layerId, 'visibility', visibility);
+    }
+    if (map.getLayer(outlineLayerId)) {
+        map.setLayoutProperty(outlineLayerId, 'visibility', visibility);
+    }
 }
 
 export function cleanupEraserLayers(
