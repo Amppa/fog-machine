@@ -14,7 +14,7 @@ export interface DrawingSession {
     erasedArea: Bbox | null;
 }
 
-export interface DeleteBlockState {
+export interface DelBlockState {
     blocks: { [tileKey: string]: Set<string> };
     features: GeoJSON.Feature<GeoJSON.Polygon>[];
     bbox: Bbox | null;
@@ -54,9 +54,9 @@ export const LAYER_PAINT_STYLES = {
 } as const;
 
 // ============================================================================
-// Eraser Mode Functions (Rectangle Eraser)
+// DelRect Mode Functions (Rectangle Eraser)
 // ============================================================================
-export function initEraserLayers(
+export function initDelRectLayers(
     map: mapboxgl.Map | null,
     layerId: string,
     outlineLayerId: string
@@ -102,7 +102,7 @@ export function initEraserLayers(
     });
 }
 
-export function setEraserLayersVisibility(
+export function setDelRectLayersVisibility(
     map: mapboxgl.Map | null,
     layerId: string,
     outlineLayerId: string,
@@ -119,7 +119,7 @@ export function setEraserLayersVisibility(
     }
 }
 
-export function cleanupEraserLayers(
+export function cleanupDelRectLayers(
     map: mapboxgl.Map | null,
     layerId: string,
     outlineLayerId: string
@@ -131,9 +131,9 @@ export function cleanupEraserLayers(
 }
 
 // ============================================================================
-// DeleteBlock Mode Functions
+// DelBlock Mode Functions
 // ============================================================================
-export function updateDeleteBlockCursor(
+export function updateDelBlockCursor(
     map: mapboxgl.Map | null,
     cursorRef: mapboxgl.Marker | null,
     lngLat: mapboxgl.LngLat
@@ -163,12 +163,12 @@ export function updateDeleteBlockCursor(
     return marker;
 }
 
-export function handleDeleteBlockInteraction(
+export function handleDelBlockInteraction(
     map: mapboxgl.Map | null,
     fogMapInstance: fogMap.FogMap,
-    pendingState: DeleteBlockState,
+    pendingState: DelBlockState,
     lngLat: mapboxgl.LngLat
-): { newState: DeleteBlockState; changed: boolean } {
+): { newState: DelBlockState; changed: boolean } {
     if (!map) return { newState: pendingState, changed: false };
 
     // Calculate bbox from cursor size
@@ -267,7 +267,7 @@ export function handleDeleteBlockInteraction(
     };
 }
 
-export function updatePendingDeleteLayer(
+export function updatePendingDelLayer(
     map: mapboxgl.Map | null,
     pendingFeatures: GeoJSON.Feature<GeoJSON.Polygon>[]
 ) {
@@ -300,7 +300,7 @@ export function updatePendingDeleteLayer(
     }
 }
 
-export function cleanupDeleteBlockLayers(map: mapboxgl.Map | null) {
+export function cleanupDelBlockLayers(map: mapboxgl.Map | null) {
     if (!map) return;
 
     const cursorLayerId = "delete-block-cursor";
@@ -315,9 +315,9 @@ export function cleanupDeleteBlockLayers(map: mapboxgl.Map | null) {
 }
 
 // ============================================================================
-// DeletePixel Mode - Helper Functions
+// DelPixel Mode - Helper Functions
 // ============================================================================
-export function getDeletePixelCursor(
+export function getDelPixelCursor(
     lngLat: mapboxgl.LngLat,
     pixelSize: number
 ): GeoJSON.Geometry {
@@ -353,9 +353,9 @@ export function getDeletePixelCursor(
 }
 
 // ============================================================================
-// DeletePixel Mode - Main Functions
+// DelPixel Mode - Main Functions
 // ============================================================================
-export function initDeletePixelCursorLayer(
+export function initDelPixelCursorLayer(
     map: mapboxgl.Map | null,
     layerId: string
 ) {
@@ -380,7 +380,7 @@ export function initDeletePixelCursorLayer(
     }
 }
 
-export function updateDeletePixelCursorLayer(
+export function updateDelPixelCursorLayer(
     map: mapboxgl.Map | null,
     layerId: string,
     lngLat: mapboxgl.LngLat,
@@ -389,7 +389,7 @@ export function updateDeletePixelCursorLayer(
     if (!map) return;
     const source = map.getSource(layerId) as mapboxgl.GeoJSONSource;
     if (source) {
-        const cursor = getDeletePixelCursor(lngLat, pixelSize);
+        const cursor = getDelPixelCursor(lngLat, pixelSize);
         source.setData({
             type: "Feature",
             geometry: cursor,
@@ -398,7 +398,7 @@ export function updateDeletePixelCursorLayer(
     }
 }
 
-export function handleDeletePixelInteraction(
+export function handleDelPixelInteraction(
     fogMapInstance: fogMap.FogMap,
     drawingSession: DrawingSession,
     lastPos: mapboxgl.LngLat | null,
@@ -582,7 +582,7 @@ export function handleDeletePixelInteraction(
     }
 }
 
-export function cleanupDeletePixelLayer(map: mapboxgl.Map | null, layerId: string) {
+export function cleanupDelPixelLayer(map: mapboxgl.Map | null, layerId: string) {
     if (!map) return;
     if (map.getLayer(layerId)) map.removeLayer(layerId);
     if (map.getSource(layerId)) map.removeSource(layerId);

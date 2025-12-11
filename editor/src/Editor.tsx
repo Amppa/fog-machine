@@ -33,7 +33,7 @@ function Editor(props: Props): JSX.Element {
   });
 
   const [eraserSize, setEraserSize] = useState(
-    mapController.getDeletePixelSize()
+    mapController.getDelPixelSize()
   );
   const [isDeletingPixel, setIsDeletingPixel] = useState(false);
 
@@ -45,7 +45,7 @@ function Editor(props: Props): JSX.Element {
         canRedo: mapController.historyManager.canRedo(),
         canUndo: mapController.historyManager.canUndo(),
       });
-      setEraserSize(mapController.getDeletePixelSize());
+      setEraserSize(mapController.getDelPixelSize());
       setIsDeletingPixel(mapController.getIsDeletingPixel());
     });
     props.setLoaded(true);
@@ -157,7 +157,7 @@ function Editor(props: Props): JSX.Element {
                       }
                       onClick={(e) => {
                         e.stopPropagation();
-                        mapController.setDeletePixelSize(sizeValue);
+                        mapController.setDelPixelSize(sizeValue);
                       }}
                     >
                       <div

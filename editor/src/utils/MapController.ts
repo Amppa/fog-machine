@@ -6,7 +6,7 @@ import { MapRenderer, MAPBOX_MAIN_CANVAS_LAYER } from "./MapRenderer";
 import { GridRenderer } from "./GridRenderer";
 import { Bbox } from "./CommonTypes";
 import * as MapEraserUtils from "./MapEraserUtils";
-import { DeleteBlockState, DrawingSession } from "./MapEraserUtils";
+import { DelBlockState, DrawingSession } from "./MapEraserUtils";
 
 type MapStyle = "standard" | "satellite" | "hybrid" | "none";
 type MapProjection = "globe" | "mercator";
@@ -25,7 +25,7 @@ export class MapController {
   // ============================================================================
   // Constants
   // ============================================================================
-  private static readonly DEFAULT_DELETE_PIXEL_SIZE = 16; // 4x4 pixels
+  private static readonly DEFAULT_DEL_PIXEL_SIZE = 16; // 4x4 pixels
 
   private static readonly CURSOR_STYLES: Record<ControlMode, string> = {
     [ControlMode.View]: 'grab',
@@ -53,16 +53,16 @@ export class MapController {
   public historyManager: HistoryManager;
   private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
   private drawScribbleLastPos: mapboxgl.LngLat | null;
-  private deletePixelLastPos: mapboxgl.LngLat | null;
+  private delPixelLastPos: mapboxgl.LngLat | null;
   private scribbleStrokeBbox: Bbox | null;
-  private deleteBlockCursor: mapboxgl.Marker | null;
-  private deleteBlockState: DeleteBlockState;
+  private delBlockCursor: mapboxgl.Marker | null;
+  private delBlockState: DelBlockState;
   private eraserStrokeBbox: Bbox | null;
   private drawingSession: DrawingSession | null;
   private gridRenderer: GridRenderer;
   private _showGrid = false;
-  private currentDeletePixelSize = MapController.DEFAULT_DELETE_PIXEL_SIZE;
-  private deletePixelCursorLayerId = MapEraserUtils.LAYER_IDS.DEL_PIXEL_CURSOR;
+  private currentDelPixelSize = MapController.DEFAULT_DEL_PIXEL_SIZE;
+  private delPixelCursorLayerId = MapEraserUtils.LAYER_IDS.DEL_PIXEL_CURSOR;
 
   // ============================================================================
   // Constructor and Factory
@@ -82,10 +82,10 @@ export class MapController {
     this.historyManager = new HistoryManager(this.fogMap);
     this.eraserArea = null;
     this.drawScribbleLastPos = null;
-    this.deletePixelLastPos = null;
+    this.delPixelLastPos = null;
     this.scribbleStrokeBbox = null;
-    this.deleteBlockCursor = null;
-    this.deleteBlockState = this.resetDeleteBlockState();
+    this.delBlockCursor = null;
+    this.delBlockState = this.resetDelBlockState();
     this.eraserStrokeBbox = null;
     this.drawingSession = null;
     this.gridRenderer = new GridRenderer();
@@ -105,7 +105,7 @@ export class MapController {
   // ============================================================================
   // Helper Functions (used by constructor and other methods)
   // ============================================================================
-  private resetDeleteBlockState(): DeleteBlockState {
+  private resetDelBlockState(): DelBlockState {
     return {
       blocks: {},
       features: [],
@@ -149,7 +149,7 @@ export class MapController {
     this.resolvedLanguage = resolvedLanguage;
     this.initMapRenderer(map);
     this.initMapDraw(map);
-    this.initEraserLayers(map);
+    this.initDelRectLayers(map);
   }
 
   unregisterMap(_map: mapboxgl.Map): void {
@@ -170,8 +170,8 @@ export class MapController {
     );
   }
 
-  private initEraserLayers(map: mapboxgl.Map): void {
-    MapEraserUtils.initEraserLayers(
+  private initDelRectLayers(map: mapboxgl.Map): void {
+    MapEraserUtils.initDelRectLayers(
       map,
       MapEraserUtils.LAYER_IDS.DEL_RECT,
       MapEraserUtils.LAYER_IDS.DEL_RECT_OUTLINE
@@ -282,19 +282,19 @@ export class MapController {
     }
   }
 
-  getDeletePixelSize(): number {
-    return this.currentDeletePixelSize;
+  getDelPixelSize(): number {
+    return this.currentDelPixelSize;
   }
 
-  setDeletePixelSize(size: number): void {
+  setDelPixelSize(size: number): void {
     if (size > 0) {
-      this.currentDeletePixelSize = size;
-      if (this.controlMode === ControlMode.DeletePixel && this.deletePixelLastPos) {
-        MapEraserUtils.updateDeletePixelCursorLayer(
+      this.currentDelPixelSize = size;
+      if (this.controlMode === ControlMode.DeletePixel && this.delPixelLastPos) {
+        MapEraserUtils.updateDelPixelCursorLayer(
           this.map,
-          this.deletePixelCursorLayerId,
-          this.deletePixelLastPos,
-          this.currentDeletePixelSize
+          this.delPixelCursorLayerId,
+          this.delPixelLastPos,
+          this.currentDelPixelSize
         );
       }
       this.onChange();
@@ -456,7 +456,7 @@ export class MapController {
         this.drawScribbleLastPos = null;
         break;
       case ControlMode.Eraser:
-        MapEraserUtils.setEraserLayersVisibility(
+        MapEraserUtils.setDelRectLayersVisibility(
           this.map,
           MapEraserUtils.LAYER_IDS.DEL_RECT,
           MapEraserUtils.LAYER_IDS.DEL_RECT_OUTLINE,
@@ -466,15 +466,15 @@ export class MapController {
         break;
       case ControlMode.DeleteBlock:
         this.showGrid = false;
-        MapEraserUtils.cleanupDeleteBlockLayers(this.map);
-        this.deleteBlockCursor?.remove();
-        this.deleteBlockCursor = null;
-        this.deleteBlockState = this.resetDeleteBlockState();
+        MapEraserUtils.cleanupDelBlockLayers(this.map);
+        this.delBlockCursor?.remove();
+        this.delBlockCursor = null;
+        this.delBlockState = this.resetDelBlockState();
         break;
       case ControlMode.DeletePixel:
-        MapEraserUtils.cleanupDeletePixelLayer(
+        MapEraserUtils.cleanupDelPixelLayer(
           this.map,
-          this.deletePixelCursorLayerId
+          this.delPixelCursorLayerId
         );
         break;
     }
@@ -498,7 +498,7 @@ export class MapController {
         break;
       case ControlMode.Eraser:
         mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.Eraser];
-        MapEraserUtils.setEraserLayersVisibility(
+        MapEraserUtils.setDelRectLayersVisibility(
           this.map,
           MapEraserUtils.LAYER_IDS.DEL_RECT,
           MapEraserUtils.LAYER_IDS.DEL_RECT_OUTLINE,
@@ -511,7 +511,7 @@ export class MapController {
         break;
       case ControlMode.DeletePixel:
         mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DeletePixel];
-        MapEraserUtils.initDeletePixelCursorLayer(this.map, this.deletePixelCursorLayerId);
+        MapEraserUtils.initDelPixelCursorLayer(this.map, this.delPixelCursorLayerId);
         break;
     }
     this.controlMode = newMode;
@@ -535,10 +535,10 @@ export class MapController {
         this.handleEraserPress(e);
         break;
       case ControlMode.DeleteBlock:
-        this.handleDeleteBlockPress(e);
+        this.handleDelBlockPress(e);
         break;
       case ControlMode.DeletePixel:
-        this.handleDeletePixelPress(e);
+        this.handleDelPixelPress(e);
         break;
       default:
         break;
@@ -558,10 +558,10 @@ export class MapController {
         this.handleEraserMove(e);
         break;
       case ControlMode.DeleteBlock:
-        this.handleDeleteBlockMove(e);
+        this.handleDelBlockMove(e);
         break;
       case ControlMode.DeletePixel:
-        this.handleDeletePixelMove(e);
+        this.handleDelPixelMove(e);
         break;
       default:
         break;
@@ -581,10 +581,10 @@ export class MapController {
         this.handleEraserRelease(e);
         break;
       case ControlMode.DeleteBlock:
-        this.handleDeleteBlockRelease(e);
+        this.handleDelBlockRelease(e);
         break;
       case ControlMode.DeletePixel:
-        this.handleDeletePixelRelease(e);
+        this.handleDelPixelRelease(e);
         break;
       default:
         break;
@@ -691,64 +691,64 @@ export class MapController {
   }
 
   // ============================================================================
-  // DeleteBlock Mode Handlers
+  // DelBlock Mode Handlers
   // ============================================================================
-  private handleDeleteBlockPress(e: mapboxgl.MapMouseEvent): void {
-    this.deleteBlockState = this.resetDeleteBlockState();
-    this.handleDeleteBlockInteraction(e.lngLat);
+  private handleDelBlockPress(e: mapboxgl.MapMouseEvent): void {
+    this.delBlockState = this.resetDelBlockState();
+    this.handleDelBlockInteraction(e.lngLat);
   }
 
-  private handleDeleteBlockMove(e: mapboxgl.MapMouseEvent): void {
+  private handleDelBlockMove(e: mapboxgl.MapMouseEvent): void {
     if (e.originalEvent.buttons === 1) {
-      this.handleDeleteBlockInteraction(e.lngLat);
+      this.handleDelBlockInteraction(e.lngLat);
     }
-    this.updateDeleteBlockCursor(e.lngLat);
+    this.updateDelBlockCursor(e.lngLat);
   }
 
-  private handleDeleteBlockRelease(e: mapboxgl.MapMouseEvent): void {
-    const newMap = this.fogMap.removeBlocks(this.deleteBlockState.blocks);
-    this.updateFogMap(newMap, this.deleteBlockState.bbox || "all");
+  private handleDelBlockRelease(e: mapboxgl.MapMouseEvent): void {
+    const newMap = this.fogMap.removeBlocks(this.delBlockState.blocks);
+    this.updateFogMap(newMap, this.delBlockState.bbox || "all");
 
-    this.deleteBlockState = this.resetDeleteBlockState();
-    MapEraserUtils.updatePendingDeleteLayer(
+    this.delBlockState = this.resetDelBlockState();
+    MapEraserUtils.updatePendingDelLayer(
       this.map,
-      this.deleteBlockState.features
+      this.delBlockState.features
     );
   }
 
-  private updateDeleteBlockCursor(lngLat: mapboxgl.LngLat) {
-    this.deleteBlockCursor = MapEraserUtils.updateDeleteBlockCursor(
+  private updateDelBlockCursor(lngLat: mapboxgl.LngLat) {
+    this.delBlockCursor = MapEraserUtils.updateDelBlockCursor(
       this.map,
-      this.deleteBlockCursor,
+      this.delBlockCursor,
       lngLat
     );
   }
 
-  private handleDeleteBlockInteraction(lngLat: mapboxgl.LngLat) {
+  private handleDelBlockInteraction(lngLat: mapboxgl.LngLat) {
     if (!this.map) return;
-    const result = MapEraserUtils.handleDeleteBlockInteraction(
+    const result = MapEraserUtils.handleDelBlockInteraction(
       this.map,
       this.fogMap,
-      this.deleteBlockState,
+      this.delBlockState,
       lngLat
     );
 
-    this.deleteBlockState = result.newState;
+    this.delBlockState = result.newState;
 
     if (result.changed) {
-      MapEraserUtils.updatePendingDeleteLayer(
+      MapEraserUtils.updatePendingDelLayer(
         this.map,
-        this.deleteBlockState.features
+        this.delBlockState.features
       );
     }
   }
 
   // ============================================================================
-  // DeletePixel Mode Handlers
+  // DelPixel Mode Handlers
   // ============================================================================
-  private handleDeletePixelPress(e: mapboxgl.MapMouseEvent): void {
+  private handleDelPixelPress(e: mapboxgl.MapMouseEvent): void {
     this.map?.dragPan.disable();
-    this.deletePixelLastPos = e.lngLat;
+    this.delPixelLastPos = e.lngLat;
     this.eraserStrokeBbox = Bbox.fromPoint(e.lngLat);
 
     this.drawingSession = {
@@ -759,23 +759,23 @@ export class MapController {
     };
 
     // Initial interaction on press
-    this.handleDeletePixelInteraction(e.lngLat);
+    this.handleDelPixelInteraction(e.lngLat);
     this.onChange();
   }
 
-  private handleDeletePixelMove(e: mapboxgl.MapMouseEvent): void {
-    MapEraserUtils.updateDeletePixelCursorLayer(
+  private handleDelPixelMove(e: mapboxgl.MapMouseEvent): void {
+    MapEraserUtils.updateDelPixelCursorLayer(
       this.map,
-      this.deletePixelCursorLayerId,
+      this.delPixelCursorLayerId,
       e.lngLat,
-      this.currentDeletePixelSize
+      this.currentDelPixelSize
     );
-    if (e.originalEvent.buttons === 1 && this.deletePixelLastPos) {
-      this.handleDeletePixelInteraction(e.lngLat);
+    if (e.originalEvent.buttons === 1 && this.delPixelLastPos) {
+      this.handleDelPixelInteraction(e.lngLat);
     }
   }
 
-  private handleDeletePixelRelease(e: mapboxgl.MapMouseEvent): void {
+  private handleDelPixelRelease(e: mapboxgl.MapMouseEvent): void {
     if (this.drawingSession) {
       // Finalize the session
       // We should already have the visual state in this.fogMap thanks to mouseMove updates
@@ -789,25 +789,25 @@ export class MapController {
       }
       this.drawingSession = null;
     }
-    this.deletePixelLastPos = null;
+    this.delPixelLastPos = null;
     this.onChange();
   }
 
-  private handleDeletePixelInteraction(lngLat: mapboxgl.LngLat) {
-    if (!this.map || !this.deletePixelLastPos || !this.drawingSession) return;
+  private handleDelPixelInteraction(lngLat: mapboxgl.LngLat) {
+    if (!this.map || !this.delPixelLastPos || !this.drawingSession) return;
 
-    const result = MapEraserUtils.handleDeletePixelInteraction(
+    const result = MapEraserUtils.handleDelPixelInteraction(
       this.fogMap,
       this.drawingSession,
-      this.deletePixelLastPos,
+      this.delPixelLastPos,
       lngLat,
-      this.currentDeletePixelSize
+      this.currentDelPixelSize
     );
 
     if (result && result.changed) {
       this.updateFogMap(result.newMap, result.segmentBbox, true, true);
     }
 
-    this.deletePixelLastPos = lngLat;
+    this.delPixelLastPos = lngLat;
   }
 }
