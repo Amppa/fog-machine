@@ -18,11 +18,11 @@ type FogConcentration = "low" | "medium" | "high";
 
 export enum ControlMode {
   View,
-  DrawLine,
+  DrawPolyline,
   DrawScribble,
-  Eraser,
-  DeleteBlock,
-  DeletePixel,
+  DelRect,
+  DelBlock,
+  DelPixel,
 }
 
 export class MapController {
@@ -33,11 +33,11 @@ export class MapController {
 
   private static readonly CURSOR_STYLES: Record<ControlMode, string> = {
     [ControlMode.View]: 'grab',
-    [ControlMode.DrawLine]: 'crosshair',
+    [ControlMode.DrawPolyline]: 'crosshair',
     [ControlMode.DrawScribble]: 'crosshair',
-    [ControlMode.Eraser]: 'cell',
-    [ControlMode.DeleteBlock]: 'none',         // hide cursor, user defined cursor
-    [ControlMode.DeletePixel]: 'crosshair',    // show cursor and delete pixel cursor due to the pixel is really small
+    [ControlMode.DelRect]: 'cell',
+    [ControlMode.DelBlock]: 'none',         // hide cursor, user defined cursor
+    [ControlMode.DelPixel]: 'crosshair',    // show cursor and delete pixel cursor due to the pixel is really small
   } as const;
 
   // ============================================================================
@@ -305,7 +305,7 @@ export class MapController {
   setDelPixelSize(size: number): void {
     if (size > 0) {
       this.currentDelPixelSize = size;
-      if (this.controlMode === ControlMode.DeletePixel && this.delPixelLastPos) {
+      if (this.controlMode === ControlMode.DelPixel && this.delPixelLastPos) {
         MapEraserUtils.updateDelPixelCursorLayer(
           this.map,
           this.delPixelCursorLayerId,
@@ -459,7 +459,7 @@ export class MapController {
   // ============================================================================
   setControlMode(newMode: ControlMode): void {
     // Use ModeManager for View and Eraser modes
-    if (newMode === ControlMode.View || newMode === ControlMode.Eraser) {
+    if (newMode === ControlMode.View || newMode === ControlMode.DelRect) {
       this.modeManager?.setMode(newMode);
       this.controlMode = newMode;
       return;
@@ -472,24 +472,24 @@ export class MapController {
     // disable the current active mode
     switch (this.controlMode) {
       case ControlMode.View:
-      case ControlMode.Eraser:
+      case ControlMode.DelRect:
         // Deactivate via ModeManager
         this.modeManager?.setMode(ControlMode.View);
         break;
-      case ControlMode.DrawLine:
+      case ControlMode.DrawPolyline:
         this.mapDraw?.deactivate();
         break;
       case ControlMode.DrawScribble:
         this.drawScribbleLastPos = null;
         break;
-      case ControlMode.DeleteBlock:
+      case ControlMode.DelBlock:
         this.showGrid = false;
         MapEraserUtils.cleanupDelBlockLayers(this.map);
         this.delBlockCursor?.remove();
         this.delBlockCursor = null;
         this.delBlockState = this.resetDelBlockState();
         break;
-      case ControlMode.DeletePixel:
+      case ControlMode.DelPixel:
         MapEraserUtils.cleanupDelPixelLayer(
           this.map,
           this.delPixelCursorLayerId
@@ -501,19 +501,19 @@ export class MapController {
     this.map?.dragPan.disable();
 
     switch (newMode) {
-      case ControlMode.DrawLine:
-        mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DrawLine];
+      case ControlMode.DrawPolyline:
+        mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DrawPolyline];
         this.mapDraw?.activate();
         break;
       case ControlMode.DrawScribble:
         mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DrawScribble];
         break;
-      case ControlMode.DeleteBlock:
-        mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DeleteBlock];
+      case ControlMode.DelBlock:
+        mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DelBlock];
         this.showGrid = true;
         break;
-      case ControlMode.DeletePixel: {
-        mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DeletePixel];
+      case ControlMode.DelPixel: {
+        mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DelPixel];
 
         // Auto zoom (pixel is too small to operate)
         const currentZoom = this.map?.getZoom();
@@ -542,23 +542,23 @@ export class MapController {
     if (DEBUG) console.log(`[Mouse Press] at ${e.lngLat}`);
 
     // Use ModeManager for View and Eraser modes
-    if (this.controlMode === ControlMode.View || this.controlMode === ControlMode.Eraser) {
+    if (this.controlMode === ControlMode.View || this.controlMode === ControlMode.DelRect) {
       this.modeManager?.handleMousePress(e);
       return;
     }
 
     // Legacy event handling for other modes
     switch (this.controlMode) {
-      case ControlMode.DrawLine:
+      case ControlMode.DrawPolyline:
         // pass. -> setControlMode(ControlMode.DrawLine) -> @mapbox/mapbox-gl-draw
         break;
       case ControlMode.DrawScribble:
         this.handleDrawScribblePress(e);
         break;
-      case ControlMode.DeleteBlock:
+      case ControlMode.DelBlock:
         this.handleDelBlockPress(e);
         break;
-      case ControlMode.DeletePixel:
+      case ControlMode.DelPixel:
         this.handleDelPixelPress(e);
         break;
       default:
@@ -568,22 +568,22 @@ export class MapController {
 
   handleMouseMove(e: mapboxgl.MapMouseEvent): void {
     // Use ModeManager for View and Eraser modes
-    if (this.controlMode === ControlMode.View || this.controlMode === ControlMode.Eraser) {
+    if (this.controlMode === ControlMode.View || this.controlMode === ControlMode.DelRect) {
       this.modeManager?.handleMouseMove(e);
       return;
     }
 
     // Legacy event handling for other modes
     switch (this.controlMode) {
-      case ControlMode.DrawLine:
+      case ControlMode.DrawPolyline:
         break;
       case ControlMode.DrawScribble:
         this.handleDrawScribbleMove(e);
         break;
-      case ControlMode.DeleteBlock:
+      case ControlMode.DelBlock:
         this.handleDelBlockMove(e);
         break;
-      case ControlMode.DeletePixel:
+      case ControlMode.DelPixel:
         this.handleDelPixelMove(e);
         break;
       default:
@@ -593,22 +593,22 @@ export class MapController {
 
   handleMouseRelease(e: mapboxgl.MapMouseEvent): void {
     // Use ModeManager for View and Eraser modes
-    if (this.controlMode === ControlMode.View || this.controlMode === ControlMode.Eraser) {
+    if (this.controlMode === ControlMode.View || this.controlMode === ControlMode.DelRect) {
       this.modeManager?.handleMouseRelease(e);
       return;
     }
 
     // Legacy event handling for other modes
     switch (this.controlMode) {
-      case ControlMode.DrawLine:
+      case ControlMode.DrawPolyline:
         break;
       case ControlMode.DrawScribble:
         this.handleDrawScribbleRelease(e);
         break;
-      case ControlMode.DeleteBlock:
+      case ControlMode.DelBlock:
         this.handleDelBlockRelease(e);
         break;
-      case ControlMode.DeletePixel:
+      case ControlMode.DelPixel:
         this.handleDelPixelRelease(e);
         break;
       default:

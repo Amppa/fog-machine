@@ -18,7 +18,7 @@ export class ModeManager {
         // Initialize all strategies
         this.strategies = new Map([
             [ControlMode.View, new ViewMode()],
-            [ControlMode.Eraser, new DelRectMode()],
+            [ControlMode.DelRect, new DelRectMode()],
             // TODO: Add other modes
             // [ControlMode.DrawLine, new DrawLineMode()],
             // [ControlMode.DrawScribble, new DrawScribbleMode()],

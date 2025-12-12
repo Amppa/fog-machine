@@ -90,8 +90,8 @@ function Editor(props: Props): JSX.Element {
       key: "line",
       icon: <IconPencil className="w-full h-full" />,
       clickable: true,
-      enabled: controlMode === ControlMode.DrawLine,
-      onClick: () => toggleMode(ControlMode.DrawLine),
+      enabled: controlMode === ControlMode.DrawPolyline,
+      onClick: () => toggleMode(ControlMode.DrawPolyline),
     },
     {
       key: "scribbleLine",
@@ -104,22 +104,22 @@ function Editor(props: Props): JSX.Element {
       key: "eraser",
       icon: <IconEraserSquare className="w-full h-full" />,
       clickable: true,
-      enabled: controlMode === ControlMode.Eraser,
-      onClick: () => toggleMode(ControlMode.Eraser),
+      enabled: controlMode === ControlMode.DelRect,
+      onClick: () => toggleMode(ControlMode.DelRect),
     },
     {
       key: "deleteBlock",
       icon: <IconEraserBlocks className="w-full h-full" />,
       clickable: true,
-      enabled: controlMode === ControlMode.DeleteBlock,
-      onClick: () => toggleMode(ControlMode.DeleteBlock)
+      enabled: controlMode === ControlMode.DelBlock,
+      onClick: () => toggleMode(ControlMode.DelBlock)
     },
     {
       key: "deletePixel",
       icon: <IconEraserScribble className="w-full h-full" />,
       clickable: true,
-      enabled: controlMode === ControlMode.DeletePixel,
-      onClick: () => toggleMode(ControlMode.DeletePixel)
+      enabled: controlMode === ControlMode.DelPixel,
+      onClick: () => toggleMode(ControlMode.DelPixel)
     },
   ];
 
@@ -143,7 +143,7 @@ function Editor(props: Props): JSX.Element {
             <div key={toolButton.key} className="relative flex flex-col items-center justify-end">
 
               {toolButton.key === "deletePixel" &&
-                controlMode === ControlMode.DeletePixel &&
+                controlMode === ControlMode.DelPixel &&
                 !isDeletingPixel ? (
                 <div className="absolute bottom-full mb-3 bg-white shadow-lg rounded-lg p-1 flex space-x-1 pointer-events-auto ring-1 ring-gray-200">
                   {DELETE_PIXEL_SIZES.map((sizeValue, index) => (
