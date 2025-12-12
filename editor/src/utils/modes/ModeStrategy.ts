@@ -2,6 +2,7 @@ import mapboxgl from "mapbox-gl";
 import { FogMap } from "../FogMap";
 import { GridRenderer } from "../GridRenderer";
 import { Bbox } from "../CommonTypes";
+import { HistoryManager } from "../HistoryManager";
 
 /**
  * Context object passed to mode strategies
@@ -11,6 +12,7 @@ export interface ModeContext {
     map: mapboxgl.Map;
     fogMap: FogMap;
     gridRenderer: GridRenderer;
+    historyManager: HistoryManager;
     updateFogMap: (newMap: FogMap, area: Bbox | "all") => void;
     onChange: () => void;
 }

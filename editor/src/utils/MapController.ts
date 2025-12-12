@@ -192,6 +192,7 @@ export class MapController {
         return MapController.instance?.fogMap || FogMap.empty;
       },
       gridRenderer: this.gridRenderer,
+      historyManager: this.historyManager,
       updateFogMap: this.updateFogMap.bind(this),
       onChange: this.onChange.bind(this),
     };
@@ -462,8 +463,10 @@ export class MapController {
   // Control Mode Management
   // ============================================================================
   setControlMode(newMode: ControlMode): void {
-    // Use ModeManager for View and Eraser modes
-    if (newMode === ControlMode.View || newMode === ControlMode.Eraser) {
+    // Use ModeManager for View, Eraser, and DrawScribble modes
+    if (newMode === ControlMode.View ||
+      newMode === ControlMode.Eraser ||
+      newMode === ControlMode.DrawScribble) {
       this.modeManager?.setMode(newMode);
       this.controlMode = newMode;
       return;
@@ -477,6 +480,7 @@ export class MapController {
     switch (this.controlMode) {
       case ControlMode.View:
       case ControlMode.Eraser:
+      case ControlMode.DrawScribble:
         // Deactivate via ModeManager
         this.modeManager?.setMode(ControlMode.View);
         break;
@@ -508,9 +512,6 @@ export class MapController {
       case ControlMode.DrawLine:
         mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DrawLine];
         this.mapDraw?.activate();
-        break;
-      case ControlMode.DrawScribble:
-        mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DrawScribble];
         break;
       case ControlMode.DeleteBlock:
         mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DeleteBlock];
@@ -545,8 +546,10 @@ export class MapController {
   handleMousePress(e: mapboxgl.MapMouseEvent): void {
     if (DEBUG) console.log(`[Mouse Press] at ${e.lngLat}`);
 
-    // Use ModeManager for View and Eraser modes
-    if (this.controlMode === ControlMode.View || this.controlMode === ControlMode.Eraser) {
+    // Use ModeManager for View, Eraser, and DrawScribble modes
+    if (this.controlMode === ControlMode.View ||
+      this.controlMode === ControlMode.Eraser ||
+      this.controlMode === ControlMode.DrawScribble) {
       this.modeManager?.handleMousePress(e);
       return;
     }
@@ -555,9 +558,6 @@ export class MapController {
     switch (this.controlMode) {
       case ControlMode.DrawLine:
         // pass. -> setControlMode(ControlMode.DrawLine) -> @mapbox/mapbox-gl-draw
-        break;
-      case ControlMode.DrawScribble:
-        this.handleDrawScribblePress(e);
         break;
       case ControlMode.DeleteBlock:
         this.handleDelBlockPress(e);
@@ -571,8 +571,10 @@ export class MapController {
   }
 
   handleMouseMove(e: mapboxgl.MapMouseEvent): void {
-    // Use ModeManager for View and Eraser modes
-    if (this.controlMode === ControlMode.View || this.controlMode === ControlMode.Eraser) {
+    // Use ModeManager for View, Eraser, and DrawScribble modes
+    if (this.controlMode === ControlMode.View ||
+      this.controlMode === ControlMode.Eraser ||
+      this.controlMode === ControlMode.DrawScribble) {
       this.modeManager?.handleMouseMove(e);
       return;
     }
@@ -580,9 +582,6 @@ export class MapController {
     // Legacy event handling for other modes
     switch (this.controlMode) {
       case ControlMode.DrawLine:
-        break;
-      case ControlMode.DrawScribble:
-        this.handleDrawScribbleMove(e);
         break;
       case ControlMode.DeleteBlock:
         this.handleDelBlockMove(e);
@@ -596,8 +595,10 @@ export class MapController {
   }
 
   handleMouseRelease(e: mapboxgl.MapMouseEvent): void {
-    // Use ModeManager for View and Eraser modes
-    if (this.controlMode === ControlMode.View || this.controlMode === ControlMode.Eraser) {
+    // Use ModeManager for View, Eraser, and DrawScribble modes
+    if (this.controlMode === ControlMode.View ||
+      this.controlMode === ControlMode.Eraser ||
+      this.controlMode === ControlMode.DrawScribble) {
       this.modeManager?.handleMouseRelease(e);
       return;
     }
@@ -605,9 +606,6 @@ export class MapController {
     // Legacy event handling for other modes
     switch (this.controlMode) {
       case ControlMode.DrawLine:
-        break;
-      case ControlMode.DrawScribble:
-        this.handleDrawScribbleRelease(e);
         break;
       case ControlMode.DeleteBlock:
         this.handleDelBlockRelease(e);
