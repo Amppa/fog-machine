@@ -317,7 +317,7 @@ export function cleanupDelBlockLayers(map: mapboxgl.Map | null) {
 // ============================================================================
 // DelPixel Mode - Helper Functions
 // ============================================================================
-export function getDelPixelCursor(
+export function getSquareCursor(
     lngLat: mapboxgl.LngLat,
     pixelSize: number
 ): GeoJSON.Geometry {
@@ -351,6 +351,45 @@ export function getDelPixelCursor(
             [nw[0], nw[1]]
         ]]
     };
+}
+
+export function getCircleCursor(
+    lngLat: mapboxgl.LngLat,
+    pixelSize: number
+): GeoJSON.Geometry {
+    const [gx, gy] = fogMap.FogMap.LngLatToGlobalXY(lngLat.lng, lngLat.lat);
+    const radius = pixelSize / 2;
+    const centerOffset = pixelSize % 2 === 1 ? 0.5 : 0;
+
+    const scale = fogMap.TILE_WIDTH * fogMap.BITMAP_WIDTH;
+
+    const numPoints = 32;
+    const coordinates: number[][] = [];
+
+    for (let i = 0; i <= numPoints; i++) {
+        const angle = (i / numPoints) * 2 * Math.PI;
+        const dx = Math.cos(angle) * radius;
+        const dy = Math.sin(angle) * radius;
+
+        const px = (gx + dx + centerOffset) / scale;
+        const py = (gy + dy + centerOffset) / scale;
+
+        const point = fogMap.Tile.XYToLngLat(px, py);
+        coordinates.push([point[0], point[1]]);
+    }
+
+    return {
+        type: "Polygon",
+        coordinates: [coordinates]
+    };
+}
+
+// Alias for backward compatibility
+export function getDelPixelCursor(
+    lngLat: mapboxgl.LngLat,
+    pixelSize: number
+): GeoJSON.Geometry {
+    return getCircleCursor(lngLat, pixelSize);
 }
 
 // ============================================================================
@@ -537,16 +576,42 @@ export function handleDelPixelInteraction(
         }
     };
 
-    const offsetStart = -Math.floor(eraserSize / 2);
-    const offsetEnd = Math.ceil(eraserSize / 2);
+    // Square
+    const eraseSquare = (points: [number, number][], size: number) => {
+        const radius = size / 2;
+        const offsetStart = -Math.floor(radius);
+        const offsetEnd = Math.ceil(radius);
 
-    for (const [x, y] of points) {
-        for (let dx = offsetStart; dx < offsetEnd; dx++) {
-            for (let dy = offsetStart; dy < offsetEnd; dy++) {
-                erasePixel(x + dx, y + dy);
+        for (const [x, y] of points) {
+            for (let dx = offsetStart; dx < offsetEnd; dx++) {
+                for (let dy = offsetStart; dy < offsetEnd; dy++) {
+                    erasePixel(x + dx, y + dy);
+                }
             }
         }
-    }
+    };
+
+    // Circle 
+    const eraseCircle = (points: [number, number][], size: number) => {
+        const radius = size / 2;
+        const radiusSquared = radius * radius;
+        const offsetStart = -Math.floor(radius);
+        const offsetEnd = Math.ceil(radius);
+
+        for (const [x, y] of points) {
+            for (let dx = offsetStart; dx < offsetEnd; dx++) {
+                for (let dy = offsetStart; dy < offsetEnd; dy++) {
+                    if (dx * dx + dy * dy <= radiusSquared) {
+                        erasePixel(x + dx, y + dy);
+                    }
+                }
+            }
+        }
+    };
+
+    // Use square eraser (change to eraseCircle to test circle mode)
+    //eraseSquare(points, eraserSize);
+    eraseCircle(points, eraserSize);
 
     // Calculate segmentBbox
     const segmentBbox = new Bbox(
