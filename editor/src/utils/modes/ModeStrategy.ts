@@ -2,6 +2,7 @@ import mapboxgl from "mapbox-gl";
 import { FogMap } from "../FogMap";
 import { GridRenderer } from "../GridRenderer";
 import { Bbox } from "../CommonTypes";
+import { HistoryManager } from "../HistoryManager";
 
 /**
  * Context object passed to mode strategies
@@ -11,7 +12,8 @@ export interface ModeContext {
     map: mapboxgl.Map;
     fogMap: FogMap;
     gridRenderer: GridRenderer;
-    updateFogMap: (newMap: FogMap, area: Bbox | "all") => void;
+    historyManager: HistoryManager;
+    updateFogMap: (newMap: FogMap, area: Bbox | "all", skipHistory?: boolean, skipGridUpdate?: boolean) => void;
     onChange: () => void;
 }
 
@@ -54,4 +56,11 @@ export interface ModeStrategy {
      * Whether to disable drag pan in this mode
      */
     shouldDisableDragPan(): boolean;
+
+    /**
+     * Get the bounding box for history management
+     * Called after handleMouseRelease to save the operation to history
+     * Returns null if no operation should be saved (e.g., ViewMode)
+     */
+    getHistoryBbox(): Bbox | null;
 }

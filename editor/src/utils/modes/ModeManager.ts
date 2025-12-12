@@ -92,7 +92,15 @@ export class ModeManager {
      */
     handleMouseRelease(e: mapboxgl.MapMouseEvent): void {
         const strategy = this.strategies.get(this.currentMode);
+
+        // Let the mode handle the release event
         strategy?.handleMouseRelease(e, this.context);
+
+        // Unified history management: save operation bbox after release
+        const historyBbox = strategy?.getHistoryBbox();
+        if (historyBbox) {
+            this.context.historyManager.append(this.context.fogMap, historyBbox);
+        }
     }
 
     /**

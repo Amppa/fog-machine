@@ -1,6 +1,7 @@
 import mapboxgl from "mapbox-gl";
 import { ModeStrategy, ModeContext } from "./ModeStrategy";
 import { MapDraw } from "../MapDraw";
+import { Bbox } from "../CommonTypes";
 
 const CURSOR_STYLE = 'crosshair';
 
@@ -42,6 +43,14 @@ export class DrawPolylineMode implements ModeStrategy {
 
     shouldDisableDragPan(): boolean {
         return true;
+    }
+
+    /**
+     * DrawPolyline uses MapDraw which handles history internally
+     * Return null to avoid duplicate history entries
+     */
+    getHistoryBbox(): Bbox | null {
+        return null;
     }
 
     /**

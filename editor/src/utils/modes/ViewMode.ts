@@ -1,5 +1,6 @@
 import mapboxgl from "mapbox-gl";
 import { ModeStrategy, ModeContext } from "./ModeStrategy";
+import { Bbox } from "../CommonTypes";
 
 /**
  * View Mode (Default mode)
@@ -32,5 +33,12 @@ export class ViewMode implements ModeStrategy {
 
     shouldDisableDragPan(): boolean {
         return false;
+    }
+
+    /**
+     * ViewMode doesn't perform operations that need history
+     */
+    getHistoryBbox(): Bbox | null {
+        return null;
     }
 }

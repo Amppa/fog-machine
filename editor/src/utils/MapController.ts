@@ -186,6 +186,7 @@ export class MapController {
         return MapController.instance?.fogMap || FogMap.empty;
       },
       gridRenderer: this.gridRenderer,
+      historyManager: this.historyManager,
       updateFogMap: this.updateFogMap.bind(this),
       onChange: this.onChange.bind(this),
     };

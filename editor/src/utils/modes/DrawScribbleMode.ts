@@ -46,15 +46,15 @@ export class DrawScribbleMode implements ModeStrategy {
             this.strokeBbox = Bbox.merge(this.strokeBbox, segmentBbox);
         }
 
-        context.updateFogMap(newMap, segmentBbox);
+        // Skip history during drawing, we'll save the entire stroke on mouse release
+        context.updateFogMap(newMap, segmentBbox, true);
         this.lastPos = currentPos;
     }
 
     handleMouseRelease(_e: mapboxgl.MapMouseEvent, _context: ModeContext): void {
-        // History is managed by MapController
-        // We just reset the state
+        // Clean up state, history will be saved by ModeManager
         this.lastPos = null;
-        this.strokeBbox = null;
+        // Don't clear strokeBbox yet, ModeManager will read it via getOperationBbox
     }
 
     getCursorStyle(): string {
@@ -66,16 +66,11 @@ export class DrawScribbleMode implements ModeStrategy {
     }
 
     /**
-     * Get the current stroke bounding box for history management
+     * Get the bounding box of the completed stroke for history
      */
-    getStrokeBbox(): Bbox | null {
-        return this.strokeBbox;
-    }
-
-    /**
-     * Clear the stroke bounding box (called after history is saved)
-     */
-    clearStrokeBbox(): void {
-        this.strokeBbox = null;
+    getHistoryBbox(): Bbox | null {
+        const bbox = this.strokeBbox;
+        this.strokeBbox = null; // Clear after reading
+        return bbox;
     }
 }

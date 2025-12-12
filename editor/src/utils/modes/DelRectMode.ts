@@ -20,6 +20,7 @@ const LAYER_IDS = {
  */
 export class DelRectMode implements ModeStrategy {
     private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null = null;
+    private lastOperationBbox: Bbox | null = null;
 
     activate(context: ModeContext): void {
         this.setVisibility(context.map, true);
@@ -28,6 +29,7 @@ export class DelRectMode implements ModeStrategy {
     deactivate(context: ModeContext): void {
         this.setVisibility(context.map, false);
         this.eraserArea = null;
+        this.lastOperationBbox = null;
     }
 
     handleMousePress(e: mapboxgl.MapMouseEvent, context: ModeContext): void {
@@ -71,19 +73,15 @@ export class DelRectMode implements ModeStrategy {
         const [startPoint, eraserSource] = this.eraserArea;
         const bounds = Bbox.fromTwoPoints(e.lngLat, startPoint);
 
-        // Clear layer data
-        eraserSource.setData({
-            type: "Feature",
-            properties: {},
-            geometry: {
-                type: "Polygon",
-                coordinates: [[]],
-            },
-        });
+        // Clear visual rectangle
+        eraserSource.setData(this.createEmptyFeature());
 
+        // Erase fog, skip history (will be saved by ModeManager)
         const newMap = context.fogMap.clearBbox(bounds);
-        context.updateFogMap(newMap, bounds);
+        context.updateFogMap(newMap, bounds, true); // skipHistory = true
 
+        // Save bbox for history
+        this.lastOperationBbox = bounds;
         this.eraserArea = null;
     }
 
@@ -93,6 +91,15 @@ export class DelRectMode implements ModeStrategy {
 
     shouldDisableDragPan(): boolean {
         return true;
+    }
+
+    /**
+     * Get the bounding box of the erased rectangle for history
+     */
+    getHistoryBbox(): Bbox | null {
+        const bbox = this.lastOperationBbox;
+        this.lastOperationBbox = null; // Clear after reading
+        return bbox;
     }
 
     /**
@@ -137,6 +144,20 @@ export class DelRectMode implements ModeStrategy {
                 "line-width": DEL_RECT_STYLE.LINE_WIDTH,
             },
         });
+    }
+
+    /**
+     * Create an empty GeoJSON feature
+     */
+    private createEmptyFeature(): GeoJSON.Feature<GeoJSON.Polygon> {
+        return {
+            type: "Feature",
+            properties: {},
+            geometry: {
+                type: "Polygon",
+                coordinates: [[]],
+            },
+        };
     }
 
     /**
