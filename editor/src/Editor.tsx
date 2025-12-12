@@ -204,17 +204,3 @@ function Editor(props: Props): JSX.Element {
 }
 
 export default Editor;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
