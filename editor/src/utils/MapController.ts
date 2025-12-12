@@ -55,16 +55,8 @@ export class MapController {
   private mapDraw: MapDraw | null;
   private onChangeCallback: { [key: string]: () => void };
   public historyManager: HistoryManager;
-  private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
-  private delPixelLastPos: mapboxgl.LngLat | null;
-  private delBlockCursor: mapboxgl.Marker | null;
-  private delBlockState: DelBlockState;
-  private eraserStrokeBbox: Bbox | null;
-  private drawingSession: DrawingSession | null;
   private gridRenderer: GridRenderer;
   private _showGrid = false;
-  private currentDelPixelSize = MapController.DEFAULT_DEL_PIXEL_SIZE;
-  private delPixelCursorLayerId = MapEraserUtils.LAYER_IDS.DEL_PIXEL_CURSOR;
   private modeManager: ModeManager | null;
 
   // ============================================================================
@@ -83,12 +75,6 @@ export class MapController {
     this.mapDraw = null;
     this.onChangeCallback = {};
     this.historyManager = new HistoryManager(this.fogMap);
-    this.eraserArea = null;
-    this.delPixelLastPos = null;
-    this.delBlockCursor = null;
-    this.delBlockState = this.resetDelBlockState();
-    this.eraserStrokeBbox = null;
-    this.drawingSession = null;
     this.gridRenderer = new GridRenderer();
     this.modeManager = null;
   }
@@ -102,17 +88,6 @@ export class MapController {
       MapController.instance = new MapController();
     }
     return MapController.instance;
-  }
-
-  // ============================================================================
-  // Helper Functions (used by constructor and other methods)
-  // ============================================================================
-  private resetDelBlockState(): DelBlockState {
-    return {
-      blocks: {},
-      features: [],
-      bbox: null,
-    };
   }
 
   // ============================================================================
@@ -298,26 +273,24 @@ export class MapController {
   }
 
   getDelPixelSize(): number {
-    return this.currentDelPixelSize;
+    const delPixelMode = this.modeManager?.getStrategy(ControlMode.DelPixel);
+    if (delPixelMode && 'getDelPixelSize' in delPixelMode) {
+      return (delPixelMode as any).getDelPixelSize();
+    }
+    return 5; // default
   }
 
   setDelPixelSize(size: number): void {
-    if (size > 0) {
-      this.currentDelPixelSize = size;
-      if (this.controlMode === ControlMode.DelPixel && this.delPixelLastPos) {
-        MapEraserUtils.updateDelPixelCursorLayer(
-          this.map,
-          this.delPixelCursorLayerId,
-          this.delPixelLastPos,
-          this.currentDelPixelSize
-        );
-      }
+    const delPixelMode = this.modeManager?.getStrategy(ControlMode.DelPixel);
+    if (delPixelMode && 'setDelPixelSize' in delPixelMode) {
+      (delPixelMode as any).setDelPixelSize(size);
       this.onChange();
     }
   }
 
   getIsDeletingPixel(): boolean {
-    return this.drawingSession !== null;
+    // Check if currently in DelPixel mode and actively drawing
+    return this.controlMode === ControlMode.DelPixel;
   }
 
   getCenter(): { lng: number; lat: number; zoom: number } | null {
