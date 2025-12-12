@@ -323,10 +323,11 @@ export function getDelPixelCursor(
 ): GeoJSON.Geometry {
     const [gx, gy] = fogMap.FogMap.LngLatToGlobalXY(lngLat.lng, lngLat.lat);
     const half = pixelSize / 2;
-    const gx1 = gx - half;
-    const gx2 = gx + half;
-    const gy1 = gy - half;
-    const gy2 = gy + half;
+    const centerOffset = pixelSize % 2 === 1 ? 0.5 : 0;
+    const gx1 = gx - half + centerOffset;
+    const gx2 = gx + half + centerOffset;
+    const gy1 = gy - half + centerOffset;
+    const gy2 = gy + half + centerOffset;
 
     const scale = fogMap.TILE_WIDTH * fogMap.BITMAP_WIDTH;
 
