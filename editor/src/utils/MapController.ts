@@ -457,11 +457,12 @@ export class MapController {
   // Control Mode Management
   // ============================================================================
   setControlMode(newMode: ControlMode): void {
-    // Use ModeManager for View, DelRect, DrawPolyline, and DrawScribble modes
+    // Use ModeManager for View, DelRect, DrawPolyline, DrawScribble, and DelBlock modes
     if (newMode === ControlMode.View ||
       newMode === ControlMode.DelRect ||
       newMode === ControlMode.DrawPolyline ||
-      newMode === ControlMode.DrawScribble) {
+      newMode === ControlMode.DrawScribble ||
+      newMode === ControlMode.DelBlock) {
       this.modeManager?.setMode(newMode);
       this.controlMode = newMode;
       return;
@@ -477,15 +478,9 @@ export class MapController {
       case ControlMode.DelRect:
       case ControlMode.DrawPolyline:
       case ControlMode.DrawScribble:
+      case ControlMode.DelBlock:
         // Deactivate via ModeManager
         this.modeManager?.setMode(ControlMode.View);
-        break;
-      case ControlMode.DelBlock:
-        this.showGrid = false;
-        MapEraserUtils.cleanupDelBlockLayers(this.map);
-        this.delBlockCursor?.remove();
-        this.delBlockCursor = null;
-        this.delBlockState = this.resetDelBlockState();
         break;
       case ControlMode.DelPixel:
         MapEraserUtils.cleanupDelPixelLayer(
@@ -499,10 +494,6 @@ export class MapController {
     this.map?.dragPan.disable();
 
     switch (newMode) {
-      case ControlMode.DelBlock:
-        mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DelBlock];
-        this.showGrid = true;
-        break;
       case ControlMode.DelPixel: {
         mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DelPixel];
 
@@ -532,20 +523,18 @@ export class MapController {
   handleMousePress(e: mapboxgl.MapMouseEvent): void {
     if (DEBUG) console.log(`[Mouse Press] at ${e.lngLat}`);
 
-    // Use ModeManager for View, DelRect, DrawPolyline, and DrawScribble modes
+    // Use ModeManager for View, DelRect, DrawPolyline, DrawScribble, and DelBlock modes
     if (this.controlMode === ControlMode.View ||
       this.controlMode === ControlMode.DelRect ||
       this.controlMode === ControlMode.DrawPolyline ||
-      this.controlMode === ControlMode.DrawScribble) {
+      this.controlMode === ControlMode.DrawScribble ||
+      this.controlMode === ControlMode.DelBlock) {
       this.modeManager?.handleMousePress(e);
       return;
     }
 
     // Legacy event handling for other modes
     switch (this.controlMode) {
-      case ControlMode.DelBlock:
-        this.handleDelBlockPress(e);
-        break;
       case ControlMode.DelPixel:
         this.handleDelPixelPress(e);
         break;
@@ -555,20 +544,18 @@ export class MapController {
   }
 
   handleMouseMove(e: mapboxgl.MapMouseEvent): void {
-    // Use ModeManager for View, DelRect, DrawPolyline, and DrawScribble modes
+    // Use ModeManager for View, DelRect, DrawPolyline, DrawScribble, and DelBlock modes
     if (this.controlMode === ControlMode.View ||
       this.controlMode === ControlMode.DelRect ||
       this.controlMode === ControlMode.DrawPolyline ||
-      this.controlMode === ControlMode.DrawScribble) {
+      this.controlMode === ControlMode.DrawScribble ||
+      this.controlMode === ControlMode.DelBlock) {
       this.modeManager?.handleMouseMove(e);
       return;
     }
 
     // Legacy event handling for other modes
     switch (this.controlMode) {
-      case ControlMode.DelBlock:
-        this.handleDelBlockMove(e);
-        break;
       case ControlMode.DelPixel:
         this.handleDelPixelMove(e);
         break;
@@ -578,20 +565,18 @@ export class MapController {
   }
 
   handleMouseRelease(e: mapboxgl.MapMouseEvent): void {
-    // Use ModeManager for View, DelRect, DrawPolyline, and DrawScribble modes
+    // Use ModeManager for View, DelRect, DrawPolyline, DrawScribble, and DelBlock modes
     if (this.controlMode === ControlMode.View ||
       this.controlMode === ControlMode.DelRect ||
       this.controlMode === ControlMode.DrawPolyline ||
-      this.controlMode === ControlMode.DrawScribble) {
+      this.controlMode === ControlMode.DrawScribble ||
+      this.controlMode === ControlMode.DelBlock) {
       this.modeManager?.handleMouseRelease(e);
       return;
     }
 
     // Legacy event handling for other modes
     switch (this.controlMode) {
-      case ControlMode.DelBlock:
-        this.handleDelBlockRelease(e);
-        break;
       case ControlMode.DelPixel:
         this.handleDelPixelRelease(e);
         break;
@@ -660,59 +645,6 @@ export class MapController {
     this.updateFogMap(newMap, bounds);
 
     this.eraserArea = null;
-  }
-
-  // ============================================================================
-  // DelBlock Mode Handlers
-  // ============================================================================
-  private handleDelBlockPress(e: mapboxgl.MapMouseEvent): void {
-    this.delBlockState = this.resetDelBlockState();
-    this.handleDelBlockInteraction(e.lngLat);
-  }
-
-  private handleDelBlockMove(e: mapboxgl.MapMouseEvent): void {
-    if (e.originalEvent.buttons === 1) {
-      this.handleDelBlockInteraction(e.lngLat);
-    }
-    this.updateDelBlockCursor(e.lngLat);
-  }
-
-  private handleDelBlockRelease(_e: mapboxgl.MapMouseEvent): void {
-    const newMap = this.fogMap.removeBlocks(this.delBlockState.blocks);
-    this.updateFogMap(newMap, this.delBlockState.bbox || "all");
-
-    this.delBlockState = this.resetDelBlockState();
-    MapEraserUtils.updatePendingDelLayer(
-      this.map,
-      this.delBlockState.features
-    );
-  }
-
-  private updateDelBlockCursor(lngLat: mapboxgl.LngLat) {
-    this.delBlockCursor = MapEraserUtils.updateDelBlockCursor(
-      this.map,
-      this.delBlockCursor,
-      lngLat
-    );
-  }
-
-  private handleDelBlockInteraction(lngLat: mapboxgl.LngLat) {
-    if (!this.map) return;
-    const result = MapEraserUtils.handleDelBlockInteraction(
-      this.map,
-      this.fogMap,
-      this.delBlockState,
-      lngLat
-    );
-
-    this.delBlockState = result.newState;
-
-    if (result.changed) {
-      MapEraserUtils.updatePendingDelLayer(
-        this.map,
-        this.delBlockState.features
-      );
-    }
   }
 
   // ============================================================================

@@ -5,3 +5,4 @@ export { ViewMode } from './ViewMode';
 export { DelRectMode } from './DelRectMode';
 export { DrawPolylineMode } from './DrawPolylineMode';
 export { DrawScribbleMode } from './DrawScribbleMode';
+export { DelBlockMode } from './DelBlockMode';

@@ -4,6 +4,7 @@ import { ViewMode } from "./ViewMode";
 import { DelRectMode } from "./DelRectMode";
 import { DrawPolylineMode } from "./DrawPolylineMode";
 import { DrawScribbleMode } from "./DrawScribbleMode";
+import { DelBlockMode } from "./DelBlockMode";
 
 /**
  * ModeManager manages mode strategies and handles mode switching
@@ -23,8 +24,8 @@ export class ModeManager {
             [ControlMode.DrawPolyline, new DrawPolylineMode()],
             [ControlMode.DrawScribble, new DrawScribbleMode()],
             [ControlMode.DelRect, new DelRectMode()],
+            [ControlMode.DelBlock, new DelBlockMode()],
             // TODO: Add other modes
-            // [ControlMode.DelBlock, new DelBlockMode()],
             // [ControlMode.DelPixel, new DelPixelMode()],
         ]);
     }
