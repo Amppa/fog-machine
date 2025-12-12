@@ -463,10 +463,11 @@ export class MapController {
   // Control Mode Management
   // ============================================================================
   setControlMode(newMode: ControlMode): void {
-    // Use ModeManager for View, Eraser, and DrawScribble modes
+    // Use ModeManager for View, Eraser, DrawScribble, and DeletePixel modes
     if (newMode === ControlMode.View ||
       newMode === ControlMode.Eraser ||
-      newMode === ControlMode.DrawScribble) {
+      newMode === ControlMode.DrawScribble ||
+      newMode === ControlMode.DeletePixel) {
       this.modeManager?.setMode(newMode);
       this.controlMode = newMode;
       return;
@@ -481,14 +482,12 @@ export class MapController {
       case ControlMode.View:
       case ControlMode.Eraser:
       case ControlMode.DrawScribble:
+      case ControlMode.DeletePixel:
         // Deactivate via ModeManager
         this.modeManager?.setMode(ControlMode.View);
         break;
       case ControlMode.DrawLine:
         this.mapDraw?.deactivate();
-        break;
-      case ControlMode.DrawScribble:
-        this.drawScribbleLastPos = null;
         break;
       case ControlMode.DeleteBlock:
         this.showGrid = false;
@@ -496,12 +495,6 @@ export class MapController {
         this.delBlockCursor?.remove();
         this.delBlockCursor = null;
         this.delBlockState = this.resetDelBlockState();
-        break;
-      case ControlMode.DeletePixel:
-        MapEraserUtils.cleanupDelPixelLayer(
-          this.map,
-          this.delPixelCursorLayerId
-        );
         break;
     }
 
@@ -517,25 +510,6 @@ export class MapController {
         mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DeleteBlock];
         this.showGrid = true;
         break;
-      case ControlMode.DeletePixel: {
-        mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DeletePixel];
-
-        // Auto zoom (pixel is too small to operate)
-        const currentZoom = this.map?.getZoom();
-        if (currentZoom !== undefined && currentZoom < 11) {
-          const center = this.map?.getCenter();
-          if (center) {
-            this.map?.flyTo({
-              zoom: 11,
-              center: [center.lng, center.lat],
-              essential: true,
-            });
-          }
-        }
-
-        MapEraserUtils.initDelPixelCursorLayer(this.map, this.delPixelCursorLayerId);
-        break;
-      }
     }
     this.controlMode = newMode;
   }

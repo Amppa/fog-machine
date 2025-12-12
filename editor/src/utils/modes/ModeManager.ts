@@ -3,6 +3,7 @@ import { ModeStrategy, ModeContext } from "./ModeStrategy";
 import { ViewMode } from "./ViewMode";
 import { DelRectMode } from "./DelRectMode";
 import { DrawScribbleMode } from "./DrawScribbleMode";
+import { DelPixelMode } from "./DelPixelMode";
 
 /**
  * ModeManager manages mode strategies and handles mode switching
@@ -21,10 +22,10 @@ export class ModeManager {
             [ControlMode.View, new ViewMode()],
             [ControlMode.Eraser, new DelRectMode()],
             [ControlMode.DrawScribble, new DrawScribbleMode()],
+            [ControlMode.DeletePixel, new DelPixelMode()],
             // TODO: Add other modes
             // [ControlMode.DrawLine, new DrawLineMode()],
             // [ControlMode.DeleteBlock, new DelBlockMode()],
-            // [ControlMode.DeletePixel, new DelPixelMode()],
         ]);
     }
 

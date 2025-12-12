@@ -4,3 +4,4 @@ export { ModeManager } from './ModeManager';
 export { ViewMode } from './ViewMode';
 export { DelRectMode } from './DelRectMode';
 export { DrawScribbleMode } from './DrawScribbleMode';
+export { DelPixelMode } from './DelPixelMode';
