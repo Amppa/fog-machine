@@ -22,11 +22,11 @@ export class DelRectMode implements ModeStrategy {
     private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null = null;
 
     activate(context: ModeContext): void {
-        this.setLayersVisibility(context.map, true);
+        this.setVisibility(context.map, true);
     }
 
     deactivate(context: ModeContext): void {
-        this.setLayersVisibility(context.map, false);
+        this.setVisibility(context.map, false);
         this.eraserArea = null;
     }
 
@@ -142,7 +142,7 @@ export class DelRectMode implements ModeStrategy {
     /**
      * Set visibility of DelRect layers
      */
-    private setLayersVisibility(map: mapboxgl.Map, visible: boolean): void {
+    private setVisibility(map: mapboxgl.Map, visible: boolean): void {
         const visibility = visible ? 'visible' : 'none';
 
         if (map.getLayer(LAYER_IDS.DEL_RECT)) {
