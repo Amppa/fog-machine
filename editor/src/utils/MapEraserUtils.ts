@@ -44,7 +44,7 @@ export const DEL_BLOCK_CURSOR_STYLE = {
 
 export const LAYER_PAINT_STYLES = {
     DEL_BLOCK_PENDING: {
-        COLOR: '#2200AA',
+        COLOR: '#404040',
         WIDTH: 2,
     },
     DEL_PIXEL_CURSOR: {
