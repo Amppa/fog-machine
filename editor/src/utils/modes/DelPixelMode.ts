@@ -29,6 +29,9 @@ export class DelPixelMode implements ModeStrategy {
                 essential: true,
             });
         }
+
+        // Initialize cursor layer
+        MapEraserUtils.initDelPixelCursorLayer(context.map, this.delPixelCursorLayerId);
     }
 
     deactivate(context: ModeContext): void {
