@@ -2,6 +2,7 @@ import { ControlMode } from "../MapController";
 import { ModeStrategy, ModeContext } from "./ModeStrategy";
 import { ViewMode } from "./ViewMode";
 import { DelRectMode } from "./DelRectMode";
+import { DrawPolylineMode } from "./DrawPolylineMode";
 
 /**
  * ModeManager manages mode strategies and handles mode switching
@@ -18,12 +19,12 @@ export class ModeManager {
         // Initialize all strategies
         this.strategies = new Map([
             [ControlMode.View, new ViewMode()],
+            [ControlMode.DrawPolyline, new DrawPolylineMode()],
             [ControlMode.DelRect, new DelRectMode()],
             // TODO: Add other modes
-            // [ControlMode.DrawLine, new DrawLineMode()],
             // [ControlMode.DrawScribble, new DrawScribbleMode()],
-            // [ControlMode.DeleteBlock, new DelBlockMode()],
-            // [ControlMode.DeletePixel, new DelPixelMode()],
+            // [ControlMode.DelBlock, new DelBlockMode()],
+            // [ControlMode.DelPixel, new DelPixelMode()],
         ]);
     }
 
@@ -91,5 +92,15 @@ export class ModeManager {
     handleMouseRelease(e: mapboxgl.MapMouseEvent): void {
         const strategy = this.strategies.get(this.currentMode);
         strategy?.handleMouseRelease(e, this.context);
+    }
+
+    /**
+     * Set MapDraw instance for DrawPolylineMode
+     */
+    setMapDraw(mapDraw: import("../MapDraw").MapDraw): void {
+        const drawPolylineMode = this.strategies.get(ControlMode.DrawPolyline);
+        if (drawPolylineMode && typeof (drawPolylineMode as DrawPolylineMode).setMapDraw === 'function') {
+            (drawPolylineMode as DrawPolylineMode).setMapDraw(mapDraw);
+        }
     }
 }

@@ -154,9 +154,9 @@ export class MapController {
     this.onChange();
     this.resolvedLanguage = resolvedLanguage;
     this.initMapRenderer(map);
-    this.initMapDraw(map);
     this.initDelRectLayers(map);
     this.initModeManager(map);
+    this.initMapDraw(map);
   }
 
   unregisterMap(_map: mapboxgl.Map): void {
@@ -175,6 +175,8 @@ export class MapController {
       this.getFogMap,
       this.handleDrawUpdate
     );
+    // Set MapDraw instance to DrawPolylineMode
+    this.modeManager?.setMapDraw(this.mapDraw);
   }
 
   private initDelRectLayers(map: mapboxgl.Map): void {
@@ -458,8 +460,10 @@ export class MapController {
   // Control Mode Management
   // ============================================================================
   setControlMode(newMode: ControlMode): void {
-    // Use ModeManager for View and Eraser modes
-    if (newMode === ControlMode.View || newMode === ControlMode.DelRect) {
+    // Use ModeManager for View, DelRect, and DrawPolyline modes
+    if (newMode === ControlMode.View ||
+      newMode === ControlMode.DelRect ||
+      newMode === ControlMode.DrawPolyline) {
       this.modeManager?.setMode(newMode);
       this.controlMode = newMode;
       return;
@@ -473,11 +477,9 @@ export class MapController {
     switch (this.controlMode) {
       case ControlMode.View:
       case ControlMode.DelRect:
+      case ControlMode.DrawPolyline:
         // Deactivate via ModeManager
         this.modeManager?.setMode(ControlMode.View);
-        break;
-      case ControlMode.DrawPolyline:
-        this.mapDraw?.deactivate();
         break;
       case ControlMode.DrawScribble:
         this.drawScribbleLastPos = null;
@@ -501,10 +503,6 @@ export class MapController {
     this.map?.dragPan.disable();
 
     switch (newMode) {
-      case ControlMode.DrawPolyline:
-        mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DrawPolyline];
-        this.mapDraw?.activate();
-        break;
       case ControlMode.DrawScribble:
         mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DrawScribble];
         break;
@@ -541,17 +539,16 @@ export class MapController {
   handleMousePress(e: mapboxgl.MapMouseEvent): void {
     if (DEBUG) console.log(`[Mouse Press] at ${e.lngLat}`);
 
-    // Use ModeManager for View and Eraser modes
-    if (this.controlMode === ControlMode.View || this.controlMode === ControlMode.DelRect) {
+    // Use ModeManager for View, DelRect, and DrawPolyline modes
+    if (this.controlMode === ControlMode.View ||
+      this.controlMode === ControlMode.DelRect ||
+      this.controlMode === ControlMode.DrawPolyline) {
       this.modeManager?.handleMousePress(e);
       return;
     }
 
     // Legacy event handling for other modes
     switch (this.controlMode) {
-      case ControlMode.DrawPolyline:
-        // pass. -> setControlMode(ControlMode.DrawLine) -> @mapbox/mapbox-gl-draw
-        break;
       case ControlMode.DrawScribble:
         this.handleDrawScribblePress(e);
         break;
@@ -567,16 +564,16 @@ export class MapController {
   }
 
   handleMouseMove(e: mapboxgl.MapMouseEvent): void {
-    // Use ModeManager for View and Eraser modes
-    if (this.controlMode === ControlMode.View || this.controlMode === ControlMode.DelRect) {
+    // Use ModeManager for View, DelRect, and DrawPolyline modes
+    if (this.controlMode === ControlMode.View ||
+      this.controlMode === ControlMode.DelRect ||
+      this.controlMode === ControlMode.DrawPolyline) {
       this.modeManager?.handleMouseMove(e);
       return;
     }
 
     // Legacy event handling for other modes
     switch (this.controlMode) {
-      case ControlMode.DrawPolyline:
-        break;
       case ControlMode.DrawScribble:
         this.handleDrawScribbleMove(e);
         break;
@@ -592,16 +589,16 @@ export class MapController {
   }
 
   handleMouseRelease(e: mapboxgl.MapMouseEvent): void {
-    // Use ModeManager for View and Eraser modes
-    if (this.controlMode === ControlMode.View || this.controlMode === ControlMode.DelRect) {
+    // Use ModeManager for View, DelRect, and DrawPolyline modes
+    if (this.controlMode === ControlMode.View ||
+      this.controlMode === ControlMode.DelRect ||
+      this.controlMode === ControlMode.DrawPolyline) {
       this.modeManager?.handleMouseRelease(e);
       return;
     }
 
     // Legacy event handling for other modes
     switch (this.controlMode) {
-      case ControlMode.DrawPolyline:
-        break;
       case ControlMode.DrawScribble:
         this.handleDrawScribbleRelease(e);
         break;
