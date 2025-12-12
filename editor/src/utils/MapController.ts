@@ -8,7 +8,7 @@ import { GridRenderer } from "./GridRenderer";
 import { Bbox } from "./CommonTypes";
 import * as MapEraserUtils from "./MapEraserUtils";
 import { DelBlockState, DrawingSession } from "./MapEraserUtils";
-import { ModeManager, ModeContext } from "./modes";
+import { ModeManager, ModeContext, DelRectMode } from "./modes";
 
 const DEBUG = false;
 
@@ -178,11 +178,7 @@ export class MapController {
   }
 
   private initDelRectLayers(map: mapboxgl.Map): void {
-    MapEraserUtils.initDelRectLayers(
-      map,
-      MapEraserUtils.LAYER_IDS.DEL_RECT,
-      MapEraserUtils.LAYER_IDS.DEL_RECT_OUTLINE
-    );
+    DelRectMode.initLayers(map);
   }
 
   private initModeManager(map: mapboxgl.Map): void {

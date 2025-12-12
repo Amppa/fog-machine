@@ -30,12 +30,6 @@ export const LAYER_IDS = {
     DEL_BLOCK_PENDING: 'del-block-pending',
 } as const;
 
-export const DEL_RECT_STYLE = {
-    COLOR: '#969696',
-    FILL_OPACITY: 0.5,
-    LINE_WIDTH: 1,
-} as const;
-
 export const DEL_BLOCK_CURSOR_STYLE = {
     SIZE: 20,
     BORDER_WIDTH: 2,
@@ -52,83 +46,6 @@ export const LAYER_PAINT_STYLES = {
         WIDTH: 2,
     },
 } as const;
-
-// ============================================================================
-// DelRect Mode Functions (Rectangle Eraser)
-// ============================================================================
-export function initDelRectLayers(
-    map: mapboxgl.Map | null,
-    layerId: string,
-    outlineLayerId: string
-): void {
-    if (!map) return;
-
-    map.addSource(layerId, {
-        type: "geojson",
-        data: {
-            type: "Feature",
-            properties: {},
-            geometry: {
-                type: "Polygon",
-                coordinates: [[]],
-            },
-        },
-    });
-
-    map.addLayer({
-        id: layerId,
-        type: "fill",
-        source: layerId,
-        layout: {
-            visibility: 'none'
-        },
-        paint: {
-            "fill-color": DEL_RECT_STYLE.COLOR,
-            "fill-opacity": DEL_RECT_STYLE.FILL_OPACITY,
-        },
-    });
-
-    map.addLayer({
-        id: outlineLayerId,
-        type: "line",
-        source: layerId,
-        layout: {
-            visibility: 'none'
-        },
-        paint: {
-            "line-color": DEL_RECT_STYLE.COLOR,
-            "line-width": DEL_RECT_STYLE.LINE_WIDTH,
-        },
-    });
-}
-
-export function setDelRectLayersVisibility(
-    map: mapboxgl.Map | null,
-    layerId: string,
-    outlineLayerId: string,
-    visible: boolean
-): void {
-    if (!map) return;
-    const visibility = visible ? 'visible' : 'none';
-
-    if (map.getLayer(layerId)) {
-        map.setLayoutProperty(layerId, 'visibility', visibility);
-    }
-    if (map.getLayer(outlineLayerId)) {
-        map.setLayoutProperty(outlineLayerId, 'visibility', visibility);
-    }
-}
-
-export function cleanupDelRectLayers(
-    map: mapboxgl.Map | null,
-    layerId: string,
-    outlineLayerId: string
-): void {
-    if (!map) return;
-    if (map.getLayer(layerId)) map.removeLayer(layerId);
-    if (map.getLayer(outlineLayerId)) map.removeLayer(outlineLayerId);
-    if (map.getSource(layerId)) map.removeSource(layerId);
-}
 
 // ============================================================================
 // DelBlock Mode Functions
