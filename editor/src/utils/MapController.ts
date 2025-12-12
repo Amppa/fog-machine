@@ -457,63 +457,8 @@ export class MapController {
   // Control Mode Management
   // ============================================================================
   setControlMode(newMode: ControlMode): void {
-    // Use ModeManager for View, DelRect, DrawPolyline, DrawScribble, and DelBlock modes
-    if (newMode === ControlMode.View ||
-      newMode === ControlMode.DelRect ||
-      newMode === ControlMode.DrawPolyline ||
-      newMode === ControlMode.DrawScribble ||
-      newMode === ControlMode.DelBlock) {
-      this.modeManager?.setMode(newMode);
-      this.controlMode = newMode;
-      return;
-    }
-
-    // Legacy mode switching for other modes
-    const mapboxCanvas = this.map?.getCanvasContainer();
-    if (!mapboxCanvas) return;
-
-    // disable the current active mode
-    switch (this.controlMode) {
-      case ControlMode.View:
-      case ControlMode.DelRect:
-      case ControlMode.DrawPolyline:
-      case ControlMode.DrawScribble:
-      case ControlMode.DelBlock:
-        // Deactivate via ModeManager
-        this.modeManager?.setMode(ControlMode.View);
-        break;
-      case ControlMode.DelPixel:
-        MapEraserUtils.cleanupDelPixelLayer(
-          this.map,
-          this.delPixelCursorLayerId
-        );
-        break;
-    }
-
-    // enable the new mode (dragPan control)
-    this.map?.dragPan.disable();
-
-    switch (newMode) {
-      case ControlMode.DelPixel: {
-        mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DelPixel];
-
-        // Auto zoom (pixel is too small to operate)
-        const currentZoom = this.map?.getZoom();
-        if (currentZoom !== undefined && currentZoom < 11) {
-          const center = this.map?.getCenter();
-          if (center) {
-            this.map?.flyTo({
-              zoom: 11,
-              center: [center.lng, center.lat],
-              essential: true,
-            });
-          }
-        }
-
-        MapEraserUtils.initDelPixelCursorLayer(this.map, this.delPixelCursorLayerId);
-        break;
-      }
-    }
+    // All modes are now managed by ModeManager
+    this.modeManager?.setMode(newMode);
     this.controlMode = newMode;
   }
 
@@ -523,195 +468,17 @@ export class MapController {
   handleMousePress(e: mapboxgl.MapMouseEvent): void {
     if (DEBUG) console.log(`[Mouse Press] at ${e.lngLat}`);
 
-    // Use ModeManager for View, DelRect, DrawPolyline, DrawScribble, and DelBlock modes
-    if (this.controlMode === ControlMode.View ||
-      this.controlMode === ControlMode.DelRect ||
-      this.controlMode === ControlMode.DrawPolyline ||
-      this.controlMode === ControlMode.DrawScribble ||
-      this.controlMode === ControlMode.DelBlock) {
-      this.modeManager?.handleMousePress(e);
-      return;
-    }
-
-    // Legacy event handling for other modes
-    switch (this.controlMode) {
-      case ControlMode.DelPixel:
-        this.handleDelPixelPress(e);
-        break;
-      default:
-        break;
-    }
+    // All modes are now managed by ModeManager
+    this.modeManager?.handleMousePress(e);
   }
 
   handleMouseMove(e: mapboxgl.MapMouseEvent): void {
-    // Use ModeManager for View, DelRect, DrawPolyline, DrawScribble, and DelBlock modes
-    if (this.controlMode === ControlMode.View ||
-      this.controlMode === ControlMode.DelRect ||
-      this.controlMode === ControlMode.DrawPolyline ||
-      this.controlMode === ControlMode.DrawScribble ||
-      this.controlMode === ControlMode.DelBlock) {
-      this.modeManager?.handleMouseMove(e);
-      return;
-    }
-
-    // Legacy event handling for other modes
-    switch (this.controlMode) {
-      case ControlMode.DelPixel:
-        this.handleDelPixelMove(e);
-        break;
-      default:
-        break;
-    }
+    // All modes are now managed by ModeManager
+    this.modeManager?.handleMouseMove(e);
   }
 
   handleMouseRelease(e: mapboxgl.MapMouseEvent): void {
-    // Use ModeManager for View, DelRect, DrawPolyline, DrawScribble, and DelBlock modes
-    if (this.controlMode === ControlMode.View ||
-      this.controlMode === ControlMode.DelRect ||
-      this.controlMode === ControlMode.DrawPolyline ||
-      this.controlMode === ControlMode.DrawScribble ||
-      this.controlMode === ControlMode.DelBlock) {
-      this.modeManager?.handleMouseRelease(e);
-      return;
-    }
-
-    // Legacy event handling for other modes
-    switch (this.controlMode) {
-      case ControlMode.DelPixel:
-        this.handleDelPixelRelease(e);
-        break;
-      default:
-        break;
-    }
-  }
-
-
-
-  // ============================================================================
-  // Eraser Mode Handlers
-  // ============================================================================
-  private handleEraserPress(e: mapboxgl.MapMouseEvent): void {
-    if (!this.eraserArea) {
-      const eraserSource = this.map?.getSource(
-        MapEraserUtils.LAYER_IDS.DEL_RECT
-      ) as mapboxgl.GeoJSONSource | null;
-
-      if (eraserSource) {
-        const startPoint = new mapboxgl.LngLat(e.lngLat.lng, e.lngLat.lat);
-        this.eraserArea = [startPoint, eraserSource];
-      }
-    }
-  }
-
-  private handleEraserMove(e: mapboxgl.MapMouseEvent): void {
-    if (!this.eraserArea) return;
-    const [startPoint, eraserSource] = this.eraserArea;
-    const bounds = Bbox.fromTwoPoints(e.lngLat, startPoint);
-
-    eraserSource.setData({
-      type: "Feature",
-      properties: {},
-      geometry: {
-        type: "Polygon",
-        coordinates: [
-          [
-            [bounds.east, bounds.north],
-            [bounds.west, bounds.north],
-            [bounds.west, bounds.south],
-            [bounds.east, bounds.south],
-            [bounds.east, bounds.north],
-          ],
-        ],
-      },
-    });
-  }
-
-  private handleEraserRelease(e: mapboxgl.MapMouseEvent): void {
-    if (!this.map || !this.eraserArea) return;
-    const [startPoint, eraserSource] = this.eraserArea;
-    const bounds = Bbox.fromTwoPoints(e.lngLat, startPoint);
-
-    // 清空 layer 資料
-    eraserSource.setData({
-      type: "Feature",
-      properties: {},
-      geometry: {
-        type: "Polygon",
-        coordinates: [[]],
-      },
-    });
-
-    const newMap = this.fogMap.clearBbox(bounds);
-    this.updateFogMap(newMap, bounds);
-
-    this.eraserArea = null;
-  }
-
-  // ============================================================================
-  // DelPixel Mode Handlers
-  // ============================================================================
-  private handleDelPixelPress(e: mapboxgl.MapMouseEvent): void {
-    this.map?.dragPan.disable();
-    this.delPixelLastPos = e.lngLat;
-    this.eraserStrokeBbox = Bbox.fromPoint(e.lngLat);
-
-    this.drawingSession = {
-      baseMap: this.fogMap,
-      modifiedBlocks: {},
-      blockCounts: {},
-      erasedArea: Bbox.fromPoint(e.lngLat),
-    };
-
-    // Initial interaction on press
-    this.handleDelPixelInteraction(e.lngLat);
-    this.onChange();
-  }
-
-  private handleDelPixelMove(e: mapboxgl.MapMouseEvent): void {
-    MapEraserUtils.updateDelPixelCursorLayer(
-      this.map,
-      this.delPixelCursorLayerId,
-      e.lngLat,
-      this.currentDelPixelSize
-    );
-    if (e.originalEvent.buttons === 1 && this.delPixelLastPos) {
-      this.handleDelPixelInteraction(e.lngLat);
-    }
-  }
-
-  private handleDelPixelRelease(_e: mapboxgl.MapMouseEvent): void {
-    if (this.drawingSession) {
-      // Finalize the session
-      // We should already have the visual state in this.fogMap thanks to mouseMove updates
-      // So this.fogMap IS the final map.
-
-      if (this.drawingSession.erasedArea) {
-        this.historyManager.append(
-          this.fogMap,
-          this.drawingSession.erasedArea
-        );
-      }
-      this.drawingSession = null;
-    }
-    this.delPixelLastPos = null;
-    this.onChange();
-  }
-
-  private handleDelPixelInteraction(lngLat: mapboxgl.LngLat) {
-    if (!this.map || !this.delPixelLastPos || !this.drawingSession) return;
-
-    const result = MapEraserUtils.handleDelPixelInteraction(
-      this.fogMap,
-      this.drawingSession,
-      this.delPixelLastPos,
-      lngLat,
-      this.currentDelPixelSize
-    );
-
-    if (result && result.changed) {
-      this.updateFogMap(result.newMap, result.segmentBbox, true, true);
-    }
-
-    this.delPixelLastPos = lngLat;
+    // All modes are now managed by ModeManager
+    this.modeManager?.handleMouseRelease(e);
   }
 }
