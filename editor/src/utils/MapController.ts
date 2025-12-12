@@ -511,10 +511,25 @@ export class MapController {
         mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DeleteBlock];
         this.showGrid = true;
         break;
-      case ControlMode.DeletePixel:
+      case ControlMode.DeletePixel: {
         mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DeletePixel];
+
+        // Auto zoom (pixel is too small to operate)
+        const currentZoom = this.map?.getZoom();
+        if (currentZoom !== undefined && currentZoom < 11) {
+          const center = this.map?.getCenter();
+          if (center) {
+            this.map?.flyTo({
+              zoom: 11,
+              center: [center.lng, center.lat],
+              essential: true,
+            });
+          }
+        }
+
         MapEraserUtils.initDelPixelCursorLayer(this.map, this.delPixelCursorLayerId);
         break;
+      }
     }
     this.controlMode = newMode;
   }
