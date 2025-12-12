@@ -195,10 +195,9 @@ export default function MainMenu(props: Props): JSX.Element {
           icon: IconImport,
         },
         {
-          name: t("export"),
-          description: t("export-description"),
+          name: t("export-full"),
+          description: t("export-full-description"),
           action: async () => {
-            // TODO: seems pretty fast, but we should consider handle this async properly
             setExportProgress({ current: 0, total: 0 });
             const blob = await mapController.fogMap.exportArchive((current, total) => {
               setExportProgress({ current, total });
@@ -207,6 +206,29 @@ export default function MainMenu(props: Props): JSX.Element {
             if (blob) {
               popDownload("Sync.zip", blob);
               props.msgboxShow("info", "export-done-message");
+            }
+          },
+          icon: IconExport,
+        },
+        {
+          name: t("export-diff"),
+          description: t("export-diff-description"),
+          action: async () => {
+            const dirtyCount = mapController.fogMap.getDirtyTilesCount();
+            if (dirtyCount === 0) {
+              props.msgboxShow("info", "export-diff-no-changes");
+              return;
+            }
+            setExportProgress({ current: 0, total: 0 });
+            const blob = await mapController.fogMap.exportDirtyArchive((current, total) => {
+              setExportProgress({ current, total });
+            });
+            setExportProgress(null);
+            if (blob) {
+              popDownload("Sync-Diff.zip", blob);
+              // Clear dirty tiles after successful export
+              mapController.fogMap = mapController.fogMap.clearDirtyTiles();
+              props.msgboxShow("info", "export-diff-done-message");
             }
           },
           icon: IconExport,

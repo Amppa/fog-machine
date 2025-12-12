@@ -25,9 +25,11 @@ i18n
           "import-description": "Import data from [Fog of World]",
           "import-gps": "Import GPS Tracks",
           "import-gps-description": "Import tracks from GPX, KML, or KMZ files",
-          export: "Export",
+          "export-full": "Full Export",
+          "export-full-description": "Export all data in [Fog of World] format",
+          "export-diff": "Differential Export",
+          "export-diff-description": "Export only modified tiles",
           "export-gpx": "Export Gpx",
-          "export-description": "Export data in [Fog of World] format",
           "export-description-gpx":
             "Export data in [GPX] format. [Experimental]",
           "exporting": "Exporting",
@@ -47,7 +49,10 @@ i18n
 
           // ===== Export Messages =====
           "export-done-message":
-            'Exported successfully.\n\nPlease use the "Sync" folder in the exported zip archive to replace the original folder. You also need to reset the [Fog of World] app to remove the existing data.',
+            'Exported successfully.\n\nInstructions: \n1. Reset [Fog of World] app\n2. Copy the extracted Sync folder to your cloud folder.\n3. Re-sync [Fog of World] app.',
+          "export-diff-done-message":
+            'Differential export successful.\n\nInstructions:\n1. Reset [Fog of World] app\n2. Copy files from the extracted Sync folder to your cloud Sync folder, replacing files with the same name (keep other unchanged files)\n3. Re-sync [Fog of World] app.',
+          "export-diff-no-changes": "No changes to export.",
           "export-done-message-gpx": "Exported successfully.",
 
           // ===== Errors & Info =====
@@ -109,9 +114,11 @@ i18n
           "import-description": "从 [世界迷雾] 中导入数据。",
           "import-gps": "匯入 GPS 軌跡",
           "import-gps-description": "從 GPX、KML 或 KMZ 檔案匯入軌跡",
-          export: "导出",
+          "export-full": "完整導出",
+          "export-full-description": "以 [世界迷雾] 的格式导出全部数据",
+          "export-diff": "差異化導出",
+          "export-diff-description": "僅導出已修改的 tiles",
           "export-gpx": "导出 GPX",
-          "export-description": "以 [世界迷雾] 的格式导出数据。",
           "export-description-gpx": "以 [GPX] 的格式导出数据。[实验性功能]",
           "exporting": "导出中",
 
@@ -129,7 +136,10 @@ i18n
 
           // ===== 匯出訊息 =====
           "export-done-message":
-            '导出成功。\n\n请使用导出的 zip 压缩包中的 "Sync" 文件夹替换原有文件夹，并重置 [世界迷雾] app 以清除已有数据。',
+            '导出成功。\n\n說明： \n1. 重置 [世界迷雾] app\n2. 將解壓縮後的Sync資料夾複製雲端資料夾中。\n3. [世界迷霧] app 重新同步。',
+          "export-diff-done-message":
+            '差異化導出成功。\n\n說明： \n1. 重置 [世界迷雾] app\n2. 解壓縮後的Sync資料夾的文件，複製到雲端的Sync資料夾中，取代同名檔案（保留其他未變更的檔案）\n3. [世界迷霧] app 重新同步。',
+          "export-diff-no-changes": "沒有變更需要導出。",
           "export-done-message-gpx": "导出成功。",
 
           // ===== 錯誤 & 提示 =====

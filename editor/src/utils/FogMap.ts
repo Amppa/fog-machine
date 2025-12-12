@@ -32,11 +32,13 @@ export type XYKey = string;
 
 export class FogMap {
   readonly tiles: { [key: XYKey]: Tile };
-  static empty = new FogMap({});
+  readonly dirtyTiles: Set<XYKey>;
+  static empty = new FogMap({}, new Set());
 
-  private constructor(tiles: { [key: XYKey]: Tile }) {
+  private constructor(tiles: { [key: XYKey]: Tile }, dirtyTiles: Set<XYKey> = new Set()) {
     Object.freeze(tiles);
     this.tiles = tiles;
+    this.dirtyTiles = dirtyTiles;
   }
 
   // It is so silly that tuple cannot be used as key
@@ -62,13 +64,15 @@ export class FogMap {
         console.error(e);
       }
     });
-    return new FogMap(mutableTiles);
+    // Imported tiles are not dirty
+    return new FogMap(mutableTiles, new Set());
   }
 
   updateBlocks(newBlocks: {
     [tileKey: string]: { [blockKey: string]: Block | null };
   }): FogMap {
     const mutableTiles = { ...this.tiles };
+    const mutableDirtyTiles = new Set(this.dirtyTiles);
     let changed = false;
 
     Object.entries(newBlocks).forEach(([tileKey, blocks]) => {
@@ -101,24 +105,22 @@ export class FogMap {
       });
 
       if (tileChanged) {
-        if (Object.keys(mutableBlocks).length === 0) {
-          delete mutableTiles[tileKey];
-        } else {
-          const newTile = new Tile(
-            tile.filename,
-            tile.id,
-            tile.x,
-            tile.y,
-            mutableBlocks
-          );
-          mutableTiles[tileKey] = newTile;
-        }
+        // Keep empty tiles instead of deleting them
+        const newTile = new Tile(
+          tile.filename,
+          tile.id,
+          tile.x,
+          tile.y,
+          mutableBlocks
+        );
+        mutableTiles[tileKey] = newTile;
+        mutableDirtyTiles.add(tileKey);
         changed = true;
       }
     });
 
     if (changed) {
-      return new FogMap(mutableTiles);
+      return new FogMap(mutableTiles, mutableDirtyTiles);
     }
     return this;
   }
@@ -162,6 +164,55 @@ export class FogMap {
 
     return syncZip.generateAsync({ type: "blob" });
   }
+
+  async exportDirtyArchive(
+    onProgress?: (current: number, total: number) => void
+  ): Promise<Blob | null> {
+    const zip = new JSZip();
+    const syncZip = zip.folder("Sync");
+    if (!syncZip) {
+      console.error("unable to create archive");
+      return null;
+    }
+
+    const dirtyTileKeys = Array.from(this.dirtyTiles);
+    const totalTiles = dirtyTileKeys.length;
+    let processedTiles = 0;
+
+    for (let i = 0; i < totalTiles; i++) {
+      const tileKey = dirtyTileKeys[i];
+      const tile = this.tiles[tileKey];
+      if (tile) {
+        // Export dirty tiles even if they are empty
+        syncZip.file("Sync/" + tile.filename, tile.dump());
+      }
+      processedTiles++;
+
+      // Yield every 50 tiles to let UI update
+      if (i % 50 === 0) {
+        if (onProgress) {
+          onProgress(processedTiles, totalTiles);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+    }
+
+    // Final progress update
+    if (onProgress) {
+      onProgress(totalTiles, totalTiles);
+    }
+
+    return syncZip.generateAsync({ type: "blob" });
+  }
+
+  clearDirtyTiles(): FogMap {
+    return new FogMap(this.tiles, new Set());
+  }
+
+  getDirtyTilesCount(): number {
+    return this.dirtyTiles.size;
+  }
+
 
   static LngLatToGlobalXY(lng: number, lat: number): number[] {
     const x = ((lng + 180) / 360) * 512;
@@ -219,6 +270,7 @@ export class FogMap {
     const [x1, y1] = FogMap.LngLatToGlobalXY(endLng, endLat);
 
     let mutableTiles: { [key: XYKey]: Tile } | null = null;
+    let mutableDirtyTiles: Set<XYKey> | null = null;
 
     // Iterators, counters required by algorithm
     let x, y, px, py, xe, ye;
@@ -271,11 +323,15 @@ export class FogMap {
           if (tile !== newTile) {
             if (!mutableTiles) {
               mutableTiles = { ...this.tiles };
+              mutableDirtyTiles = new Set(this.dirtyTiles);
             }
             if (newTile) {
               mutableTiles[key] = newTile;
+              mutableDirtyTiles!.add(key);
             } else {
-              delete mutableTiles[key];
+              // Keep empty tiles
+              mutableTiles[key] = Tile.createEmptyTile(tileX, tileY);
+              mutableDirtyTiles!.add(key);
             }
           }
         }
@@ -321,18 +377,22 @@ export class FogMap {
           if (tile !== newTile) {
             if (!mutableTiles) {
               mutableTiles = { ...this.tiles };
+              mutableDirtyTiles = new Set(this.dirtyTiles);
             }
             if (newTile) {
               mutableTiles[key] = newTile;
+              mutableDirtyTiles!.add(key);
             } else {
-              delete mutableTiles[key];
+              // Keep empty tiles
+              mutableTiles[key] = Tile.createEmptyTile(tileX, tileY);
+              mutableDirtyTiles!.add(key);
             }
           }
         }
       }
     }
-    if (mutableTiles) {
-      return new FogMap(mutableTiles);
+    if (mutableTiles && mutableDirtyTiles) {
+      return new FogMap(mutableTiles, mutableDirtyTiles);
     } else {
       return this;
     }
@@ -383,6 +443,7 @@ export class FogMap {
     [tileKey: string]: string[] | Set<string>;
   }): FogMap {
     let mutableTiles: { [key: XYKey]: Tile } | null = null;
+    let mutableDirtyTiles: Set<XYKey> | null = null;
 
     for (const tileKey in blocksToRemove) {
       if (Object.prototype.hasOwnProperty.call(this.tiles, tileKey)) {
@@ -394,18 +455,22 @@ export class FogMap {
         if (newTile !== tile) {
           if (!mutableTiles) {
             mutableTiles = { ...this.tiles };
+            mutableDirtyTiles = new Set(this.dirtyTiles);
           }
           if (newTile) {
             mutableTiles[tileKey] = newTile;
           } else {
-            delete mutableTiles[tileKey];
+            // Keep empty tiles
+            const [tx, ty] = tileKey.split("-").map(Number);
+            mutableTiles[tileKey] = Tile.createEmptyTile(tx, ty);
           }
+          mutableDirtyTiles!.add(tileKey);
         }
       }
     }
 
-    if (mutableTiles) {
-      return new FogMap(mutableTiles);
+    if (mutableTiles && mutableDirtyTiles) {
+      return new FogMap(mutableTiles, mutableDirtyTiles);
     } else {
       return this;
     }
@@ -428,6 +493,7 @@ export class FogMap {
     const yMaxInt = Math.floor(yMax);
 
     let mutableTiles: { [key: XYKey]: Tile } | null = null;
+    let mutableDirtyTiles: Set<XYKey> | null = null;
 
     for (let x = xMinInt; x <= xMaxInt; x++) {
       for (let y = yMinInt; y <= yMaxInt; y++) {
@@ -443,18 +509,21 @@ export class FogMap {
           if (tile !== newTile) {
             if (!mutableTiles) {
               mutableTiles = { ...this.tiles };
+              mutableDirtyTiles = new Set(this.dirtyTiles);
             }
             if (newTile) {
               mutableTiles[key] = newTile;
             } else {
-              delete mutableTiles[key];
+              // Keep empty tiles
+              mutableTiles[key] = Tile.createEmptyTile(x, y);
             }
+            mutableDirtyTiles!.add(key);
           }
         }
       }
     }
-    if (mutableTiles) {
-      return new FogMap(mutableTiles);
+    if (mutableTiles && mutableDirtyTiles) {
+      return new FogMap(mutableTiles, mutableDirtyTiles);
     } else {
       return this;
     }

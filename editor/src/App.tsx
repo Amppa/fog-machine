@@ -90,7 +90,7 @@ function App(): JSX.Element {
     >
       <div className="mt-2">
         <p
-          className="text-sm text-gray-500"
+          className="text-xs text-gray-500"
           style={{ whiteSpace: "pre-wrap" }}
         >
           {t_(msgboxState.msg)}
