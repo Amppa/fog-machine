@@ -56,9 +56,7 @@ export class MapController {
   private onChangeCallback: { [key: string]: () => void };
   public historyManager: HistoryManager;
   private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
-  private drawScribbleLastPos: mapboxgl.LngLat | null;
   private delPixelLastPos: mapboxgl.LngLat | null;
-  private scribbleStrokeBbox: Bbox | null;
   private delBlockCursor: mapboxgl.Marker | null;
   private delBlockState: DelBlockState;
   private eraserStrokeBbox: Bbox | null;
@@ -86,9 +84,7 @@ export class MapController {
     this.onChangeCallback = {};
     this.historyManager = new HistoryManager(this.fogMap);
     this.eraserArea = null;
-    this.drawScribbleLastPos = null;
     this.delPixelLastPos = null;
-    this.scribbleStrokeBbox = null;
     this.delBlockCursor = null;
     this.delBlockState = this.resetDelBlockState();
     this.eraserStrokeBbox = null;
@@ -460,10 +456,11 @@ export class MapController {
   // Control Mode Management
   // ============================================================================
   setControlMode(newMode: ControlMode): void {
-    // Use ModeManager for View, DelRect, and DrawPolyline modes
+    // Use ModeManager for View, DelRect, DrawPolyline, and DrawScribble modes
     if (newMode === ControlMode.View ||
       newMode === ControlMode.DelRect ||
-      newMode === ControlMode.DrawPolyline) {
+      newMode === ControlMode.DrawPolyline ||
+      newMode === ControlMode.DrawScribble) {
       this.modeManager?.setMode(newMode);
       this.controlMode = newMode;
       return;
@@ -478,11 +475,9 @@ export class MapController {
       case ControlMode.View:
       case ControlMode.DelRect:
       case ControlMode.DrawPolyline:
+      case ControlMode.DrawScribble:
         // Deactivate via ModeManager
         this.modeManager?.setMode(ControlMode.View);
-        break;
-      case ControlMode.DrawScribble:
-        this.drawScribbleLastPos = null;
         break;
       case ControlMode.DelBlock:
         this.showGrid = false;
@@ -503,9 +498,6 @@ export class MapController {
     this.map?.dragPan.disable();
 
     switch (newMode) {
-      case ControlMode.DrawScribble:
-        mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DrawScribble];
-        break;
       case ControlMode.DelBlock:
         mapboxCanvas.style.cursor = MapController.CURSOR_STYLES[ControlMode.DelBlock];
         this.showGrid = true;
@@ -539,19 +531,17 @@ export class MapController {
   handleMousePress(e: mapboxgl.MapMouseEvent): void {
     if (DEBUG) console.log(`[Mouse Press] at ${e.lngLat}`);
 
-    // Use ModeManager for View, DelRect, and DrawPolyline modes
+    // Use ModeManager for View, DelRect, DrawPolyline, and DrawScribble modes
     if (this.controlMode === ControlMode.View ||
       this.controlMode === ControlMode.DelRect ||
-      this.controlMode === ControlMode.DrawPolyline) {
+      this.controlMode === ControlMode.DrawPolyline ||
+      this.controlMode === ControlMode.DrawScribble) {
       this.modeManager?.handleMousePress(e);
       return;
     }
 
     // Legacy event handling for other modes
     switch (this.controlMode) {
-      case ControlMode.DrawScribble:
-        this.handleDrawScribblePress(e);
-        break;
       case ControlMode.DelBlock:
         this.handleDelBlockPress(e);
         break;
@@ -564,19 +554,17 @@ export class MapController {
   }
 
   handleMouseMove(e: mapboxgl.MapMouseEvent): void {
-    // Use ModeManager for View, DelRect, and DrawPolyline modes
+    // Use ModeManager for View, DelRect, DrawPolyline, and DrawScribble modes
     if (this.controlMode === ControlMode.View ||
       this.controlMode === ControlMode.DelRect ||
-      this.controlMode === ControlMode.DrawPolyline) {
+      this.controlMode === ControlMode.DrawPolyline ||
+      this.controlMode === ControlMode.DrawScribble) {
       this.modeManager?.handleMouseMove(e);
       return;
     }
 
     // Legacy event handling for other modes
     switch (this.controlMode) {
-      case ControlMode.DrawScribble:
-        this.handleDrawScribbleMove(e);
-        break;
       case ControlMode.DelBlock:
         this.handleDelBlockMove(e);
         break;
@@ -589,19 +577,17 @@ export class MapController {
   }
 
   handleMouseRelease(e: mapboxgl.MapMouseEvent): void {
-    // Use ModeManager for View, DelRect, and DrawPolyline modes
+    // Use ModeManager for View, DelRect, DrawPolyline, and DrawScribble modes
     if (this.controlMode === ControlMode.View ||
       this.controlMode === ControlMode.DelRect ||
-      this.controlMode === ControlMode.DrawPolyline) {
+      this.controlMode === ControlMode.DrawPolyline ||
+      this.controlMode === ControlMode.DrawScribble) {
       this.modeManager?.handleMouseRelease(e);
       return;
     }
 
     // Legacy event handling for other modes
     switch (this.controlMode) {
-      case ControlMode.DrawScribble:
-        this.handleDrawScribbleRelease(e);
-        break;
       case ControlMode.DelBlock:
         this.handleDelBlockRelease(e);
         break;
@@ -613,44 +599,7 @@ export class MapController {
     }
   }
 
-  // ============================================================================
-  // DrawScribble Mode Handlers
-  // ============================================================================
-  private handleDrawScribblePress(e: mapboxgl.MapMouseEvent): void {
-    this.map?.dragPan.disable();
-    this.drawScribbleLastPos = e.lngLat;
-    this.scribbleStrokeBbox = Bbox.fromPoint(e.lngLat);
-  }
 
-  private handleDrawScribbleMove(e: mapboxgl.MapMouseEvent): void {
-    if (!this.drawScribbleLastPos) return;
-
-    const currentPos = e.lngLat;
-    const newMap = this.fogMap.addLine(
-      this.drawScribbleLastPos.lng,
-      this.drawScribbleLastPos.lat,
-      currentPos.lng,
-      currentPos.lat
-    );
-
-    const segmentBbox = Bbox.fromTwoPoints(this.drawScribbleLastPos, currentPos);
-
-    if (this.scribbleStrokeBbox) {
-      this.scribbleStrokeBbox = Bbox.merge(this.scribbleStrokeBbox, segmentBbox);
-    }
-
-    this.updateFogMap(newMap, segmentBbox, true);
-    this.drawScribbleLastPos = currentPos;
-  }
-
-  private handleDrawScribbleRelease(_e: mapboxgl.MapMouseEvent): void {
-    if (this.scribbleStrokeBbox) {
-      this.historyManager.append(this.fogMap, this.scribbleStrokeBbox);
-    }
-    this.drawScribbleLastPos = null;
-    this.scribbleStrokeBbox = null;
-    this.map?.dragPan.enable();
-  }
 
   // ============================================================================
   // Eraser Mode Handlers

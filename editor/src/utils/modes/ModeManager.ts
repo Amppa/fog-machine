@@ -3,6 +3,7 @@ import { ModeStrategy, ModeContext } from "./ModeStrategy";
 import { ViewMode } from "./ViewMode";
 import { DelRectMode } from "./DelRectMode";
 import { DrawPolylineMode } from "./DrawPolylineMode";
+import { DrawScribbleMode } from "./DrawScribbleMode";
 
 /**
  * ModeManager manages mode strategies and handles mode switching
@@ -20,9 +21,9 @@ export class ModeManager {
         this.strategies = new Map([
             [ControlMode.View, new ViewMode()],
             [ControlMode.DrawPolyline, new DrawPolylineMode()],
+            [ControlMode.DrawScribble, new DrawScribbleMode()],
             [ControlMode.DelRect, new DelRectMode()],
             // TODO: Add other modes
-            // [ControlMode.DrawScribble, new DrawScribbleMode()],
             // [ControlMode.DelBlock, new DelBlockMode()],
             // [ControlMode.DelPixel, new DelPixelMode()],
         ]);
