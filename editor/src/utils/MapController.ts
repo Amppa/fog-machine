@@ -110,7 +110,8 @@ export class MapController {
     this.map.on("mousedown", this.handleMousePress.bind(this));
     this.map.on("mouseup", this.handleMouseRelease.bind(this));
     this.map.on("mousemove", this.handleMouseMove.bind(this));
-    this.map.on("zoomend", this.handleZoomEnd.bind(this));
+    this.map.on("moveend", this.updateGridLayer.bind(this));
+    this.map.on("zoomend", this.updateGridLayer.bind(this));
 
     this.setControlMode(this.controlMode);
     this.onChange();
@@ -380,14 +381,8 @@ export class MapController {
   }
 
   private updateGridLayer(): void {
-    if (!this.map) return;
+    if (!this.map || !this.showGrid) return;
     this.gridRenderer.update(this.map, this.fogMap, this.showGrid);
-  }
-
-  private handleZoomEnd(): void {
-    if (this.showGrid) {
-      this.updateGridLayer();
-    }
   }
 
   // ============================================================================
