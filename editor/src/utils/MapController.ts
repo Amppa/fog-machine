@@ -6,6 +6,7 @@ import { MapDraw } from "./MapDraw";
 import { MapRenderer, MAPBOX_MAIN_CANVAS_LAYER } from "./MapRenderer";
 import { GridRenderer } from "./GridRenderer";
 import { Bbox } from "./CommonTypes";
+import { MapViewController } from "./MapViewController";
 
 import { ModeManager, ModeContext, DelRectMode } from "./modes";
 
@@ -33,6 +34,7 @@ export class MapController {
   private static instance: MapController | null = null;
   private map: mapboxgl.Map | null;
   private mapRenderer: MapRenderer | null;
+  private mapViewController: MapViewController | null;
   public fogMap: fogMap.FogMap;
   private controlMode: ControlMode;
   private mapStyle: MapStyle;
@@ -52,6 +54,7 @@ export class MapController {
   private constructor() {
     this.map = null;
     this.mapRenderer = null;
+    this.mapViewController = null;
     this.fogMap = fogMap.FogMap.empty;
     this.controlMode = ControlMode.View;
 
@@ -102,6 +105,7 @@ export class MapController {
   // ============================================================================
   registerMap(map: mapboxgl.Map, resolvedLanguage: string): void {
     this.map = map;
+    this.mapViewController = new MapViewController(map);
     this.map.on("styledata", this.initMapStyle.bind(this));
     this.map.on("mousedown", this.handleMousePress.bind(this));
     this.map.on("mouseup", this.handleMouseRelease.bind(this));
@@ -281,55 +285,22 @@ export class MapController {
   }
 
   getCenter(): { lng: number; lat: number; zoom: number } | null {
-    const center = this.map?.getCenter();
-    const zoom = this.map?.getZoom();
-    if (center && zoom !== undefined) {
-      return { lng: center.lng, lat: center.lat, zoom };
-    }
-    return null;
+    return this.mapViewController?.getCenter() || null;
   }
 
   flyTo(lng: number, lat: number, zoom?: number): void {
-    const options: mapboxgl.FlyToOptions = {
-      center: [lng, lat],
-      essential: true,
-    };
-    if (zoom !== undefined) {
-      options.zoom = zoom;
-    }
-    this.map?.flyTo(options);
+    this.mapViewController?.flyTo(lng, lat, zoom);
   }
 
   fitBounds(bounds: Bbox): void {
-    this.map?.fitBounds(
-      [
-        [bounds.west, bounds.south], // southwest
-        [bounds.east, bounds.north], // northeast
-      ],
-      {
-        padding: 50, // 50px padding
-        essential: true,
-      }
-    );
+    this.mapViewController?.fitBounds(bounds);
   }
 
   zoomToBoundingBox(
     boundingBox: Bbox | null,
     firstCoordinate: [number, number] | null
   ): void {
-    if (boundingBox) {
-      const isSinglePoint =
-        boundingBox.west === boundingBox.east &&
-        boundingBox.south === boundingBox.north;
-
-      if (isSinglePoint) {
-        this.flyTo(boundingBox.west, boundingBox.south, 20);
-      } else {
-        this.fitBounds(boundingBox);
-      }
-    } else if (firstCoordinate) {
-      this.flyTo(firstCoordinate[0], firstCoordinate[1]);
-    }
+    this.mapViewController?.zoomToBoundingBox(boundingBox, firstCoordinate);
   }
 
   // ============================================================================
