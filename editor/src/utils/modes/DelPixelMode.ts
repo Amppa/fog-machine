@@ -156,10 +156,9 @@ class PixelEraser {
 
 export class DelPixelMode implements ModeStrategy {
     private lastPos: mapboxgl.LngLat | null = null;
-    private eraserStrokeBbox: Bbox | null = null;
-    private drawingSession: DrawingSession | null = null;
-    private eraserSize = DEFAULT_DEL_PIXEL_SIZE;
-    private eraserCursor: mapboxgl.Marker | null = null;
+    private session: DrawingSession | null = null;
+    private size = DEFAULT_DEL_PIXEL_SIZE;
+    private cursorIndicator: mapboxgl.Marker | null = null;
     private isDrawing = false;
 
     activate(context: ModeContext): void {
@@ -176,43 +175,37 @@ export class DelPixelMode implements ModeStrategy {
 
     deactivate(context: ModeContext): void {
         this.lastPos = null;
-        this.eraserStrokeBbox = null;
-        this.drawingSession = null;
-
-        if (this.eraserCursor) {
-            this.eraserCursor.remove();
-            this.eraserCursor = null;
-        }
+        this.session = null;
+        this.cursorIndicator?.remove();
+        this.cursorIndicator = null;
     }
 
     handleMousePress(e: mapboxgl.MapMouseEvent, context: ModeContext): void {
         this.isDrawing = true;
         context.map.dragPan.disable();
         this.lastPos = e.lngLat;
-        this.eraserStrokeBbox = Bbox.fromPoint(e.lngLat);
 
-        this.drawingSession = {
+        this.session = {
             baseMap: context.fogMap,
             modifiedBlocks: {},
             blockCounts: {},
             erasedArea: Bbox.fromPoint(e.lngLat),
         };
 
-        this.applyEraserStroke(e.lngLat, context);
+        this.eraseStroke(e.lngLat, context);
         context.onChange();
     }
 
     handleMouseMove(e: mapboxgl.MapMouseEvent, context: ModeContext): void {
-        this.updateDelPixelCursor(e.lngLat, context.map);
+        this.updateCursorIndicator(e.lngLat, context.map);
 
         if (e.originalEvent.buttons === 1 && this.lastPos) {
-            this.applyEraserStroke(e.lngLat, context);
+            this.eraseStroke(e.lngLat, context);
         }
     }
 
     handleMouseRelease(_e: mapboxgl.MapMouseEvent, context: ModeContext): void {
         this.isDrawing = false;
-        console.log('[DelPixelMode] Mouse released, isDrawing:', this.isDrawing);
         this.lastPos = null;
         context.onChange();
         context.map.dragPan.enable();
@@ -227,26 +220,26 @@ export class DelPixelMode implements ModeStrategy {
     }
 
     getHistoryBbox(): Bbox | null {
-        const bbox = this.drawingSession?.erasedArea || null;
-        this.drawingSession = null;
+        const bbox = this.session?.erasedArea || null;
+        this.session = null;
         return bbox;
     }
 
     setDelPixelSize(size: number): void {
-        this.eraserSize = size;
+        this.size = size;
     }
 
     getDelPixelSize(): number {
-        return this.eraserSize;
+        return this.size;
     }
 
     getIsDrawing(): boolean {
         return this.isDrawing;
     }
 
-    private updateDelPixelCursor(lngLat: mapboxgl.LngLat, map: mapboxgl.Map): void {
-        if (!this.eraserCursor) {
-            const size = this.calculateCursorSize(map);
+    private updateCursorIndicator(lngLat: mapboxgl.LngLat, map: mapboxgl.Map): void {
+        if (!this.cursorIndicator) {
+            const size = this.calcCursorSizeInPixels(map);
             const el = document.createElement('div');
             el.className = 'delete-pixel-cursor-dom';
             el.style.width = `${size}px`;
@@ -255,28 +248,26 @@ export class DelPixelMode implements ModeStrategy {
             el.style.borderRadius = '50%';
             el.style.pointerEvents = 'none';
 
-            this.eraserCursor = new mapboxgl.Marker({
+            this.cursorIndicator = new mapboxgl.Marker({
                 element: el,
                 anchor: 'center',
             })
                 .setLngLat(lngLat)
                 .addTo(map);
         } else {
-            this.eraserCursor.setLngLat(lngLat);
+            this.cursorIndicator.setLngLat(lngLat);
 
-            // Update size if zoom changed
-            const size = this.calculateCursorSize(map);
-            const el = this.eraserCursor.getElement();
+            const size = this.calcCursorSizeInPixels(map);
+            const el = this.cursorIndicator.getElement();
             el.style.width = `${size}px`;
             el.style.height = `${size}px`;
         }
     }
 
-    private calculateCursorSize(map: mapboxgl.Map): number {
-        // Calculate pixel size in screen coordinates
+    private calcCursorSizeInPixels(map: mapboxgl.Map): number {
         const center = map.getCenter();
         const [gx, gy] = fogMap.FogMap.LngLatToGlobalXY(center.lng, center.lat);
-        const radius = this.eraserSize / 2;
+        const radius = this.size / 2;
 
         const scale = fogMap.TILE_WIDTH * fogMap.BITMAP_WIDTH;
         const px1 = (gx - radius) / scale;
@@ -291,37 +282,36 @@ export class DelPixelMode implements ModeStrategy {
         return Math.abs(point2.x - point1.x);
     }
 
-    private applyEraserStroke(lngLat: mapboxgl.LngLat, context: ModeContext): void {
-        if (!this.lastPos || !this.drawingSession) return;
+    private eraseStroke(lngLat: mapboxgl.LngLat, context: ModeContext): void {
+        if (!this.lastPos || !this.session) return;
 
-        const result = processEraserStroke(
+        const result = processStroke(
             context.fogMap,
-            this.drawingSession,
+            this.session,
             this.lastPos,
             lngLat,
-            this.eraserSize
+            this.size
         );
 
         this.lastPos = lngLat;
 
-        if (result && result.changed) {
+        if (result?.changed) {
             context.updateFogMap(result.newMap, result.segmentBbox, true, true);
         }
     }
 }
 
-function processEraserStroke(
+function processStroke(
     fogMapInstance: fogMap.FogMap,
-    drawingSession: DrawingSession,
-    lastPos: mapboxgl.LngLat | null,
+    session: DrawingSession,
+    lastPos: mapboxgl.LngLat,
     curPos: mapboxgl.LngLat,
-    eraserSize: number
+    size: number
 ): {
     newMap: fogMap.FogMap;
     segmentBbox: Bbox;
     changed: boolean;
 } | null {
-    if (!lastPos || !drawingSession) return null;
 
     const [x0, y0] = fogMap.FogMap.LngLatToGlobalXY(lastPos.lng, lastPos.lat);
     const [x1, y1] = fogMap.FogMap.LngLatToGlobalXY(curPos.lng, curPos.lat);
@@ -334,8 +324,8 @@ function processEraserStroke(
     };
 
     const points = Array.from(fogMap.FogMap.traceLine(x0, y0, x1, y1));
-    const eraser = new PixelEraser(drawingSession, constants);
-    eraser.eraseCircle(points, eraserSize);
+    const eraser = new PixelEraser(session, constants);
+    eraser.eraseCircle(points, size);
 
     const segmentBbox = new Bbox(
         Math.min(lastPos.lng, curPos.lng),
@@ -345,11 +335,11 @@ function processEraserStroke(
     );
 
     if (eraser.hasChanged()) {
-        const newMap = fogMapInstance.updateBlocks(drawingSession.modifiedBlocks);
+        const newMap = fogMapInstance.updateBlocks(session.modifiedBlocks);
 
-        if (drawingSession.erasedArea) {
-            const b = drawingSession.erasedArea;
-            drawingSession.erasedArea = new Bbox(
+        if (session.erasedArea) {
+            const b = session.erasedArea;
+            session.erasedArea = new Bbox(
                 Math.min(b.west, segmentBbox.west),
                 Math.min(b.south, segmentBbox.south),
                 Math.max(b.east, segmentBbox.east),
