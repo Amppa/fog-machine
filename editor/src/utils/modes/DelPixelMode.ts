@@ -7,15 +7,9 @@ const CURSOR_STYLE = 'crosshair';
 const DEFAULT_DEL_PIXEL_SIZE = 5;
 const AUTO_ZOOM_LEVEL = 11;
 
-const LAYER_IDS = {
-    DEL_PIXEL_CURSOR: 'del-pixel-cursor',
-} as const;
-
-const LAYER_PAINT_STYLES = {
-    DEL_PIXEL_CURSOR: {
-        COLOR: '#000000',
-        WIDTH: 2,
-    },
+const DEL_PIXEL_CURSOR_STYLE = {
+    BORDER_WIDTH: 2,
+    BORDER_COLOR: '#000000',
 } as const;
 
 export interface DrawingSession {
@@ -165,7 +159,7 @@ export class DelPixelMode implements ModeStrategy {
     private eraserStrokeBbox: Bbox | null = null;
     private drawingSession: DrawingSession | null = null;
     private earserSize = DEFAULT_DEL_PIXEL_SIZE;
-    private delPixelCursorLayerId = LAYER_IDS.DEL_PIXEL_CURSOR;
+    private delPixelCursor: mapboxgl.Marker | null = null;
 
     activate(context: ModeContext): void {
         const currentZoom = context.map.getZoom();
@@ -177,15 +171,17 @@ export class DelPixelMode implements ModeStrategy {
                 essential: true,
             });
         }
-
-        initDelPixelCursorLayer(context.map, this.delPixelCursorLayerId);
     }
 
     deactivate(context: ModeContext): void {
-        cleanupDelPixelLayer(context.map, this.delPixelCursorLayerId);
         this.lastPos = null;
         this.eraserStrokeBbox = null;
         this.drawingSession = null;
+        
+        if (this.delPixelCursor) {
+            this.delPixelCursor.remove();
+            this.delPixelCursor = null;
+        }
     }
 
     handleMousePress(e: mapboxgl.MapMouseEvent, context: ModeContext): void {
@@ -205,12 +201,7 @@ export class DelPixelMode implements ModeStrategy {
     }
 
     handleMouseMove(e: mapboxgl.MapMouseEvent, context: ModeContext): void {
-        updateDelPixelCursorLayer(
-            context.map,
-            this.delPixelCursorLayerId,
-            e.lngLat,
-            this.earserSize
-        );
+        this.updateDelPixelCursor(e.lngLat, context.map);
 
         if (e.originalEvent.buttons === 1 && this.lastPos) {
             this.handleDelPixelInteraction(e.lngLat, context);
@@ -243,6 +234,53 @@ export class DelPixelMode implements ModeStrategy {
 
     getDelPixelSize(): number {
         return this.earserSize;
+    }
+
+    private updateDelPixelCursor(lngLat: mapboxgl.LngLat, map: mapboxgl.Map): void {
+        if (!this.delPixelCursor) {
+            const size = this.calculateCursorSize(map);
+            const el = document.createElement('div');
+            el.className = 'delete-pixel-cursor-dom';
+            el.style.width = `${size}px`;
+            el.style.height = `${size}px`;
+            el.style.border = `${DEL_PIXEL_CURSOR_STYLE.BORDER_WIDTH}px solid ${DEL_PIXEL_CURSOR_STYLE.BORDER_COLOR}`;
+            el.style.borderRadius = '50%';
+            el.style.pointerEvents = 'none';
+
+            this.delPixelCursor = new mapboxgl.Marker({
+                element: el,
+                anchor: 'center',
+            })
+                .setLngLat(lngLat)
+                .addTo(map);
+        } else {
+            this.delPixelCursor.setLngLat(lngLat);
+            
+            // Update size if zoom changed
+            const size = this.calculateCursorSize(map);
+            const el = this.delPixelCursor.getElement();
+            el.style.width = `${size}px`;
+            el.style.height = `${size}px`;
+        }
+    }
+
+    private calculateCursorSize(map: mapboxgl.Map): number {
+        // Calculate pixel size in screen coordinates
+        const center = map.getCenter();
+        const [gx, gy] = fogMap.FogMap.LngLatToGlobalXY(center.lng, center.lat);
+        const radius = this.earserSize / 2;
+        
+        const scale = fogMap.TILE_WIDTH * fogMap.BITMAP_WIDTH;
+        const px1 = (gx - radius) / scale;
+        const px2 = (gx + radius) / scale;
+        
+        const lng1 = fogMap.Tile.XYToLngLat(px1, gy / scale)[0];
+        const lng2 = fogMap.Tile.XYToLngLat(px2, gy / scale)[0];
+        
+        const point1 = map.project(new mapboxgl.LngLat(lng1, center.lat));
+        const point2 = map.project(new mapboxgl.LngLat(lng2, center.lat));
+        
+        return Math.abs(point2.x - point1.x);
     }
 
     private handleDelPixelInteraction(lngLat: mapboxgl.LngLat, context: ModeContext): void {
@@ -384,58 +422,4 @@ function getCircleCursor(
     };
 }
 
-function getDelPixelCursor(
-    lngLat: mapboxgl.LngLat,
-    pixelSize: number
-): GeoJSON.Geometry {
-    return getCircleCursor(lngLat, pixelSize);
-}
 
-function initDelPixelCursorLayer(
-    map: mapboxgl.Map | null,
-    layerId: string
-) {
-    if (!map) return;
-    if (!map.getSource(layerId)) {
-        map.addSource(layerId, {
-            type: "geojson",
-            data: {
-                type: "FeatureCollection",
-                features: []
-            }
-        });
-        map.addLayer({
-            id: layerId,
-            type: "line",
-            source: layerId,
-            paint: {
-                "line-color": LAYER_PAINT_STYLES.DEL_PIXEL_CURSOR.COLOR,
-                "line-width": LAYER_PAINT_STYLES.DEL_PIXEL_CURSOR.WIDTH
-            }
-        });
-    }
-}
-
-function updateDelPixelCursorLayer(
-    map: mapboxgl.Map | null,
-    layerId: string,
-    lngLat: mapboxgl.LngLat,
-    pixelSize: number
-): void {
-    if (!map) return;
-    const source = map.getSource(layerId) as mapboxgl.GeoJSONSource;
-    if (source) {
-        const cursor = getDelPixelCursor(lngLat, pixelSize);
-        source.setData({
-            type: "Feature",
-            geometry: cursor,
-            properties: {},
-        });
-    }
-}
-
-function cleanupDelPixelLayer(map: mapboxgl.Map | null, layerId: string) {
-    if (!map) return;
-    if (map.getLayer(layerId)) map.removeLayer(layerId);
-    if (map.getSource(layerId)) map.removeSource(layerId);
-}
