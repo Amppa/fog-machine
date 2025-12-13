@@ -43,7 +43,6 @@ export class DelBlockMode implements ModeStrategy {
     }
 
     handleMouseMove(e: mapboxgl.MapMouseEvent, context: ModeContext): void {
-        // Handle interaction if mouse button is pressed
         if (e.originalEvent.buttons === 1) {
             this.handleDelBlockInteraction(e.lngLat, context);
         }
@@ -52,7 +51,7 @@ export class DelBlockMode implements ModeStrategy {
 
     handleMouseRelease(_e: mapboxgl.MapMouseEvent, context: ModeContext): void {
         const newMap = context.fogMap.removeBlocks(this.delBlockState.blocks);
-        context.updateFogMap(newMap, this.delBlockState.bbox || "all", true); // skipHistory
+        context.updateFogMap(newMap, this.delBlockState.bbox || "all", true);
 
         this.delBlockState = this.resetDelBlockState();
         MapEraserUtils.updatePendingDelLayer(
@@ -66,12 +65,9 @@ export class DelBlockMode implements ModeStrategy {
     }
 
     canDragPan(): boolean {
-        return false; // Disable drag pan to allow block erasing
+        return false;
     }
 
-    /**
-     * Get the bounding box of the erased blocks for history
-     */
     getHistoryBbox(): Bbox | null {
         return this.delBlockState.bbox;
     }
@@ -119,9 +115,6 @@ export class DelBlockMode implements ModeStrategy {
         );
     }
 
-    /**
-     * Reset DelBlock state
-     */
     private resetDelBlockState(): MapEraserUtils.DelBlockState {
         return {
             blocks: {},

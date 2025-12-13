@@ -54,7 +54,7 @@ export class DrawScribbleMode implements ModeStrategy {
     handleMouseRelease(_e: mapboxgl.MapMouseEvent, _context: ModeContext): void {
         // Clean up state, history will be saved by ModeManager
         this.lastPos = null;
-        // Don't clear strokeBbox yet, ModeManager will read it via getOperationBbox
+        // Don't clear strokeBbox yet, ModeManager will read it via getHistoryBbox
     }
 
     getCursorStyle(): string {
@@ -65,9 +65,6 @@ export class DrawScribbleMode implements ModeStrategy {
         return false;
     }
 
-    /**
-     * Get the bounding box of the completed stroke for history
-     */
     getHistoryBbox(): Bbox | null {
         const bbox = this.strokeBbox;
         this.strokeBbox = null; // Clear after reading

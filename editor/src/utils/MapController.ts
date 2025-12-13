@@ -417,7 +417,6 @@ export class MapController {
   // Control Mode Management
   // ============================================================================
   setControlMode(newMode: ControlMode): void {
-    // All modes are now managed by ModeManager
     this.modeManager?.setMode(newMode);
     this.controlMode = newMode;
   }
@@ -427,18 +426,14 @@ export class MapController {
   // ============================================================================
   handleMousePress(e: mapboxgl.MapMouseEvent): void {
     if (DEBUG) console.log(`[Mouse Press] at ${e.lngLat}`);
-
-    // All modes are now managed by ModeManager
     this.modeManager?.handleMousePress(e);
   }
 
   handleMouseMove(e: mapboxgl.MapMouseEvent): void {
-    // All modes are now managed by ModeManager
     this.modeManager?.handleMouseMove(e);
   }
 
   handleMouseRelease(e: mapboxgl.MapMouseEvent): void {
-    // All modes are now managed by ModeManager
     this.modeManager?.handleMouseRelease(e);
   }
 }
