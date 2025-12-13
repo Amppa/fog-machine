@@ -6,8 +6,7 @@ import { MapDraw } from "./MapDraw";
 import { MapRenderer, MAPBOX_MAIN_CANVAS_LAYER } from "./MapRenderer";
 import { GridRenderer } from "./GridRenderer";
 import { Bbox } from "./CommonTypes";
-import * as MapEraserUtils from "./MapEraserUtils";
-import { DelBlockState, DrawingSession } from "./MapEraserUtils";
+
 import { ModeManager, ModeContext, DelRectMode } from "./modes";
 
 const DEBUG = false;
@@ -26,19 +25,7 @@ export enum ControlMode {
 }
 
 export class MapController {
-  // ============================================================================
-  // Constants
-  // ============================================================================
-  private static readonly DEFAULT_DEL_PIXEL_SIZE = 16; // 4x4 pixels
 
-  private static readonly CURSOR_STYLES: Record<ControlMode, string> = {
-    [ControlMode.View]: 'grab',
-    [ControlMode.DrawPolyline]: 'crosshair',
-    [ControlMode.DrawScribble]: 'crosshair',
-    [ControlMode.DelRect]: 'cell',
-    [ControlMode.DelBlock]: 'none',         // hide cursor, user defined cursor
-    [ControlMode.DelPixel]: 'crosshair',    // show cursor and delete pixel cursor due to the pixel is really small
-  } as const;
 
   // ============================================================================
   // Instance Fields
