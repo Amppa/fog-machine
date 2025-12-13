@@ -108,7 +108,8 @@ describe("Mode Functional Tests", () => {
             const bbox = new Bbox(121.5, 25.0, 121.6, 25.1);
             const blocksToRemove = fogMapData.getBlocks(bbox);
 
-            expect(blocksToRemove.length).toBeGreaterThan(0);
+            // This line creates exactly 39 blocks
+            expect(blocksToRemove.length).toBe(39);
 
             // 3. Group blocks by tile
             const blocksByTile: { [tileKey: string]: string[] } = {};
@@ -138,15 +139,15 @@ describe("Mode Functional Tests", () => {
             // Draw a line
             fogMapData = fogMapData.addLine(121.5, 25.0, 121.6, 25.1);
 
-            // Should have dirty tiles
-            expect(fogMapData.getDirtyTilesCount()).toBeGreaterThan(0);
+            // Drawing a line marks exactly 1 tile as dirty
+            expect(fogMapData.getDirtyTilesCount()).toBe(1);
         });
 
         test("should clear dirty tiles flag", () => {
             let fogMapData = fogMap.FogMap.empty;
             fogMapData = fogMapData.addLine(121.5, 25.0, 121.6, 25.1);
 
-            expect(fogMapData.getDirtyTilesCount()).toBeGreaterThan(0);
+            expect(fogMapData.getDirtyTilesCount()).toBe(1);
 
             // Clear dirty flag
             fogMapData = fogMapData.clearDirtyTiles();
