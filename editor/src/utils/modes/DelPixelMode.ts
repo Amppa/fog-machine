@@ -155,6 +155,139 @@ function cleanupDelPixelLayer(map: mapboxgl.Map | null, layerId: string) {
 }
 
 
+class PixelEraser {
+    private cachedTileKey = "";
+    private cachedBlockKey = "";
+    private cachedBlock: fogMap.Block | null | undefined = undefined;
+    private processedPixels = new Set<string>();
+    private changed = false;
+
+    constructor(
+        private drawingSession: DrawingSession,
+        private constants: {
+            TILE_WIDTH: number;
+            BITMAP_WIDTH: number;
+            BITMAP_WIDTH_OFFSET: number;
+            ALL_OFFSET: number;
+        }
+    ) { }
+
+    erasePixel(gx: number, gy: number): void {
+        const pixelKey = `${gx},${gy}`;
+        if (this.processedPixels.has(pixelKey)) return;
+        this.processedPixels.add(pixelKey);
+
+        const { tileKey, blockKey, blockX, blockY } = this.getBlockCoordinates(gx, gy);
+
+        this.updateCache(tileKey, blockKey);
+        if (this.cachedBlock === null) return;
+
+        const block = this.getOrCreateBlock(tileKey, blockKey, blockX, blockY);
+        if (!block) return;
+
+        if (this.clearPixelBit(block, gx, gy)) {
+            this.updateBlockCount(tileKey, blockKey);
+            this.changed = true;
+        }
+    }
+
+    eraseCircle(points: [number, number][], size: number): void {
+        const radius = size / 2;
+        const radiusSquared = radius * radius;
+        const offsetStart = -Math.floor(radius);
+        const offsetEnd = Math.ceil(radius);
+
+        for (const [x, y] of points) {
+            for (let dx = offsetStart; dx < offsetEnd; dx++) {
+                for (let dy = offsetStart; dy < offsetEnd; dy++) {
+                    if (dx * dx + dy * dy <= radiusSquared) {
+                        this.erasePixel(x + dx, y + dy);
+                    }
+                }
+            }
+        }
+    }
+
+    hasChanged(): boolean {
+        return this.changed;
+    }
+
+    private getBlockCoordinates(gx: number, gy: number) {
+        const { TILE_WIDTH, BITMAP_WIDTH_OFFSET, ALL_OFFSET } = this.constants;
+        const tileX = gx >> ALL_OFFSET;
+        const tileY = gy >> ALL_OFFSET;
+        const tileKey = fogMap.FogMap.makeKeyXY(tileX, tileY);
+        const blockX = (gx >> BITMAP_WIDTH_OFFSET) % TILE_WIDTH;
+        const blockY = (gy >> BITMAP_WIDTH_OFFSET) % TILE_WIDTH;
+        const blockKey = fogMap.FogMap.makeKeyXY(blockX, blockY);
+        return { tileKey, blockKey, blockX, blockY };
+    }
+
+    private updateCache(tileKey: string, blockKey: string): void {
+        if (tileKey !== this.cachedTileKey || blockKey !== this.cachedBlockKey) {
+            this.cachedTileKey = tileKey;
+            this.cachedBlockKey = blockKey;
+            this.cachedBlock = undefined;
+
+            if (this.drawingSession.modifiedBlocks[tileKey]) {
+                this.cachedBlock = this.drawingSession.modifiedBlocks[tileKey][blockKey];
+            }
+        }
+    }
+
+    private getOrCreateBlock(
+        tileKey: string,
+        blockKey: string,
+        blockX: number,
+        blockY: number
+    ): fogMap.Block | null {
+        if (this.cachedBlock === undefined) {
+            const tile = this.drawingSession.baseMap.tiles[tileKey];
+            const originalBlock = tile?.blocks[blockKey];
+            if (!originalBlock) return null;
+
+            const newBlock = fogMap.Block.create(blockX, blockY, originalBlock.dump());
+
+            if (!this.drawingSession.modifiedBlocks[tileKey]) {
+                this.drawingSession.modifiedBlocks[tileKey] = {};
+                this.drawingSession.blockCounts[tileKey] = {};
+            }
+
+            this.drawingSession.modifiedBlocks[tileKey][blockKey] = newBlock;
+            this.drawingSession.blockCounts[tileKey][blockKey] = newBlock.count();
+            this.cachedBlock = newBlock;
+        }
+
+        return this.cachedBlock as fogMap.Block;
+    }
+
+    private clearPixelBit(block: fogMap.Block, gx: number, gy: number): boolean {
+        const { BITMAP_WIDTH } = this.constants;
+        const localX = gx % BITMAP_WIDTH;
+        const localY = gy % BITMAP_WIDTH;
+        const bitOffset = 7 - (localX % 8);
+        const i = Math.floor(localX / 8);
+        const j = localY;
+        const index = i + j * 8;
+
+        const isSet = (block.bitmap[index] & (1 << bitOffset)) !== 0;
+        if (isSet) {
+            block.bitmap[index] &= ~(1 << bitOffset);
+            return true;
+        }
+        return false;
+    }
+
+    private updateBlockCount(tileKey: string, blockKey: string): void {
+        this.drawingSession.blockCounts[tileKey][blockKey]--;
+
+        if (this.drawingSession.blockCounts[tileKey][blockKey] <= 0) {
+            this.drawingSession.modifiedBlocks[tileKey][blockKey] = null;
+            this.cachedBlock = null;
+        }
+    }
+}
+
 function handleDelPixelInteraction(
     fogMapInstance: fogMap.FogMap,
     drawingSession: DrawingSession,
@@ -169,131 +302,18 @@ function handleDelPixelInteraction(
     if (!lastPos || !drawingSession) return null;
 
     const [x0, y0] = fogMap.FogMap.LngLatToGlobalXY(lastPos.lng, lastPos.lat);
-    const [x1, y1] = fogMap.FogMap.LngLatToGlobalXY(
-        currentPos.lng,
-        currentPos.lat
-    );
+    const [x1, y1] = fogMap.FogMap.LngLatToGlobalXY(currentPos.lng, currentPos.lat);
 
-    const TILE_WIDTH = fogMap.TILE_WIDTH;
-    const BITMAP_WIDTH = fogMap.BITMAP_WIDTH;
-    const BITMAP_WIDTH_OFFSET = fogMap.BITMAP_WIDTH_OFFSET;
-    const ALL_OFFSET = fogMap.TILE_WIDTH_OFFSET + BITMAP_WIDTH_OFFSET;
-
+    const constants = {
+        TILE_WIDTH: fogMap.TILE_WIDTH,
+        BITMAP_WIDTH: fogMap.BITMAP_WIDTH,
+        BITMAP_WIDTH_OFFSET: fogMap.BITMAP_WIDTH_OFFSET,
+        ALL_OFFSET: fogMap.TILE_WIDTH_OFFSET + fogMap.BITMAP_WIDTH_OFFSET,
+    };
 
     const points = Array.from(fogMap.FogMap.traceLine(x0, y0, x1, y1));
-    let changed = false;
-
-
-    let cachedTileKey = "";
-    let cachedBlockKey = "";
-    let cachedBlock: fogMap.Block | null | undefined = undefined;
-
-
-    const processedPixels = new Set<string>();
-
-    const erasePixel = (gx: number, gy: number) => {
-
-        const pixelKey = gx + "," + gy;
-        if (processedPixels.has(pixelKey)) {
-            return;
-        }
-        processedPixels.add(pixelKey);
-
-
-        const tileX = gx >> ALL_OFFSET;
-        const tileY = gy >> ALL_OFFSET;
-        const tileKey = fogMap.FogMap.makeKeyXY(tileX, tileY);
-
-        const blockX = (gx >> BITMAP_WIDTH_OFFSET) % TILE_WIDTH;
-        const blockY = (gy >> BITMAP_WIDTH_OFFSET) % TILE_WIDTH;
-        const blockKey = fogMap.FogMap.makeKeyXY(blockX, blockY);
-
-
-        if (tileKey !== cachedTileKey || blockKey !== cachedBlockKey) {
-            cachedTileKey = tileKey;
-            cachedBlockKey = blockKey;
-            cachedBlock = undefined;
-
-            if (drawingSession.modifiedBlocks[tileKey]) {
-                cachedBlock = drawingSession.modifiedBlocks[tileKey][blockKey];
-            }
-        }
-
-
-        if (cachedBlock === null) return;
-
-        if (cachedBlock === undefined) {
-            const tile = drawingSession.baseMap.tiles[tileKey];
-            const originalBlock = tile?.blocks[blockKey];
-
-            if (!originalBlock) {
-                return;
-            }
-
-
-            const newBlock = fogMap.Block.create(blockX, blockY, originalBlock.dump());
-
-            if (!drawingSession.modifiedBlocks[tileKey]) {
-                drawingSession.modifiedBlocks[tileKey] = {};
-                drawingSession.blockCounts[tileKey] = {};
-            }
-
-            drawingSession.modifiedBlocks[tileKey][blockKey] = newBlock;
-            drawingSession.blockCounts[tileKey][blockKey] = newBlock.count();
-
-            cachedBlock = newBlock;
-        }
-
-        const block = cachedBlock as fogMap.Block;
-
-        const localX = gx % BITMAP_WIDTH;
-        const localY = gy % BITMAP_WIDTH;
-
-        const bitOffset = 7 - (localX % 8);
-        const i = Math.floor(localX / 8);
-        const j = localY;
-        const index = i + j * 8;
-
-
-        const isSet = (block.bitmap[index] & (1 << bitOffset)) !== 0;
-
-        if (isSet) {
-
-            block.bitmap[index] &= ~(1 << bitOffset);
-
-
-            drawingSession.blockCounts[tileKey][blockKey]--;
-
-
-            if (drawingSession.blockCounts[tileKey][blockKey] <= 0) {
-                drawingSession.modifiedBlocks[tileKey][blockKey] = null;
-                cachedBlock = null;
-            }
-
-            changed = true;
-        }
-    };
-
-
-    const eraseCircle = (points: [number, number][], size: number) => {
-        const radius = size / 2;
-        const radiusSquared = radius * radius;
-        const offsetStart = -Math.floor(radius);
-        const offsetEnd = Math.ceil(radius);
-
-        for (const [x, y] of points) {
-            for (let dx = offsetStart; dx < offsetEnd; dx++) {
-                for (let dy = offsetStart; dy < offsetEnd; dy++) {
-                    if (dx * dx + dy * dy <= radiusSquared) {
-                        erasePixel(x + dx, y + dy);
-                    }
-                }
-            }
-        }
-    };
-
-    eraseCircle(points, eraserSize);
-
+    const eraser = new PixelEraser(drawingSession, constants);
+    eraser.eraseCircle(points, eraserSize);
 
     const segmentBbox = new Bbox(
         Math.min(lastPos.lng, currentPos.lng),
@@ -302,7 +322,7 @@ function handleDelPixelInteraction(
         Math.max(lastPos.lat, currentPos.lat)
     );
 
-    if (changed) {
+    if (eraser.hasChanged()) {
         const newMap = fogMapInstance.updateBlocks(drawingSession.modifiedBlocks);
 
         if (drawingSession.erasedArea) {
@@ -315,18 +335,10 @@ function handleDelPixelInteraction(
             );
         }
 
-        return {
-            newMap: newMap,
-            segmentBbox: segmentBbox,
-            changed: true,
-        };
-    } else {
-        return {
-            newMap: fogMapInstance,
-            segmentBbox: segmentBbox,
-            changed: false,
-        };
+        return { newMap, segmentBbox, changed: true };
     }
+
+    return { newMap: fogMapInstance, segmentBbox, changed: false };
 }
 
 
