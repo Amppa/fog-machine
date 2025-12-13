@@ -1,9 +1,9 @@
 import { MapController } from "./utils/MapController";
 import { useEffect, useState } from "react";
-import { createMapFromZip } from "./Import";
+import { createMapFromZip } from "./components/ImportDialog";
 import TimeMachineApi, { SnapshotInfo } from "./utils/TimeMachineApi";
 import moment from "moment";
-import MainMenu from "./MainMenu";
+import MainMenu from "./components/MainMenu";
 
 type Props = {
   mapController: MapController;

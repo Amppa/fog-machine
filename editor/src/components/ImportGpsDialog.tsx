@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import BaseDialog from "./BaseDialog";
-import { readFileAsync } from "../Utils";
+import { readFileAsync } from "../utils/fileUtils";
 import { MapController } from "../utils/MapController";
 import { useDropzone } from "react-dropzone";
 import { importGpxToFogMap } from "../utils/GpxImport";

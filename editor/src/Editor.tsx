@@ -2,7 +2,7 @@ import { ControlMode, MapController } from "./utils/MapController";
 import { useEffect, useState } from "react";
 const ERASER_DIAMETERS = [1, 3, 9, 31]; // Eraser diameter in fog pixels
 import Mousetrap from "mousetrap";
-import MainMenu from "./MainMenu";
+import MainMenu from "./components/MainMenu";
 import FlyToDialog from "./components/FlyToDialog";
 import { ReactComponent as IconFlyTo } from "./assets/svg/pin.svg";
 import { ReactComponent as IconRedo } from "./assets/svg/redo.svg";

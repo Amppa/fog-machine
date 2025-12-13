@@ -1,9 +1,9 @@
 import { useState } from "react";
-import GithubCorner from "./GithubCorner";
+import GithubCorner from "./components/GithubCorner";
 import { MapController } from "./utils/MapController";
 import { useTranslation } from "react-i18next";
 import BaseDialog from "./components/BaseDialog";
-import Map from "./Map";
+import Map from "./components/Map";
 import Editor from "./Editor";
 import Viewer from "./Viewer";
 
