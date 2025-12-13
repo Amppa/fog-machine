@@ -3,7 +3,6 @@ import { ModeStrategy, ModeContext } from "./ModeStrategy";
 import { Bbox } from "../CommonTypes";
 import * as fogMap from "../FogMap";
 
-
 const CURSOR_STYLE = 'crosshair';
 const DEFAULT_DEL_PIXEL_SIZE = 5;
 const AUTO_ZOOM_LEVEL = 11;
@@ -19,7 +18,6 @@ const LAYER_PAINT_STYLES = {
     },
 } as const;
 
-
 export interface DrawingSession {
     baseMap: fogMap.FogMap;
     modifiedBlocks: {
@@ -28,132 +26,6 @@ export interface DrawingSession {
     blockCounts: { [tileKey: string]: { [blockKey: string]: number } };
     erasedArea: Bbox | null;
 }
-
-
-function getSquareCursor(
-    lngLat: mapboxgl.LngLat,
-    pixelSize: number
-): GeoJSON.Geometry {
-    const [gx, gy] = fogMap.FogMap.LngLatToGlobalXY(lngLat.lng, lngLat.lat);
-    const half = pixelSize / 2;
-    const centerOffset = pixelSize % 2 === 1 ? 0.5 : 0;
-    const gx1 = gx - half + centerOffset;
-    const gx2 = gx + half + centerOffset;
-    const gy1 = gy - half + centerOffset;
-    const gy2 = gy + half + centerOffset;
-
-    const scale = fogMap.TILE_WIDTH * fogMap.BITMAP_WIDTH;
-
-    const x1 = gx1 / scale;
-    const y1 = gy1 / scale;
-    const x2 = gx2 / scale;
-    const y2 = gy2 / scale;
-
-    const nw = fogMap.Tile.XYToLngLat(x1, y1);
-    const ne = fogMap.Tile.XYToLngLat(x2, y1);
-    const se = fogMap.Tile.XYToLngLat(x2, y2);
-    const sw = fogMap.Tile.XYToLngLat(x1, y2);
-
-    return {
-        type: "Polygon",
-        coordinates: [[
-            [nw[0], nw[1]],
-            [ne[0], ne[1]],
-            [se[0], se[1]],
-            [sw[0], sw[1]],
-            [nw[0], nw[1]]
-        ]]
-    };
-}
-
-function getCircleCursor(
-    lngLat: mapboxgl.LngLat,
-    pixelSize: number
-): GeoJSON.Geometry {
-    const [gx, gy] = fogMap.FogMap.LngLatToGlobalXY(lngLat.lng, lngLat.lat);
-    const radius = pixelSize / 2;
-    const centerOffset = pixelSize % 2 === 1 ? 0.5 : 0;
-
-    const scale = fogMap.TILE_WIDTH * fogMap.BITMAP_WIDTH;
-
-    const numPoints = 32;
-    const coordinates: number[][] = [];
-
-    for (let i = 0; i <= numPoints; i++) {
-        const angle = (i / numPoints) * 2 * Math.PI;
-        const dx = Math.cos(angle) * radius;
-        const dy = Math.sin(angle) * radius;
-
-        const px = (gx + dx + centerOffset) / scale;
-        const py = (gy + dy + centerOffset) / scale;
-
-        const point = fogMap.Tile.XYToLngLat(px, py);
-        coordinates.push([point[0], point[1]]);
-    }
-
-    return {
-        type: "Polygon",
-        coordinates: [coordinates]
-    };
-}
-
-function getDelPixelCursor(
-    lngLat: mapboxgl.LngLat,
-    pixelSize: number
-): GeoJSON.Geometry {
-    return getCircleCursor(lngLat, pixelSize);
-}
-
-
-function initDelPixelCursorLayer(
-    map: mapboxgl.Map | null,
-    layerId: string
-) {
-    if (!map) return;
-    if (!map.getSource(layerId)) {
-        map.addSource(layerId, {
-            type: "geojson",
-            data: {
-                type: "FeatureCollection",
-                features: []
-            }
-        });
-        map.addLayer({
-            id: layerId,
-            type: "line",
-            source: layerId,
-            paint: {
-                "line-color": LAYER_PAINT_STYLES.DEL_PIXEL_CURSOR.COLOR,
-                "line-width": LAYER_PAINT_STYLES.DEL_PIXEL_CURSOR.WIDTH
-            }
-        });
-    }
-}
-
-function updateDelPixelCursorLayer(
-    map: mapboxgl.Map | null,
-    layerId: string,
-    lngLat: mapboxgl.LngLat,
-    pixelSize: number
-): void {
-    if (!map) return;
-    const source = map.getSource(layerId) as mapboxgl.GeoJSONSource;
-    if (source) {
-        const cursor = getDelPixelCursor(lngLat, pixelSize);
-        source.setData({
-            type: "Feature",
-            geometry: cursor,
-            properties: {},
-        });
-    }
-}
-
-function cleanupDelPixelLayer(map: mapboxgl.Map | null, layerId: string) {
-    if (!map) return;
-    if (map.getLayer(layerId)) map.removeLayer(layerId);
-    if (map.getSource(layerId)) map.removeSource(layerId);
-}
-
 
 class PixelEraser {
     private cachedTileKey = "";
@@ -288,6 +160,110 @@ class PixelEraser {
     }
 }
 
+export class DelPixelMode implements ModeStrategy {
+    private lastPos: mapboxgl.LngLat | null = null;
+    private eraserStrokeBbox: Bbox | null = null;
+    private drawingSession: DrawingSession | null = null;
+    private earserSize = DEFAULT_DEL_PIXEL_SIZE;
+    private delPixelCursorLayerId = LAYER_IDS.DEL_PIXEL_CURSOR;
+
+    activate(context: ModeContext): void {
+        const currentZoom = context.map.getZoom();
+        if (currentZoom < AUTO_ZOOM_LEVEL) {
+            const center = context.map.getCenter();
+            context.map.flyTo({
+                zoom: AUTO_ZOOM_LEVEL,
+                center: [center.lng, center.lat],
+                essential: true,
+            });
+        }
+
+        initDelPixelCursorLayer(context.map, this.delPixelCursorLayerId);
+    }
+
+    deactivate(context: ModeContext): void {
+        cleanupDelPixelLayer(context.map, this.delPixelCursorLayerId);
+        this.lastPos = null;
+        this.eraserStrokeBbox = null;
+        this.drawingSession = null;
+    }
+
+    handleMousePress(e: mapboxgl.MapMouseEvent, context: ModeContext): void {
+        context.map.dragPan.disable();
+        this.lastPos = e.lngLat;
+        this.eraserStrokeBbox = Bbox.fromPoint(e.lngLat);
+
+        this.drawingSession = {
+            baseMap: context.fogMap,
+            modifiedBlocks: {},
+            blockCounts: {},
+            erasedArea: Bbox.fromPoint(e.lngLat),
+        };
+
+        this.handleDelPixelInteraction(e.lngLat, context);
+        context.onChange();
+    }
+
+    handleMouseMove(e: mapboxgl.MapMouseEvent, context: ModeContext): void {
+        updateDelPixelCursorLayer(
+            context.map,
+            this.delPixelCursorLayerId,
+            e.lngLat,
+            this.earserSize
+        );
+
+        if (e.originalEvent.buttons === 1 && this.lastPos) {
+            this.handleDelPixelInteraction(e.lngLat, context);
+        }
+    }
+
+    handleMouseRelease(_e: mapboxgl.MapMouseEvent, context: ModeContext): void {
+        this.lastPos = null;
+        context.onChange();
+        context.map.dragPan.enable();
+    }
+
+    getCursorStyle(): string {
+        return CURSOR_STYLE;
+    }
+
+    canDragPan(): boolean {
+        return false;
+    }
+
+    getHistoryBbox(): Bbox | null {
+        const bbox = this.drawingSession?.erasedArea || null;
+        this.drawingSession = null;
+        return bbox;
+    }
+
+    setDelPixelSize(size: number): void {
+        this.earserSize = size;
+    }
+
+    getDelPixelSize(): number {
+        return this.earserSize;
+    }
+
+    private handleDelPixelInteraction(lngLat: mapboxgl.LngLat, context: ModeContext): void {
+        if (!this.lastPos || !this.drawingSession) return;
+
+        const result = handleDelPixelInteraction(
+            context.fogMap,
+            this.drawingSession,
+            this.lastPos,
+            lngLat,
+            this.earserSize
+        );
+
+        this.lastPos = lngLat;
+
+        if (result && result.changed) {
+            context.updateFogMap(result.newMap, result.segmentBbox, true, true);
+        }
+    }
+}
+
 function handleDelPixelInteraction(
     fogMapInstance: fogMap.FogMap,
     drawingSession: DrawingSession,
@@ -341,115 +317,125 @@ function handleDelPixelInteraction(
     return { newMap: fogMapInstance, segmentBbox, changed: false };
 }
 
+function getSquareCursor(
+    lngLat: mapboxgl.LngLat,
+    pixelSize: number
+): GeoJSON.Geometry {
+    const [gx, gy] = fogMap.FogMap.LngLatToGlobalXY(lngLat.lng, lngLat.lat);
+    const half = pixelSize / 2;
+    const centerOffset = pixelSize % 2 === 1 ? 0.5 : 0;
+    const gx1 = gx - half + centerOffset;
+    const gx2 = gx + half + centerOffset;
+    const gy1 = gy - half + centerOffset;
+    const gy2 = gy + half + centerOffset;
 
-export class DelPixelMode implements ModeStrategy {
-    private lastPos: mapboxgl.LngLat | null = null;
-    private eraserStrokeBbox: Bbox | null = null;
-    private drawingSession: DrawingSession | null = null;
-    private earserSize = DEFAULT_DEL_PIXEL_SIZE;
-    private delPixelCursorLayerId = LAYER_IDS.DEL_PIXEL_CURSOR;
+    const scale = fogMap.TILE_WIDTH * fogMap.BITMAP_WIDTH;
 
-    activate(context: ModeContext): void {
+    const x1 = gx1 / scale;
+    const y1 = gy1 / scale;
+    const x2 = gx2 / scale;
+    const y2 = gy2 / scale;
 
-        const currentZoom = context.map.getZoom();
-        if (currentZoom < AUTO_ZOOM_LEVEL) {
-            const center = context.map.getCenter();
-            context.map.flyTo({
-                zoom: AUTO_ZOOM_LEVEL,
-                center: [center.lng, center.lat],
-                essential: true,
-            });
-        }
+    const nw = fogMap.Tile.XYToLngLat(x1, y1);
+    const ne = fogMap.Tile.XYToLngLat(x2, y1);
+    const se = fogMap.Tile.XYToLngLat(x2, y2);
+    const sw = fogMap.Tile.XYToLngLat(x1, y2);
 
+    return {
+        type: "Polygon",
+        coordinates: [[
+            [nw[0], nw[1]],
+            [ne[0], ne[1]],
+            [se[0], se[1]],
+            [sw[0], sw[1]],
+            [nw[0], nw[1]]
+        ]]
+    };
+}
 
-        initDelPixelCursorLayer(context.map, this.delPixelCursorLayerId);
+function getCircleCursor(
+    lngLat: mapboxgl.LngLat,
+    pixelSize: number
+): GeoJSON.Geometry {
+    const [gx, gy] = fogMap.FogMap.LngLatToGlobalXY(lngLat.lng, lngLat.lat);
+    const radius = pixelSize / 2;
+    const centerOffset = pixelSize % 2 === 1 ? 0.5 : 0;
+
+    const scale = fogMap.TILE_WIDTH * fogMap.BITMAP_WIDTH;
+
+    const numPoints = 32;
+    const coordinates: number[][] = [];
+
+    for (let i = 0; i <= numPoints; i++) {
+        const angle = (i / numPoints) * 2 * Math.PI;
+        const dx = Math.cos(angle) * radius;
+        const dy = Math.sin(angle) * radius;
+
+        const px = (gx + dx + centerOffset) / scale;
+        const py = (gy + dy + centerOffset) / scale;
+
+        const point = fogMap.Tile.XYToLngLat(px, py);
+        coordinates.push([point[0], point[1]]);
     }
 
-    deactivate(context: ModeContext): void {
-        cleanupDelPixelLayer(context.map, this.delPixelCursorLayerId);
-        this.lastPos = null;
-        this.eraserStrokeBbox = null;
-        this.drawingSession = null;
+    return {
+        type: "Polygon",
+        coordinates: [coordinates]
+    };
+}
+
+function getDelPixelCursor(
+    lngLat: mapboxgl.LngLat,
+    pixelSize: number
+): GeoJSON.Geometry {
+    return getCircleCursor(lngLat, pixelSize);
+}
+
+function initDelPixelCursorLayer(
+    map: mapboxgl.Map | null,
+    layerId: string
+) {
+    if (!map) return;
+    if (!map.getSource(layerId)) {
+        map.addSource(layerId, {
+            type: "geojson",
+            data: {
+                type: "FeatureCollection",
+                features: []
+            }
+        });
+        map.addLayer({
+            id: layerId,
+            type: "line",
+            source: layerId,
+            paint: {
+                "line-color": LAYER_PAINT_STYLES.DEL_PIXEL_CURSOR.COLOR,
+                "line-width": LAYER_PAINT_STYLES.DEL_PIXEL_CURSOR.WIDTH
+            }
+        });
     }
+}
 
-    handleMousePress(e: mapboxgl.MapMouseEvent, context: ModeContext): void {
-        context.map.dragPan.disable();
-        this.lastPos = e.lngLat;
-        this.eraserStrokeBbox = Bbox.fromPoint(e.lngLat);
-
-        this.drawingSession = {
-            baseMap: context.fogMap,
-            modifiedBlocks: {},
-            blockCounts: {},
-            erasedArea: Bbox.fromPoint(e.lngLat),
-        };
-
-
-        this.handleDelPixelInteraction(e.lngLat, context);
-        context.onChange();
+function updateDelPixelCursorLayer(
+    map: mapboxgl.Map | null,
+    layerId: string,
+    lngLat: mapboxgl.LngLat,
+    pixelSize: number
+): void {
+    if (!map) return;
+    const source = map.getSource(layerId) as mapboxgl.GeoJSONSource;
+    if (source) {
+        const cursor = getDelPixelCursor(lngLat, pixelSize);
+        source.setData({
+            type: "Feature",
+            geometry: cursor,
+            properties: {},
+        });
     }
+}
 
-    handleMouseMove(e: mapboxgl.MapMouseEvent, context: ModeContext): void {
-        updateDelPixelCursorLayer(
-            context.map,
-            this.delPixelCursorLayerId,
-            e.lngLat,
-            this.earserSize
-        );
-
-        if (e.originalEvent.buttons === 1 && this.lastPos) {
-            this.handleDelPixelInteraction(e.lngLat, context);
-        }
-    }
-
-    handleMouseRelease(_e: mapboxgl.MapMouseEvent, context: ModeContext): void {
-
-        this.lastPos = null;
-        context.onChange();
-        context.map.dragPan.enable();
-    }
-
-    getCursorStyle(): string {
-        return CURSOR_STYLE;
-    }
-
-    canDragPan(): boolean {
-        return false;
-    }
-
-
-    getHistoryBbox(): Bbox | null {
-        const bbox = this.drawingSession?.erasedArea || null;
-        this.drawingSession = null;
-        return bbox;
-    }
-
-
-    private handleDelPixelInteraction(lngLat: mapboxgl.LngLat, context: ModeContext): void {
-        if (!this.lastPos || !this.drawingSession) return;
-
-        const result = handleDelPixelInteraction(
-            context.fogMap,
-            this.drawingSession,
-            this.lastPos,
-            lngLat,
-            this.earserSize
-        );
-
-        this.lastPos = lngLat;
-
-        if (result && result.changed) {
-            context.updateFogMap(result.newMap, result.segmentBbox, true, true);
-        }
-    }
-
-
-    setDelPixelSize(size: number): void {
-        this.earserSize = size;
-    }
-
-
-    getDelPixelSize(): number {
-        return this.earserSize;
-    }
+function cleanupDelPixelLayer(map: mapboxgl.Map | null, layerId: string) {
+    if (!map) return;
+    if (map.getLayer(layerId)) map.removeLayer(layerId);
+    if (map.getSource(layerId)) map.removeSource(layerId);
 }
