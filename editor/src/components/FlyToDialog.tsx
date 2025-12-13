@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { MapController } from "./utils/MapController";
-import BaseDialog from "./components/BaseDialog";
+import { MapController } from "../utils/MapController";
+import BaseDialog from "./BaseDialog";
 import UrlParserDialog from "./UrlParserDialog";
 
 type Props = {

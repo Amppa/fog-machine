@@ -1,13 +1,13 @@
 import { useTranslation } from "react-i18next";
-import BaseDialog from "./components/BaseDialog";
-import { readFileAsync } from "./Utils";
-import { MapController } from "./utils/MapController";
+import BaseDialog from "./BaseDialog";
+import { readFileAsync } from "../Utils";
+import { MapController } from "../utils/MapController";
 import { useDropzone } from "react-dropzone";
-import { importGpxToFogMap } from "./utils/GpxImport";
-import { importKmlToFogMap, importKmzToFogMap } from "./utils/KmlImport";
-import { Bbox } from "./utils/CommonTypes";
-import { GpsImportResult } from "./utils/GpsImportTypes";
-import { arrayBufferToString, mergeFogMaps } from "./utils/GpsImportUtils";
+import { importGpxToFogMap } from "../utils/GpxImport";
+import { importKmlToFogMap, importKmzToFogMap } from "../utils/KmlImport";
+import { Bbox } from "../utils/CommonTypes";
+import { GpsImportResult } from "../utils/GpsImportTypes";
+import { arrayBufferToString, mergeFogMaps } from "../utils/GpsImportUtils";
 
 type Props = {
     mapController: MapController;

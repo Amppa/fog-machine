@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 const ERASER_DIAMETERS = [1, 3, 9, 31]; // Eraser diameter in fog pixels
 import Mousetrap from "mousetrap";
 import MainMenu from "./MainMenu";
-import FlyToDialog from "./FlyToDialog";
+import FlyToDialog from "./components/FlyToDialog";
 import { ReactComponent as IconFlyTo } from "./assets/svg/pin.svg";
 import { ReactComponent as IconRedo } from "./assets/svg/redo.svg";
 import { ReactComponent as IconUndo } from "./assets/svg/undo.svg";

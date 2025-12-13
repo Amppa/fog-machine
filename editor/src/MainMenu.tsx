@@ -5,7 +5,7 @@ import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { MapController } from "./utils/MapController";
 import Import from "./Import";
-import ImportGpsDialog from "./ImportGpsDialog";
+import ImportGpsDialog from "./components/ImportGpsDialog";
 
 function MapTap(props: { mapController: MapController }): JSX.Element {
   const { t } = useTranslation();

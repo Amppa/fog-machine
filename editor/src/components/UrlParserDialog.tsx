@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import BaseDialog from "./components/BaseDialog";
-import { parseMapUrl } from "./utils/MapUrlUtils";
+import BaseDialog from "./BaseDialog";
+import { parseMapUrl } from "../utils/MapUrlUtils";
 
 type Props = {
   isOpen: boolean;
