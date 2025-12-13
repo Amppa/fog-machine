@@ -41,8 +41,8 @@ export class DrawPolylineMode implements ModeStrategy {
         return CURSOR_STYLE;
     }
 
-    shouldDisableDragPan(): boolean {
-        return true;
+    canDragPan(): boolean {
+        return false;
     }
 
     /**

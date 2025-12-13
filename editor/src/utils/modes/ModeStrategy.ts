@@ -53,9 +53,9 @@ export interface ModeStrategy {
     getCursorStyle(): string;
 
     /**
-     * Whether to disable drag pan in this mode
+     * Whether drag pan is allowed in this mode
      */
-    shouldDisableDragPan(): boolean;
+    canDragPan(): boolean;
 
     /**
      * Get the bounding box for history management

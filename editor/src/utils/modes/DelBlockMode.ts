@@ -65,8 +65,8 @@ export class DelBlockMode implements ModeStrategy {
         return CURSOR_STYLE;
     }
 
-    shouldDisableDragPan(): boolean {
-        return true; // Disable drag pan to allow block erasing
+    canDragPan(): boolean {
+        return false; // Disable drag pan to allow block erasing
     }
 
     /**

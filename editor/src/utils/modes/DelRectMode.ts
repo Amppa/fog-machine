@@ -89,8 +89,8 @@ export class DelRectMode implements ModeStrategy {
         return 'cell';
     }
 
-    shouldDisableDragPan(): boolean {
-        return true;
+    canDragPan(): boolean {
+        return false;
     }
 
     /**

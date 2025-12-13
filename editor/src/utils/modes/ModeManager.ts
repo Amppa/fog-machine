@@ -55,10 +55,10 @@ export class ModeManager {
             canvas.style.cursor = newStrategy.getCursorStyle();
         }
 
-        if (newStrategy.shouldDisableDragPan()) {
-            this.context.map.dragPan.disable();
-        } else {
+        if (newStrategy.canDragPan()) {
             this.context.map.dragPan.enable();
+        } else {
+            this.context.map.dragPan.disable();
         }
 
         // Activate new mode

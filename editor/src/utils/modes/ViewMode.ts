@@ -31,8 +31,8 @@ export class ViewMode implements ModeStrategy {
         return 'grab';
     }
 
-    shouldDisableDragPan(): boolean {
-        return false;
+    canDragPan(): boolean {
+        return true;
     }
 
     /**
