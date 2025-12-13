@@ -58,12 +58,12 @@ export class DelBlockMode implements ModeStrategy {
 
     handleMousePress(e: mapboxgl.MapMouseEvent, context: ModeContext): void {
         this.delBlockState = this.resetDelBlockState();
-        this.handleDelBlockInteraction(e.lngLat, context);
+        this.processBlockErasure(e.lngLat, context);
     }
 
     handleMouseMove(e: mapboxgl.MapMouseEvent, context: ModeContext): void {
         if (e.originalEvent.buttons === 1) {
-            this.handleDelBlockInteraction(e.lngLat, context);
+            this.processBlockErasure(e.lngLat, context);
         }
         this.updateDelBlockCursor(e.lngLat, context);
     }
@@ -89,88 +89,25 @@ export class DelBlockMode implements ModeStrategy {
     }
 
     /**
-     * Handle block interaction (erase blocks)
+     * Process block erasure at cursor position
      */
-    private handleDelBlockInteraction(lngLat: mapboxgl.LngLat, context: ModeContext): void {
-        const map = context.map;
-        const fogMapInstance = context.fogMap;
+    private processBlockErasure(lngLat: mapboxgl.LngLat, context: ModeContext): void {
+        const bbox = this.getCursorBbox(lngLat, context.map);
+        const keys = context.fogMap.getBlocks(bbox);
 
-        // Calculate bbox from cursor size
-        const point = map.project(lngLat);
-        const halfSize = DEL_BLOCK_CURSOR_STYLE.SIZE / 2;
-        const nwPoint = new mapboxgl.Point(point.x - halfSize, point.y - halfSize);
-        const sePoint = new mapboxgl.Point(point.x + halfSize, point.y + halfSize);
-
-        const tnw = map.unproject(nwPoint);
-        const tse = map.unproject(sePoint);
-
-        // Construct bbox from the corner LngLats
-        const west = Math.min(tnw.lng, tse.lng);
-        const east = Math.max(tnw.lng, tse.lng);
-        const north = Math.max(tnw.lat, tse.lat);
-        const south = Math.min(tnw.lat, tse.lat);
-
-        const bbox = new Bbox(west, south, east, north);
-
-        const keys = fogMapInstance.getBlocks(bbox);
-        const TILE_WIDTH = fogMap.TILE_WIDTH;
         let changed = false;
-
         const pendingBlocks = this.delBlockState.blocks;
         const pendingFeatures = this.delBlockState.features;
         let pendingBbox = this.delBlockState.bbox;
 
         keys.forEach(({ tileKey, blockKey }) => {
-            if (!pendingBlocks[tileKey]) {
-                pendingBlocks[tileKey] = new Set();
-            }
-            if (!pendingBlocks[tileKey].has(blockKey)) {
-                pendingBlocks[tileKey].add(blockKey);
+            if (this.addBlockToPending(tileKey, blockKey, pendingBlocks)) {
                 changed = true;
+                const blockPolygon = this.createBlockPolygon(tileKey, blockKey, context.fogMap);
 
-                const tile = fogMapInstance.tiles[tileKey];
-                if (tile && tile.blocks[blockKey]) {
-                    const block = tile.blocks[blockKey];
-                    const x0 = tile.x + block.x / TILE_WIDTH;
-                    const y0 = tile.y + block.y / TILE_WIDTH;
-                    const x1 = tile.x + (block.x + 1) / TILE_WIDTH;
-                    const y1 = tile.y + (block.y + 1) / TILE_WIDTH;
-
-                    const nw = fogMap.Tile.XYToLngLat(x0, y0);
-                    const ne = fogMap.Tile.XYToLngLat(x1, y0);
-                    const se = fogMap.Tile.XYToLngLat(x1, y1);
-                    const sw = fogMap.Tile.XYToLngLat(x0, y1);
-
-                    const cnw = [nw[0], nw[1]];
-                    const cne = [ne[0], ne[1]];
-                    const cse = [se[0], se[1]];
-                    const csw = [sw[0], sw[1]];
-
-                    pendingFeatures.push({
-                        type: "Feature",
-                        geometry: {
-                            type: "Polygon",
-                            coordinates: [[cnw, csw, cse, cne, cnw]],
-                        },
-                        properties: {},
-                    });
-
-                    // Update pendingDeleteBbox
-                    const bWest = Math.min(nw[0], ne[0], se[0], sw[0]);
-                    const bEast = Math.max(nw[0], ne[0], se[0], sw[0]);
-                    const bNorth = Math.max(nw[1], ne[1], se[1], sw[1]);
-                    const bSouth = Math.min(nw[1], ne[1], se[1], sw[1]);
-
-                    if (!pendingBbox) {
-                        pendingBbox = new Bbox(bWest, bSouth, bEast, bNorth);
-                    } else {
-                        pendingBbox = new Bbox(
-                            Math.min(pendingBbox.west, bWest),
-                            Math.min(pendingBbox.south, bSouth),
-                            Math.max(pendingBbox.east, bEast),
-                            Math.max(pendingBbox.north, bNorth)
-                        );
-                    }
+                if (blockPolygon) {
+                    pendingFeatures.push(blockPolygon.feature);
+                    pendingBbox = this.expandPendingBbox(pendingBbox, blockPolygon.bbox);
                 }
             }
         });
@@ -184,6 +121,115 @@ export class DelBlockMode implements ModeStrategy {
         if (changed) {
             this.updatePendingDelLayer(context.map);
         }
+    }
+
+    /**
+     * Calculate bbox from cursor position and size
+     */
+    private getCursorBbox(lngLat: mapboxgl.LngLat, map: mapboxgl.Map): Bbox {
+        const point = map.project(lngLat);
+        const halfSize = DEL_BLOCK_CURSOR_STYLE.SIZE / 2;
+
+        const nwPoint = new mapboxgl.Point(point.x - halfSize, point.y - halfSize);
+        const sePoint = new mapboxgl.Point(point.x + halfSize, point.y + halfSize);
+
+        const nw = map.unproject(nwPoint);
+        const se = map.unproject(sePoint);
+
+        return new Bbox(
+            Math.min(nw.lng, se.lng),
+            Math.min(nw.lat, se.lat),
+            Math.max(nw.lng, se.lng),
+            Math.max(nw.lat, se.lat)
+        );
+    }
+
+    /**
+     * Add block to pending deletion set
+     * @returns true if block was newly added, false if already exists
+     */
+    private addBlockToPending(
+        tileKey: string,
+        blockKey: string,
+        pendingBlocks: { [tileKey: string]: Set<string> }
+    ): boolean {
+        if (!pendingBlocks[tileKey]) {
+            pendingBlocks[tileKey] = new Set();
+        }
+
+        if (pendingBlocks[tileKey].has(blockKey)) {
+            return false;
+        }
+
+        pendingBlocks[tileKey].add(blockKey);
+        return true;
+    }
+
+    /**
+     * Create polygon feature for a block
+     */
+    private createBlockPolygon(
+        tileKey: string,
+        blockKey: string,
+        fogMapInstance: fogMap.FogMap
+    ): { feature: GeoJSON.Feature<GeoJSON.Polygon>; bbox: Bbox } | null {
+        const tile = fogMapInstance.tiles[tileKey];
+        if (!tile || !tile.blocks[blockKey]) {
+            return null;
+        }
+
+        const block = tile.blocks[blockKey];
+        const TILE_WIDTH = fogMap.TILE_WIDTH;
+
+        const x0 = tile.x + block.x / TILE_WIDTH;
+        const y0 = tile.y + block.y / TILE_WIDTH;
+        const x1 = tile.x + (block.x + 1) / TILE_WIDTH;
+        const y1 = tile.y + (block.y + 1) / TILE_WIDTH;
+
+        const nw = fogMap.Tile.XYToLngLat(x0, y0);
+        const ne = fogMap.Tile.XYToLngLat(x1, y0);
+        const se = fogMap.Tile.XYToLngLat(x1, y1);
+        const sw = fogMap.Tile.XYToLngLat(x0, y1);
+
+        const feature: GeoJSON.Feature<GeoJSON.Polygon> = {
+            type: "Feature",
+            geometry: {
+                type: "Polygon",
+                coordinates: [[
+                    [nw[0], nw[1]],
+                    [sw[0], sw[1]],
+                    [se[0], se[1]],
+                    [ne[0], ne[1]],
+                    [nw[0], nw[1]]
+                ]],
+            },
+            properties: {},
+        };
+
+        const bbox = new Bbox(
+            Math.min(nw[0], ne[0], se[0], sw[0]),
+            Math.min(nw[1], ne[1], se[1], sw[1]),
+            Math.max(nw[0], ne[0], se[0], sw[0]),
+            Math.max(nw[1], ne[1], se[1], sw[1])
+        );
+
+        return { feature, bbox };
+    }
+
+    /**
+     * Expand pending bbox to include new block bbox
+     */
+    private expandPendingBbox(currentBbox: Bbox | null, newBbox: Bbox): Bbox {
+        if (!currentBbox) {
+            return newBbox;
+        }
+
+        return new Bbox(
+            Math.min(currentBbox.west, newBbox.west),
+            Math.min(currentBbox.south, newBbox.south),
+            Math.max(currentBbox.east, newBbox.east),
+            Math.max(currentBbox.north, newBbox.north)
+        );
     }
 
     /**
