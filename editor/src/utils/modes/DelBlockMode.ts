@@ -216,26 +216,23 @@ export class DelBlockMode implements ModeStrategy {
         return { feature, bbox };
     }
 
-    /**
-     * Expand pending bbox to include new block bbox
-     */
-    private expandPendingBbox(currentBbox: Bbox | null, newBbox: Bbox): Bbox {
-        if (!currentBbox) {
+    private expandPendingBbox(curBbox: Bbox | null, newBbox: Bbox): Bbox {
+        if (!curBbox) {
             return newBbox;
         }
 
         return new Bbox(
-            Math.min(currentBbox.west, newBbox.west),
-            Math.min(currentBbox.south, newBbox.south),
-            Math.max(currentBbox.east, newBbox.east),
-            Math.max(currentBbox.north, newBbox.north)
+            Math.min(curBbox.west, newBbox.west),
+            Math.min(curBbox.south, newBbox.south),
+            Math.max(curBbox.east, newBbox.east),
+            Math.max(curBbox.north, newBbox.north)
         );
     }
 
     /**
      * Update the block cursor position
      */
-    private updateDelBlockCursor(lngLat: mapboxgl.LngLat, context: ModeContext): void {
+    private updateDelBlockCursor(curLngLat: mapboxgl.LngLat, context: ModeContext): void {
         const map = context.map;
 
         if (!this.delBlockCursor) {
@@ -249,10 +246,10 @@ export class DelBlockMode implements ModeStrategy {
                 element: el,
                 anchor: 'center',
             })
-                .setLngLat(lngLat)
+                .setLngLat(curLngLat)
                 .addTo(map);
         } else {
-            this.delBlockCursor.setLngLat(lngLat);
+            this.delBlockCursor.setLngLat(curLngLat);
         }
     }
 
