@@ -158,8 +158,8 @@ export class DelPixelMode implements ModeStrategy {
     private lastPos: mapboxgl.LngLat | null = null;
     private eraserStrokeBbox: Bbox | null = null;
     private drawingSession: DrawingSession | null = null;
-    private earserSize = DEFAULT_DEL_PIXEL_SIZE;
-    private delPixelCursor: mapboxgl.Marker | null = null;
+    private eraserSize = DEFAULT_DEL_PIXEL_SIZE;
+    private eraserCursor: mapboxgl.Marker | null = null;
 
     activate(context: ModeContext): void {
         const currentZoom = context.map.getZoom();
@@ -178,9 +178,9 @@ export class DelPixelMode implements ModeStrategy {
         this.eraserStrokeBbox = null;
         this.drawingSession = null;
 
-        if (this.delPixelCursor) {
-            this.delPixelCursor.remove();
-            this.delPixelCursor = null;
+        if (this.eraserCursor) {
+            this.eraserCursor.remove();
+            this.eraserCursor = null;
         }
     }
 
@@ -229,15 +229,15 @@ export class DelPixelMode implements ModeStrategy {
     }
 
     setDelPixelSize(size: number): void {
-        this.earserSize = size;
+        this.eraserSize = size;
     }
 
     getDelPixelSize(): number {
-        return this.earserSize;
+        return this.eraserSize;
     }
 
     private updateDelPixelCursor(lngLat: mapboxgl.LngLat, map: mapboxgl.Map): void {
-        if (!this.delPixelCursor) {
+        if (!this.eraserCursor) {
             const size = this.calculateCursorSize(map);
             const el = document.createElement('div');
             el.className = 'delete-pixel-cursor-dom';
@@ -247,18 +247,18 @@ export class DelPixelMode implements ModeStrategy {
             el.style.borderRadius = '50%';
             el.style.pointerEvents = 'none';
 
-            this.delPixelCursor = new mapboxgl.Marker({
+            this.eraserCursor = new mapboxgl.Marker({
                 element: el,
                 anchor: 'center',
             })
                 .setLngLat(lngLat)
                 .addTo(map);
         } else {
-            this.delPixelCursor.setLngLat(lngLat);
+            this.eraserCursor.setLngLat(lngLat);
 
             // Update size if zoom changed
             const size = this.calculateCursorSize(map);
-            const el = this.delPixelCursor.getElement();
+            const el = this.eraserCursor.getElement();
             el.style.width = `${size}px`;
             el.style.height = `${size}px`;
         }
@@ -268,7 +268,7 @@ export class DelPixelMode implements ModeStrategy {
         // Calculate pixel size in screen coordinates
         const center = map.getCenter();
         const [gx, gy] = fogMap.FogMap.LngLatToGlobalXY(center.lng, center.lat);
-        const radius = this.earserSize / 2;
+        const radius = this.eraserSize / 2;
 
         const scale = fogMap.TILE_WIDTH * fogMap.BITMAP_WIDTH;
         const px1 = (gx - radius) / scale;
@@ -291,7 +291,7 @@ export class DelPixelMode implements ModeStrategy {
             this.drawingSession,
             this.lastPos,
             lngLat,
-            this.earserSize
+            this.eraserSize
         );
 
         this.lastPos = lngLat;
