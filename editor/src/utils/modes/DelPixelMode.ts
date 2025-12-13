@@ -177,7 +177,7 @@ export class DelPixelMode implements ModeStrategy {
         this.lastPos = null;
         this.eraserStrokeBbox = null;
         this.drawingSession = null;
-        
+
         if (this.delPixelCursor) {
             this.delPixelCursor.remove();
             this.delPixelCursor = null;
@@ -196,7 +196,7 @@ export class DelPixelMode implements ModeStrategy {
             erasedArea: Bbox.fromPoint(e.lngLat),
         };
 
-        this.handleDelPixelInteraction(e.lngLat, context);
+        this.applyEraserStroke(e.lngLat, context);
         context.onChange();
     }
 
@@ -204,7 +204,7 @@ export class DelPixelMode implements ModeStrategy {
         this.updateDelPixelCursor(e.lngLat, context.map);
 
         if (e.originalEvent.buttons === 1 && this.lastPos) {
-            this.handleDelPixelInteraction(e.lngLat, context);
+            this.applyEraserStroke(e.lngLat, context);
         }
     }
 
@@ -255,7 +255,7 @@ export class DelPixelMode implements ModeStrategy {
                 .addTo(map);
         } else {
             this.delPixelCursor.setLngLat(lngLat);
-            
+
             // Update size if zoom changed
             const size = this.calculateCursorSize(map);
             const el = this.delPixelCursor.getElement();
@@ -269,24 +269,24 @@ export class DelPixelMode implements ModeStrategy {
         const center = map.getCenter();
         const [gx, gy] = fogMap.FogMap.LngLatToGlobalXY(center.lng, center.lat);
         const radius = this.earserSize / 2;
-        
+
         const scale = fogMap.TILE_WIDTH * fogMap.BITMAP_WIDTH;
         const px1 = (gx - radius) / scale;
         const px2 = (gx + radius) / scale;
-        
+
         const lng1 = fogMap.Tile.XYToLngLat(px1, gy / scale)[0];
         const lng2 = fogMap.Tile.XYToLngLat(px2, gy / scale)[0];
-        
+
         const point1 = map.project(new mapboxgl.LngLat(lng1, center.lat));
         const point2 = map.project(new mapboxgl.LngLat(lng2, center.lat));
-        
+
         return Math.abs(point2.x - point1.x);
     }
 
-    private handleDelPixelInteraction(lngLat: mapboxgl.LngLat, context: ModeContext): void {
+    private applyEraserStroke(lngLat: mapboxgl.LngLat, context: ModeContext): void {
         if (!this.lastPos || !this.drawingSession) return;
 
-        const result = handleDelPixelInteraction(
+        const result = processEraserStroke(
             context.fogMap,
             this.drawingSession,
             this.lastPos,
@@ -302,11 +302,11 @@ export class DelPixelMode implements ModeStrategy {
     }
 }
 
-function handleDelPixelInteraction(
+function processEraserStroke(
     fogMapInstance: fogMap.FogMap,
     drawingSession: DrawingSession,
     lastPos: mapboxgl.LngLat | null,
-    currentPos: mapboxgl.LngLat,
+    curPos: mapboxgl.LngLat,
     eraserSize: number
 ): {
     newMap: fogMap.FogMap;
@@ -316,7 +316,7 @@ function handleDelPixelInteraction(
     if (!lastPos || !drawingSession) return null;
 
     const [x0, y0] = fogMap.FogMap.LngLatToGlobalXY(lastPos.lng, lastPos.lat);
-    const [x1, y1] = fogMap.FogMap.LngLatToGlobalXY(currentPos.lng, currentPos.lat);
+    const [x1, y1] = fogMap.FogMap.LngLatToGlobalXY(curPos.lng, curPos.lat);
 
     const constants = {
         TILE_WIDTH: fogMap.TILE_WIDTH,
@@ -330,10 +330,10 @@ function handleDelPixelInteraction(
     eraser.eraseCircle(points, eraserSize);
 
     const segmentBbox = new Bbox(
-        Math.min(lastPos.lng, currentPos.lng),
-        Math.min(lastPos.lat, currentPos.lat),
-        Math.max(lastPos.lng, currentPos.lng),
-        Math.max(lastPos.lat, currentPos.lat)
+        Math.min(lastPos.lng, curPos.lng),
+        Math.min(lastPos.lat, curPos.lat),
+        Math.max(lastPos.lng, curPos.lng),
+        Math.max(lastPos.lat, curPos.lat)
     );
 
     if (eraser.hasChanged()) {
@@ -354,72 +354,3 @@ function handleDelPixelInteraction(
 
     return { newMap: fogMapInstance, segmentBbox, changed: false };
 }
-
-function getSquareCursor(
-    lngLat: mapboxgl.LngLat,
-    pixelSize: number
-): GeoJSON.Geometry {
-    const [gx, gy] = fogMap.FogMap.LngLatToGlobalXY(lngLat.lng, lngLat.lat);
-    const half = pixelSize / 2;
-    const centerOffset = pixelSize % 2 === 1 ? 0.5 : 0;
-    const gx1 = gx - half + centerOffset;
-    const gx2 = gx + half + centerOffset;
-    const gy1 = gy - half + centerOffset;
-    const gy2 = gy + half + centerOffset;
-
-    const scale = fogMap.TILE_WIDTH * fogMap.BITMAP_WIDTH;
-
-    const x1 = gx1 / scale;
-    const y1 = gy1 / scale;
-    const x2 = gx2 / scale;
-    const y2 = gy2 / scale;
-
-    const nw = fogMap.Tile.XYToLngLat(x1, y1);
-    const ne = fogMap.Tile.XYToLngLat(x2, y1);
-    const se = fogMap.Tile.XYToLngLat(x2, y2);
-    const sw = fogMap.Tile.XYToLngLat(x1, y2);
-
-    return {
-        type: "Polygon",
-        coordinates: [[
-            [nw[0], nw[1]],
-            [ne[0], ne[1]],
-            [se[0], se[1]],
-            [sw[0], sw[1]],
-            [nw[0], nw[1]]
-        ]]
-    };
-}
-
-function getCircleCursor(
-    lngLat: mapboxgl.LngLat,
-    pixelSize: number
-): GeoJSON.Geometry {
-    const [gx, gy] = fogMap.FogMap.LngLatToGlobalXY(lngLat.lng, lngLat.lat);
-    const radius = pixelSize / 2;
-    const centerOffset = pixelSize % 2 === 1 ? 0.5 : 0;
-
-    const scale = fogMap.TILE_WIDTH * fogMap.BITMAP_WIDTH;
-
-    const numPoints = 32;
-    const coordinates: number[][] = [];
-
-    for (let i = 0; i <= numPoints; i++) {
-        const angle = (i / numPoints) * 2 * Math.PI;
-        const dx = Math.cos(angle) * radius;
-        const dy = Math.sin(angle) * radius;
-
-        const px = (gx + dx + centerOffset) / scale;
-        const py = (gy + dy + centerOffset) / scale;
-
-        const point = fogMap.Tile.XYToLngLat(px, py);
-        coordinates.push([point[0], point[1]]);
-    }
-
-    return {
-        type: "Polygon",
-        coordinates: [coordinates]
-    };
-}
-
-
