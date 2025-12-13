@@ -12,7 +12,7 @@ const DEL_PIXEL_CURSOR_STYLE = {
     BORDER_COLOR: '#000000',
 } as const;
 
-export interface DrawingSession {
+interface DrawingSession {
     baseMap: fogMap.FogMap;
     modifiedBlocks: {
         [tileKey: string]: { [blockKey: string]: fogMap.Block | null };
