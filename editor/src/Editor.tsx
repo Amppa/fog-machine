@@ -46,7 +46,7 @@ function Editor(props: Props): JSX.Element {
         canUndo: mapController.historyManager.canUndo(),
       });
       setEraserSize(mapController.getDelPixelSize());
-      setIsDeletingPixel(mapController.getIsDeletingPixel());
+      setIsDeletingPixel(mapController.isDelPixelDrawing());
     });
     props.setLoaded(true);
 

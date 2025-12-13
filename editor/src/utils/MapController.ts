@@ -279,9 +279,18 @@ export class MapController {
     }
   }
 
-  getIsDeletingPixel(): boolean {
+  isDelPixelDrawing(): boolean {
     // Check if currently in DelPixel mode and actively drawing
-    return this.controlMode === ControlMode.DelPixel;
+    if (this.controlMode !== ControlMode.DelPixel) {
+      return false;
+    }
+    const delPixelMode = this.modeManager?.getStrategy(ControlMode.DelPixel);
+    if (delPixelMode && 'getIsDrawing' in delPixelMode) {
+      const isDrawing = (delPixelMode as any).getIsDrawing();
+      console.log('[MapController] isDelPixelDrawing:', isDrawing);
+      return isDrawing;
+    }
+    return false;
   }
 
   getCenter(): { lng: number; lat: number; zoom: number } | null {

@@ -160,6 +160,7 @@ export class DelPixelMode implements ModeStrategy {
     private drawingSession: DrawingSession | null = null;
     private eraserSize = DEFAULT_DEL_PIXEL_SIZE;
     private eraserCursor: mapboxgl.Marker | null = null;
+    private isDrawing = false;
 
     activate(context: ModeContext): void {
         const currentZoom = context.map.getZoom();
@@ -185,6 +186,7 @@ export class DelPixelMode implements ModeStrategy {
     }
 
     handleMousePress(e: mapboxgl.MapMouseEvent, context: ModeContext): void {
+        this.isDrawing = true;
         context.map.dragPan.disable();
         this.lastPos = e.lngLat;
         this.eraserStrokeBbox = Bbox.fromPoint(e.lngLat);
@@ -209,6 +211,8 @@ export class DelPixelMode implements ModeStrategy {
     }
 
     handleMouseRelease(_e: mapboxgl.MapMouseEvent, context: ModeContext): void {
+        this.isDrawing = false;
+        console.log('[DelPixelMode] Mouse released, isDrawing:', this.isDrawing);
         this.lastPos = null;
         context.onChange();
         context.map.dragPan.enable();
@@ -234,6 +238,10 @@ export class DelPixelMode implements ModeStrategy {
 
     getDelPixelSize(): number {
         return this.eraserSize;
+    }
+
+    getIsDrawing(): boolean {
+        return this.isDrawing;
     }
 
     private updateDelPixelCursor(lngLat: mapboxgl.LngLat, map: mapboxgl.Map): void {
