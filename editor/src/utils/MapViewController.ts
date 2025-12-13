@@ -1,6 +1,9 @@
 import mapboxgl from "mapbox-gl";
 import { Bbox } from "./CommonTypes";
 
+const DEFAULT_ZOOM = 20;
+const FIT_BOUNDS_PADDING = 50;
+
 export class MapViewController {
     private map: mapboxgl.Map;
 
@@ -35,28 +38,31 @@ export class MapViewController {
                 [bounds.east, bounds.north], // northeast
             ],
             {
-                padding: 50, // 50px padding
+                padding: FIT_BOUNDS_PADDING,
                 essential: true,
             }
         );
     }
 
     zoomToBoundingBox(
-        boundingBox: Bbox | null,
-        firstCoordinate: [number, number] | null
+        bbox: Bbox | null,
+        defaultCoord: [number, number] | null
     ): void {
-        if (boundingBox) {
-            const isSinglePoint =
-                boundingBox.west === boundingBox.east &&
-                boundingBox.south === boundingBox.north;
+        if (bbox) {
+            this.zoomToBbox(bbox);
+        } else if (defaultCoord) {
+            this.flyTo(defaultCoord[0], defaultCoord[1]);
+        }
+    }
 
-            if (isSinglePoint) {
-                this.flyTo(boundingBox.west, boundingBox.south, 20);
-            } else {
-                this.fitBounds(boundingBox);
-            }
-        } else if (firstCoordinate) {
-            this.flyTo(firstCoordinate[0], firstCoordinate[1]);
+    private zoomToBbox(bbox: Bbox): void {
+        const isSinglePoint =
+            bbox.west === bbox.east && bbox.south === bbox.north;
+
+        if (isSinglePoint) {
+            this.flyTo(bbox.west, bbox.south, DEFAULT_ZOOM);
+        } else {
+            this.fitBounds(bbox);
         }
     }
 }
