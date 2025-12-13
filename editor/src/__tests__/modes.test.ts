@@ -24,7 +24,7 @@ describe("Mode Functional Tests", () => {
             // 3. Verify exact counts
             const tileCount = Object.keys(fogMapData.tiles).length;
             const blockCount = countTotalBlocks(fogMapData);
-
+            // console.log(`Short line - Tiles: ${tileCount}, Blocks: ${blockCount}`);
 
             // This specific line creates exactly 1 tile with 39 blocks
             expect(tileCount).toBe(1);
@@ -42,7 +42,6 @@ describe("Mode Functional Tests", () => {
 
             const tileCount = Object.keys(fogMapData.tiles).length;
             const blockCount = countTotalBlocks(fogMapData);
-
 
             // This long line creates exactly 4 tiles with 382 blocks
             expect(tileCount).toBe(4);
@@ -72,15 +71,15 @@ describe("Mode Functional Tests", () => {
             fogMapData = fogMapData.addLine(121.5, 25.0, 121.6, 25.1);
 
             const blocksBeforeClear = countTotalBlocks(fogMapData);
-            expect(blocksBeforeClear).toBeGreaterThan(0);
+            expect(blocksBeforeClear).toBe(39);
 
             // 2. Clear the same area with a rectangle
             const bbox = new Bbox(121.5, 25.0, 121.6, 25.1);
             fogMapData = fogMapData.clearBbox(bbox);
 
-            // 3. Verify: blocks should be significantly reduced or cleared
+            // 3. Verify: clearing reduces blocks from 39 to 2
             const blocksAfterClear = countTotalBlocks(fogMapData);
-            expect(blocksAfterClear).toBeLessThan(blocksBeforeClear);
+            expect(blocksAfterClear).toBe(2);
         });
 
         test("should partially clear fog", () => {
@@ -93,9 +92,9 @@ describe("Mode Functional Tests", () => {
             const bbox = new Bbox(121.5, 25.0, 121.55, 25.05);
             fogMapData = fogMapData.clearBbox(bbox);
 
-            // Should still have some blocks remaining
+            // Partial clear leaves exactly 60 blocks remaining
             const totalBlocks = countTotalBlocks(fogMapData);
-            expect(totalBlocks).toBeGreaterThan(0);
+            expect(totalBlocks).toBe(60);
         });
     });
 
