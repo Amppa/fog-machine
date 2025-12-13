@@ -53,36 +53,45 @@ export default function ImportDialog(props: Props): JSX.Element {
         }
 
         console.log(files);
-        // TODO: error handling
         // TODO: progress bar
         // TODO: improve file checking
         let done = false;
-        files.forEach((file) => console.log(getFileExtension(file.name)));
-        if (files.every((file) => getFileExtension(file.name) === "")) {
-            const tileFiles = await Promise.all(
-                files.map(async (file) => {
-                    const data = await readFileAsync(file);
-                    return [file.name, data] as [string, ArrayBuffer];
-                })
-            );
-            const map = FogMap.createFromFiles(tileFiles);
-            mapController.replaceFogMap(map);
-            done = true;
-        } else {
-            if (files.length === 1 && getFileExtension(files[0].name) === "zip") {
-                const data = await readFileAsync(files[0]);
-                if (data instanceof ArrayBuffer) {
-                    const map = await createMapFromZip(data);
-                    mapController.replaceFogMap(map);
-                }
-                done = true;
-            }
-        }
 
-        if (done) {
-            // TODO: move to center?
-        } else {
-            msgboxShow("error", "error-invalid-format");
+        try {
+            files.forEach((file) => console.log(getFileExtension(file.name)));
+            if (files.every((file) => getFileExtension(file.name) === "")) {
+                const tileFiles = await Promise.all(
+                    files.map(async (file) => {
+                        const data = await readFileAsync(file);
+                        return [file.name, data] as [string, ArrayBuffer];
+                    })
+                );
+                const map = FogMap.createFromFiles(tileFiles);
+                mapController.replaceFogMap(map);
+                done = true;
+            } else {
+                if (files.length === 1 && getFileExtension(files[0].name) === "zip") {
+                    const data = await readFileAsync(files[0]);
+                    if (data instanceof ArrayBuffer) {
+                        const map = await createMapFromZip(data);
+                        mapController.replaceFogMap(map);
+                    }
+                    done = true;
+                }
+            }
+
+            if (done) {
+                // TODO: move to center?
+            } else {
+                msgboxShow("error", "error-invalid-format");
+            }
+        } catch (error) {
+            console.error("Import failed:", error);
+            if (error instanceof Error) {
+                msgboxShow("error", `error-import-failed: ${error.message}`);
+            } else {
+                msgboxShow("error", "error-import-failed");
+            }
         }
     }
 
