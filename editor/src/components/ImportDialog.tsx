@@ -41,57 +41,67 @@ export async function createMapFromZip(data: ArrayBuffer): Promise<FogMap> {
 
 export default function ImportDialog(props: Props): JSX.Element {
     const { t } = useTranslation();
-    const { isOpen, setIsOpen, msgboxShow } = props;
+    const { isOpen, setIsOpen, msgboxShow, mapController } = props;
+
+    // Helper functions
+    function isZipFile(files: File[]): boolean {
+        return files.length === 1 && getFileExtension(files[0].name) === "zip";
+    }
+
+    function isTileFiles(files: File[]): boolean {
+        return files.every((file) => getFileExtension(file.name) === "");
+    }
+
+    async function importTileFiles(files: File[]): Promise<FogMap> {
+        const tileFiles = await Promise.all(
+            files.map(async (file) => {
+                const data = await readFileAsync(file);
+                return [file.name, data] as [string, ArrayBuffer];
+            })
+        );
+        return FogMap.createFromFiles(tileFiles);
+    }
+
+    async function importZipFile(file: File): Promise<FogMap> {
+        const data = await readFileAsync(file);
+        if (!(data instanceof ArrayBuffer)) {
+            throw new Error("Invalid file data");
+        }
+        return await createMapFromZip(data);
+    }
 
     async function importFiles(files: File[]) {
-        const mapController = props.mapController;
         closeModal();
+
+        // Early return: check if map already imported
         if (mapController.fogMap !== FogMap.empty) {
-            // we need this because we do not support overriding in `mapController.addFoGFile`
             msgboxShow("error", "error-already-imported");
             return;
         }
 
         console.log(files);
         // TODO: progress bar
-        // TODO: improve file checking
-        let done = false;
 
         try {
-            files.forEach((file) => console.log(getFileExtension(file.name)));
-            if (files.every((file) => getFileExtension(file.name) === "")) {
-                const tileFiles = await Promise.all(
-                    files.map(async (file) => {
-                        const data = await readFileAsync(file);
-                        return [file.name, data] as [string, ArrayBuffer];
-                    })
-                );
-                const map = FogMap.createFromFiles(tileFiles);
-                mapController.replaceFogMap(map);
-                done = true;
-            } else {
-                if (files.length === 1 && getFileExtension(files[0].name) === "zip") {
-                    const data = await readFileAsync(files[0]);
-                    if (data instanceof ArrayBuffer) {
-                        const map = await createMapFromZip(data);
-                        mapController.replaceFogMap(map);
-                    }
-                    done = true;
-                }
-            }
+            let fogMap: FogMap | null = null;
 
-            if (done) {
-                // TODO: move to center?
+            if (isTileFiles(files)) {
+                fogMap = await importTileFiles(files);
+            } else if (isZipFile(files)) {
+                fogMap = await importZipFile(files[0]);
             } else {
                 msgboxShow("error", "error-invalid-format");
+                return;
             }
+
+            mapController.replaceFogMap(fogMap);
+            // TODO: move to center?
         } catch (error) {
             console.error("Import failed:", error);
-            if (error instanceof Error) {
-                msgboxShow("error", `error-import-failed: ${error.message}`);
-            } else {
-                msgboxShow("error", "error-import-failed");
-            }
+            const errorMsg = error instanceof Error
+                ? `error-import-failed: ${error.message}`
+                : "error-import-failed";
+            msgboxShow("error", errorMsg);
         }
     }
 
