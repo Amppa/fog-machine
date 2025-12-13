@@ -4,7 +4,7 @@ import { Bbox } from "../CommonTypes";
 import * as fogMap from "../FogMap";
 
 const CURSOR_STYLE = 'crosshair';
-const DEFAULT_DEL_PIXEL_SIZE = 5;
+const DEFAULT_ERASER_DIAMETER = 5;
 const AUTO_ZOOM_LEVEL = 11;
 
 const DEL_PIXEL_CURSOR_STYLE = {
@@ -57,8 +57,8 @@ class PixelEraser {
         }
     }
 
-    eraseCircle(points: [number, number][], size: number): void {
-        const radius = size / 2;
+    eraseCircle(points: [number, number][], diameter: number): void {
+        const radius = diameter / 2;
         const radiusSquared = radius * radius;
         const offsetStart = -Math.floor(radius);
         const offsetEnd = Math.ceil(radius);
@@ -157,7 +157,7 @@ class PixelEraser {
 export class DelPixelMode implements ModeStrategy {
     private lastPos: mapboxgl.LngLat | null = null;
     private session: DrawingSession | null = null;
-    private size = DEFAULT_DEL_PIXEL_SIZE;
+    private diameter = DEFAULT_ERASER_DIAMETER;
     private cursorIndicator: mapboxgl.Marker | null = null;
     private isDrawing = false;
 
@@ -225,12 +225,12 @@ export class DelPixelMode implements ModeStrategy {
         return bbox;
     }
 
-    setDelPixelSize(size: number): void {
-        this.size = size;
+    setDelPixelSize(diameter: number): void {
+        this.diameter = diameter;
     }
 
     getDelPixelSize(): number {
-        return this.size;
+        return this.diameter;
     }
 
     getIsDrawing(): boolean {
@@ -239,11 +239,11 @@ export class DelPixelMode implements ModeStrategy {
 
     private updateCursorIndicator(lngLat: mapboxgl.LngLat, map: mapboxgl.Map): void {
         if (!this.cursorIndicator) {
-            const size = this.calcCursorSizeInPixels(map);
+            const screenSize = this.calcCursorSizeInPixels(map);
             const el = document.createElement('div');
             el.className = 'delete-pixel-cursor-dom';
-            el.style.width = `${size}px`;
-            el.style.height = `${size}px`;
+            el.style.width = `${screenSize}px`;
+            el.style.height = `${screenSize}px`;
             el.style.border = `${DEL_PIXEL_CURSOR_STYLE.BORDER_WIDTH}px solid ${DEL_PIXEL_CURSOR_STYLE.BORDER_COLOR}`;
             el.style.borderRadius = '50%';
             el.style.pointerEvents = 'none';
@@ -257,17 +257,17 @@ export class DelPixelMode implements ModeStrategy {
         } else {
             this.cursorIndicator.setLngLat(lngLat);
 
-            const size = this.calcCursorSizeInPixels(map);
+            const screenSize = this.calcCursorSizeInPixels(map);
             const el = this.cursorIndicator.getElement();
-            el.style.width = `${size}px`;
-            el.style.height = `${size}px`;
+            el.style.width = `${screenSize}px`;
+            el.style.height = `${screenSize}px`;
         }
     }
 
     private calcCursorSizeInPixels(map: mapboxgl.Map): number {
         const center = map.getCenter();
         const [gx, gy] = fogMap.FogMap.LngLatToGlobalXY(center.lng, center.lat);
-        const radius = this.size / 2;
+        const radius = this.diameter / 2;
 
         const scale = fogMap.TILE_WIDTH * fogMap.BITMAP_WIDTH;
         const px1 = (gx - radius) / scale;
@@ -290,7 +290,7 @@ export class DelPixelMode implements ModeStrategy {
             this.session,
             this.lastPos,
             lngLat,
-            this.size
+            this.diameter
         );
 
         this.lastPos = lngLat;
@@ -306,7 +306,7 @@ function processStroke(
     session: DrawingSession,
     lastPos: mapboxgl.LngLat,
     curPos: mapboxgl.LngLat,
-    size: number
+    diameter: number
 ): {
     newMap: fogMap.FogMap;
     segmentBbox: Bbox;
@@ -325,7 +325,7 @@ function processStroke(
 
     const points = Array.from(fogMap.FogMap.traceLine(x0, y0, x1, y1));
     const eraser = new PixelEraser(session, constants);
-    eraser.eraseCircle(points, size);
+    eraser.eraseCircle(points, diameter);
 
     const segmentBbox = new Bbox(
         Math.min(lastPos.lng, curPos.lng),
