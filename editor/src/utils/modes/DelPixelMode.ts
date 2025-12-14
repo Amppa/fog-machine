@@ -4,7 +4,7 @@ import { Bbox } from "../CommonTypes";
 import * as fogMap from "../FogMap";
 
 const CURSOR_STYLE = 'crosshair';
-const DEFAULT_ERASER_DIAMETER = 5;
+const DEFAULT_ERASER_DIAMETER = 31;
 const AUTO_ZOOM_LEVEL = 11;
 
 const DEL_PIXEL_CURSOR_STYLE = {

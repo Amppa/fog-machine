@@ -109,49 +109,49 @@ i18n
           "confirm": "確認",
           "cancel": "取消",
 
-          // ===== 匯入 / 匯出 =====
+          // ===== 汇入 / 汇出 =====
           import: "导入",
           "import-description": "从 [世界迷雾] 中导入数据。",
-          "import-gps": "匯入 GPS 軌跡",
-          "import-gps-description": "從 GPX、KML 或 KMZ 檔案匯入軌跡",
-          "export-full": "完整導出",
+          "import-gps": "汇入 GPS 轨迹",
+          "import-gps-description": "从 GPX、KML 或 KMZ 档案汇入轨迹",
+          "export-full": "完整导出",
           "export-full-description": "以 [世界迷雾] 的格式导出全部数据",
-          "export-diff": "差異化導出",
-          "export-diff-description": "僅導出已修改的 tiles",
+          "export-diff": "差异化导出",
+          "export-diff-description": "仅导出已修改的 tiles",
           "export-gpx": "导出 GPX",
           "export-description-gpx": "以 [GPX] 的格式导出数据。[实验性功能]",
           "exporting": "导出中",
 
-          // ===== 匯入對話框 =====
+          // ===== 汇入对话框 =====
           "import-dialog-description":
             '你的数据将完全在本地处理。\n\n接受的数据格式:\n- "Sync" 文件夹\n-  "Sync" 文件夹中的全部文件\n- 包含 "Sync" 文件夹的 zip 压缩包\n\n',
           "import-dialog-drag-and-drop": "拖入 [世界迷雾] 同步数据",
           "import-dialog-select": "手动选择",
 
-          // ===== 匯入 GPS 對話框 =====
+          // ===== 汇入 GPS 对话框 =====
           "import-gps-dialog-description":
-            "從 GPX、KML 或 KMZ 檔案匯入 GPS 軌跡資料。",
-          "import-gps-dialog-drag-and-drop": "拖入 GPS 軌跡檔案",
-          "import-gps-success": "GPS 軌跡匯入成功",
+            "从 GPX、KML 或 KMZ 档案汇入 GPS 轨迹资料。",
+          "import-gps-dialog-drag-and-drop": "拖入 GPS 轨迹档案",
+          "import-gps-success": "GPS 轨迹汇入成功",
 
-          // ===== 匯出訊息 =====
+          // ===== 汇出讯息 =====
           "export-done-message":
-            '导出成功。\n\n說明： \n1. 重置 [世界迷雾] app\n2. 將解壓縮後的Sync資料夾複製雲端資料夾中。\n3. [世界迷霧] app 重新同步。',
+            '导出成功。\n\n说明： \n1. 重置 [世界迷雾] app\n2. 将解压缩后的Sync资料夹複製云端资料夹中。\n3. [世界迷雾] app 重新同步。',
           "export-diff-done-message":
-            '差異化導出成功。\n\n說明： \n1. 重置 [世界迷雾] app\n2. 解壓縮後的Sync資料夾的文件，複製到雲端的Sync資料夾中，取代同名檔案（保留其他未變更的檔案）\n3. [世界迷霧] app 重新同步。',
-          "export-diff-no-changes": "沒有變更需要導出。",
+            '差异化导出成功。\n\n说明： \n1. 重置 [世界迷雾] app\n2. 解压缩后的Sync资料夹的文件，複製到云端的Sync资料夹中，取代同名档案（保留其他未变更的档案）\n3. [世界迷雾] app 重新同步。',
+          "export-diff-no-changes": "没有变更需要导出。",
           "export-done-message-gpx": "导出成功。",
 
-          // ===== 錯誤 & 提示 =====
+          // ===== 错误 & 提示 =====
           error: "错误",
           "error-already-imported":
             "无法多次导入 [世界迷雾] 数据。可通过刷新页面重置。",
           "error-invalid-format": "无效文件格式。",
           "error-failed-to-load-snapshot": "载入快照失败。",
-          "error-invalid-gps": "無效的 GPS 檔案格式",
+          "error-invalid-gps": "无效的 GPS 档案格式",
           info: "提示",
 
-          // ===== 地圖設定 =====
+          // ===== 地图设定 =====
           "map-type": "地图模式",
           "map-type-standard": "标准",
           "map-type-satellite": "卫星",
@@ -165,21 +165,21 @@ i18n
           "fog-concentration-medium": "中",
           "fog-concentration-high": "高",
 
-          // ===== 座標跳轉對話框 =====
-          "fly-to": "座標跳轉",
-          "fly-to-coordinates": "座標 (緯度, 經度, 縮放)",
-          "fly-to-url-parser": "貼上 URL 網址",
-          "fly-to-error-invalid-format": "格式無效。必須是 '緯度, 經度' 或 '緯度, 經度, 縮放'。僅限數字。",
-          "fly-to-error-invalid-coordinates": "座標格式無效。請使用：緯度, 經度, 縮放",
+          // ===== 座标跳转对话框 =====
+          "fly-to": "座标跳转",
+          "fly-to-coordinates": "座标 (纬度, 经度, 缩放)",
+          "fly-to-url-parser": "贴上 URL 网址",
+          "fly-to-error-invalid-format": "格式无效。必须是 '纬度, 经度' 或 '纬度, 经度, 缩放'。仅限数字。",
+          "fly-to-error-invalid-coordinates": "座标格式无效。请使用：纬度, 经度, 缩放",
 
-          // ===== URL 解析器對話框 =====
+          // ===== URL 解析器对话框 =====
           "url-parser-title": "URL 解析器",
-          "url-parser-paste-url": "貼上 URL 網址",
+          "url-parser-paste-url": "贴上 URL 网址",
           "url-parser-placeholder": "https://...",
           "url-parser-supports": "支援 Google Maps、Apple Maps、OpenStreetMap、Bing Maps。",
           "url-parser-parsed": "已解析",
-          "url-parser-zoom": "縮放等級",
-          "url-parser-error": "無法解析 URL。請檢查格式。",
+          "url-parser-zoom": "缩放等级",
+          "url-parser-error": "无法解析 URL。请检查格式。",
         },
       },
     },
