@@ -31,21 +31,16 @@ interface DelBlockState {
 export class DelBlockMode implements ModeStrategy {
   private delBlockState: DelBlockState;
   private delBlockCursor: mapboxgl.Marker | null = null;
-  private showGrid = false;
 
   constructor() {
     this.delBlockState = this.resetDelBlockState();
   }
 
   activate(context: ModeContext): void {
-    this.showGrid = true;
-    this.updateGridLayer(context);
     // DelBlock layers are initialized in MapController
   }
 
   deactivate(context: ModeContext): void {
-    this.showGrid = false;
-    this.updateGridLayer(context);
     // DelBlock layers are cleaned up in MapController
     this.delBlockState = this.resetDelBlockState();
 
@@ -76,9 +71,6 @@ export class DelBlockMode implements ModeStrategy {
 
     this.delBlockState = this.resetDelBlockState();
     this.updatePendingDelLayer(context.map);
-
-    // Force grid update after block deletion
-    this.updateGridLayer(context);
 
     // Store bbox for history (will be read by ModeManager)
     this.delBlockState.bbox = bboxForHistory;
@@ -265,12 +257,7 @@ export class DelBlockMode implements ModeStrategy {
     }
   }
 
-  /**
-   * Update grid layer visibility
-   */
-  private updateGridLayer(context: ModeContext): void {
-    context.gridRenderer.update(context.map, context.fogMap, this.showGrid);
-  }
+
 
   /**
    * Update pending delete layer

@@ -346,7 +346,7 @@ export class MapController {
   }
 
   private updateGridLayer(): void {
-    if (!this.map || !this.showGrid) return;
+    if (!this.map) return;
     this.gridRenderer.update(this.map, this.fogMap, this.showGrid);
   }
 

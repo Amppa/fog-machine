@@ -54,7 +54,7 @@ function Editor(props: Props): JSX.Element {
 
   Mousetrap.bind(["mod+z"], (_) => mapController.undo());
   Mousetrap.bind(["mod+shift+z"], (_) => mapController.redo());
-  Mousetrap.bind(["b"], (_) => mapController.toggleGrid());
+  Mousetrap.bind(["g"], (_) => mapController.toggleGrid());
 
   const toggleMode = (modeToToggle: ControlMode) => {
     setControlMode(controlMode !== modeToToggle ? modeToToggle : ControlMode.View);
