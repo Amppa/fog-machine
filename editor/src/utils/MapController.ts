@@ -140,7 +140,7 @@ export class MapController {
       updateFogMap: this.updateFogMap.bind(this),
       onChange: this.onChange.bind(this),
       saveToHistory: this.saveToHistory,
-      ensureMinZoomLevel: this.ensureMinZoomLevel.bind(this),
+      ensureMinZoomLevel: (minZoom: number) => this.mapViewController?.ensureMinZoomLevel(minZoom),
     };
     this.modeManager = new ModeManager(context);
   }
@@ -230,6 +230,10 @@ export class MapController {
     }
   }
 
+  getMapViewController(): MapViewController | null {
+    return this.mapViewController;
+  }
+
   get showGrid(): boolean {
     return this._showGrid;
   }
@@ -266,30 +270,6 @@ export class MapController {
       return (delPixelMode as { getIsDrawing(): boolean }).getIsDrawing();
     }
     return false;
-  }
-
-  getCenter(): { lng: number; lat: number; zoom: number } | null {
-    return this.mapViewController?.getCenter() || null;
-  }
-
-  flyTo(lng: number, lat: number, zoom?: number): void {
-    this.mapViewController?.flyTo(lng, lat, zoom);
-  }
-
-  ensureMinZoomLevel(minZoom: number): void {
-    const center = this.getCenter();
-    if (!center) return;
-    if (center.zoom < minZoom) {
-      this.flyTo(center.lng, center.lat, minZoom);
-    }
-  }
-
-  fitBounds(bounds: Bbox): void {
-    this.mapViewController?.fitBounds(bounds);
-  }
-
-  zoomToBoundingBox(boundingBox: Bbox | null, firstCoordinate: [number, number] | null): void {
-    this.mapViewController?.zoomToBoundingBox(boundingBox, firstCoordinate);
   }
 
   // ============================================================================

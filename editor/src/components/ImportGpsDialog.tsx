@@ -88,7 +88,7 @@ export default function ImportGpsDialog(props: Props): JSX.Element {
       }
 
       mapController.replaceFogMap(importedMap);
-      mapController.zoomToBoundingBox(combinedBoundingBox, firstCoordinate);
+      mapController.getMapViewController()?.zoomToBoundingBox(combinedBoundingBox, firstCoordinate);
 
       msgboxShow("info", "import-gps-success");
     } catch (error) {

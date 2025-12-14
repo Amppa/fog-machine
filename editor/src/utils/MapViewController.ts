@@ -52,6 +52,14 @@ export class MapViewController {
     }
   }
 
+  ensureMinZoomLevel(minZoom: number): void {
+    const center = this.getCenter();
+    if (!center) return;
+    if (center.zoom < minZoom) {
+      this.flyTo(center.lng, center.lat, minZoom);
+    }
+  }
+
   private zoomToBbox(bbox: Bbox): void {
     const isSinglePoint = bbox.west === bbox.east && bbox.south === bbox.north;
 

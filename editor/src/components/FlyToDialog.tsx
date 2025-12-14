@@ -19,7 +19,8 @@ export default function FlyToDialog(props: Props): JSX.Element {
 
   useEffect(() => {
     if (isOpen) {
-      const center = mapController.getCenter();
+      const mapViewController = mapController.getMapViewController();
+      const center = mapViewController?.getCenter();
       if (center) {
         setCoordinates(`${center.lat.toFixed(6)}, ${center.lng.toFixed(6)}, ${center.zoom.toFixed(2)}`);
       }
@@ -58,7 +59,7 @@ export default function FlyToDialog(props: Props): JSX.Element {
       const lat = parts[0];
       const lng = parts[1];
       const zoom = parts.length >= 3 ? parts[2] : undefined;
-      mapController.flyTo(lng, lat, zoom);
+      mapController.getMapViewController()?.flyTo(lng, lat, zoom);
       closeModal();
     } else {
       setCoordError(String(t("fly-to-error-invalid-coordinates")));
@@ -66,7 +67,7 @@ export default function FlyToDialog(props: Props): JSX.Element {
   }
 
   function handleUrlParserConfirm(lat: number, lng: number, zoom?: number) {
-    mapController.flyTo(lng, lat, zoom);
+    mapController.getMapViewController()?.flyTo(lng, lat, zoom);
     setIsUrlParserOpen(false);
     closeModal();
   }
