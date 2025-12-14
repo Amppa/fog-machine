@@ -93,8 +93,7 @@ export class ModeManager {
     // Unified history management: save operation bbox after release
     const historyBbox = strategy?.getHistoryBbox();
     if (historyBbox) {
-      this.context.historyManager.append(this.context.fogMap, historyBbox);
-      this.context.onChange(); // Trigger UI update for undo/redo buttons
+      this.context.saveToHistory(this.context.fogMap, historyBbox);
     }
   }
 

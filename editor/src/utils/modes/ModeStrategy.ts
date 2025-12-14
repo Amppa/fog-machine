@@ -15,6 +15,7 @@ export interface ModeContext {
   historyManager: HistoryManager;
   updateFogMap: (newMap: FogMap, area: Bbox | "all", skipGridUpdate?: boolean) => void;
   onChange: () => void;
+  saveToHistory: (fogMap: FogMap, bbox: Bbox | "all") => void;
 }
 
 /**

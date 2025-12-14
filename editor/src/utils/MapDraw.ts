@@ -7,7 +7,6 @@
 import mapboxgl from "mapbox-gl";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import { Bbox } from "./CommonTypes";
-import { HistoryManager } from "./HistoryManager";
 import * as fogMap from "./FogMap";
 
 const DEBUG = false;
@@ -17,21 +16,18 @@ export class MapDraw {
   private mapboxDraw: MapboxDraw;
   private getCurrentFogMap: () => fogMap.FogMap;
   private updateFogMap: (newMap: fogMap.FogMap, areaChanged: Bbox) => void;
-  private historyManager: HistoryManager;
-  private onChange: () => void;
+  private saveToHistory: (fogMap: fogMap.FogMap, bbox: Bbox) => void;
 
   constructor(
     map: mapboxgl.Map,
     getCurrentFogMap: () => fogMap.FogMap,
     updateFogMap: (newMap: fogMap.FogMap, areaChanged: Bbox) => void,
-    historyManager: HistoryManager,
-    onChange: () => void
+    saveToHistory: (fogMap: fogMap.FogMap, bbox: Bbox) => void
   ) {
     this.map = map;
     this.getCurrentFogMap = getCurrentFogMap;
     this.updateFogMap = updateFogMap;
-    this.historyManager = historyManager;
-    this.onChange = onChange;
+    this.saveToHistory = saveToHistory;
     this.mapboxDraw = new MapboxDraw({
       displayControlsDefault: false,
       defaultMode: "draw_line_string",
@@ -73,8 +69,7 @@ export class MapDraw {
           }
           const bbox = new Bbox(bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth());
           this.updateFogMap(newMap, bbox);
-          this.historyManager.append(newMap, bbox);
-          this.onChange(); // Trigger UI update for undo/redo buttons
+          this.saveToHistory(newMap, bbox);
         }
       }
       this.mapboxDraw.trash(); // clean up the user drawing

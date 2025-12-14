@@ -89,6 +89,11 @@ export class MapController {
     return opacityMap[this.fogConcentration];
   };
 
+  private saveToHistory = (fogMap: FogMap, bbox: Bbox | "all"): void => {
+    this.historyManager.append(fogMap, bbox);
+    this.onChange();
+  };
+
   // ============================================================================
   // Initialization Methods
   // ============================================================================
@@ -134,6 +139,7 @@ export class MapController {
       historyManager: this.historyManager,
       updateFogMap: this.updateFogMap.bind(this),
       onChange: this.onChange.bind(this),
+      saveToHistory: this.saveToHistory,
     };
     this.modeManager = new ModeManager(context);
   }
