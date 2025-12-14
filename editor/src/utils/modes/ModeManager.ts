@@ -6,7 +6,6 @@ import { DrawPolylineMode } from "./DrawPolylineMode";
 import { DrawScribbleMode } from "./DrawScribbleMode";
 import { DelBlockMode } from "./DelBlockMode";
 import { DelPixelMode } from "./DelPixelMode";
-import { MapDraw } from "../MapDraw";
 
 /**
  * ModeManager manages mode strategies and handles mode switching
@@ -110,15 +109,5 @@ export class ModeManager {
    */
   getStrategy(mode: ControlMode): ModeStrategy | undefined {
     return this.strategies.get(mode);
-  }
-
-  /**
-   * Set MapDraw instance for DrawPolylineMode
-   */
-  setMapDraw(mapDraw: MapDraw): void {
-    const drawPolylineMode = this.strategies.get(ControlMode.DrawPolyline);
-    if (drawPolylineMode && "setMapDraw" in drawPolylineMode) {
-      (drawPolylineMode as { setMapDraw(mapDraw: MapDraw): void }).setMapDraw(mapDraw);
-    }
   }
 }

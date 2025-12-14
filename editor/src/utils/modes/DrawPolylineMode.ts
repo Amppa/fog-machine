@@ -12,17 +12,20 @@ const CURSOR_STYLE = "crosshair";
 export class DrawPolylineMode implements ModeStrategy {
   private mapDraw: MapDraw | null = null;
 
-  activate(_context: ModeContext): void {
-    // MapDraw will be initialized in MapController
-    if (!this.mapDraw) {
-      console.error("[DrawPolylineMode] MapDraw is not initialized. Call setMapDraw() before activating this mode.");
-      return;
-    }
+  activate(context: ModeContext): void {
+    // Create MapDraw instance when mode is activated
+    this.mapDraw = new MapDraw(
+      context.map,
+      () => context.fogMap,
+      context.updateFogMap
+    );
     this.mapDraw.activate();
   }
 
   deactivate(_context: ModeContext): void {
+    // Clean up MapDraw when mode is deactivated
     this.mapDraw?.deactivate();
+    this.mapDraw = null;
   }
 
   handleMousePress(_e: mapboxgl.MapMouseEvent, _context: ModeContext): void {
@@ -51,13 +54,5 @@ export class DrawPolylineMode implements ModeStrategy {
    */
   getHistoryBbox(): Bbox | null {
     return null;
-  }
-
-  /**
-   * Set the MapDraw instance
-   * This is called from MapController after MapDraw is initialized
-   */
-  setMapDraw(mapDraw: MapDraw): void {
-    this.mapDraw = mapDraw;
   }
 }

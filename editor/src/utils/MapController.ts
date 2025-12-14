@@ -2,7 +2,6 @@ import mapboxgl from "mapbox-gl";
 import * as fogMap from "./FogMap";
 import { FogMap } from "./FogMap";
 import { HistoryManager } from "./HistoryManager";
-import { MapDraw } from "./MapDraw";
 import { MapRenderer, MAPBOX_MAIN_CANVAS_LAYER } from "./MapRenderer";
 import { GridRenderer } from "./GridRenderer";
 import { Bbox } from "./CommonTypes";
@@ -39,7 +38,6 @@ export class MapController {
   private mapProjection: MapProjection;
   private resolvedLanguage: string;
   private fogConcentration: FogConcentration;
-  private mapDraw: MapDraw | null;
   private onChangeCallback: { [key: string]: () => void };
   public historyManager: HistoryManager;
   private gridRenderer: GridRenderer;
@@ -60,7 +58,6 @@ export class MapController {
     this.mapProjection = "mercator";
     this.resolvedLanguage = "en";
     this.fogConcentration = "medium";
-    this.mapDraw = null;
     this.onChangeCallback = {};
     this.historyManager = new HistoryManager(this.fogMap);
     this.gridRenderer = new GridRenderer();
@@ -115,7 +112,6 @@ export class MapController {
     this.initMapRenderer(map);
     this.initDelRectLayers(map);
     this.initModeManager(map);
-    this.initMapDraw(map);
   }
 
   unregisterMap(_map: mapboxgl.Map): void {
@@ -126,12 +122,6 @@ export class MapController {
     // Set the default atmosphere style for globe mode
     this.map?.setFog({});
     this.setMapboxLanguage();
-  }
-
-  private initMapDraw(map: mapboxgl.Map): void {
-    this.mapDraw = new MapDraw(map, this.getFogMap, this.handleDrawUpdate);
-    // Set MapDraw instance to DrawPolylineMode
-    this.modeManager?.setMapDraw(this.mapDraw);
   }
 
   private initDelRectLayers(map: mapboxgl.Map): void {
