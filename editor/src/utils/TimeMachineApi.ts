@@ -51,8 +51,7 @@ function snakeToCamel(x: any): any {
 }
 
 export default class TimeMachineApi {
-  public static readonly backendUrl =
-    process.env.REACT_APP_BACKEND_URL + "/api/v1/";
+  public static readonly backendUrl = process.env.REACT_APP_BACKEND_URL + "/api/v1/";
   private static readonly tokenKey = "user-token";
 
   private static getToken(): string | null {
@@ -72,9 +71,7 @@ export default class TimeMachineApi {
   ): Promise<Result<any>> {
     try {
       if (DEBUG) console.log("requesting api:", method, " ", url);
-      const headers = needToken
-        ? { Authorization: "Bearer " + this.getToken() }
-        : undefined;
+      const headers = needToken ? { Authorization: "Bearer " + this.getToken() } : undefined;
       const response = await axios({
         method,
         url: this.backendUrl + url,
@@ -87,9 +84,7 @@ export default class TimeMachineApi {
       const status = error.response?.status;
       const knownError = error.response?.data?.error;
       const e: Error | UnknownError =
-        status && knownError
-          ? { status: status, error: knownError }
-          : { status: status, unknownError: String(error) };
+        status && knownError ? { status: status, error: knownError } : { status: status, unknownError: String(error) };
 
       // Always log errors
       console.error("api error:", e);
@@ -97,29 +92,15 @@ export default class TimeMachineApi {
     }
   }
 
-  public static async getSnapshotInfo(
-    snapshotId: number
-  ): Promise<Result<SnapshotInfo>> {
-    const result = await this.requestApi(
-      "snapshot/" + String(snapshotId) + "/editor_view",
-      "get",
-      true,
-      "json"
-    );
+  public static async getSnapshotInfo(snapshotId: number): Promise<Result<SnapshotInfo>> {
+    const result = await this.requestApi("snapshot/" + String(snapshotId) + "/editor_view", "get", true, "json");
     if (result.ok) {
       result.ok = snakeToCamel(result.ok);
     }
     return result;
   }
 
-  public static async downloadSnapshot(
-    downloadToken: string
-  ): Promise<Result<ArrayBuffer>> {
-    return this.requestApi(
-      "misc/download?token=" + downloadToken,
-      "get",
-      false,
-      "arraybuffer"
-    );
+  public static async downloadSnapshot(downloadToken: string): Promise<Result<ArrayBuffer>> {
+    return this.requestApi("misc/download?token=" + downloadToken, "get", false, "arraybuffer");
   }
 }

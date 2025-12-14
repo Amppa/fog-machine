@@ -3,61 +3,61 @@ import { ModeStrategy, ModeContext } from "./ModeStrategy";
 import { MapDraw } from "../MapDraw";
 import { Bbox } from "../CommonTypes";
 
-const CURSOR_STYLE = 'crosshair';
+const CURSOR_STYLE = "crosshair";
 
 /**
  * DrawPolyline Mode
  * Allows user to draw polylines to reveal fog
  */
 export class DrawPolylineMode implements ModeStrategy {
-    private mapDraw: MapDraw | null = null;
+  private mapDraw: MapDraw | null = null;
 
-    activate(context: ModeContext): void {
-        // MapDraw will be initialized in MapController
-        if (!this.mapDraw) {
-            console.error('[DrawPolylineMode] MapDraw is not initialized. Call setMapDraw() before activating this mode.');
-            return;
-        }
-        this.mapDraw.activate();
+  activate(_context: ModeContext): void {
+    // MapDraw will be initialized in MapController
+    if (!this.mapDraw) {
+      console.error("[DrawPolylineMode] MapDraw is not initialized. Call setMapDraw() before activating this mode.");
+      return;
     }
+    this.mapDraw.activate();
+  }
 
-    deactivate(_context: ModeContext): void {
-        this.mapDraw?.deactivate();
-    }
+  deactivate(_context: ModeContext): void {
+    this.mapDraw?.deactivate();
+  }
 
-    handleMousePress(_e: mapboxgl.MapMouseEvent, _context: ModeContext): void {
-        // MapDraw handles all mouse events internally via @mapbox/mapbox-gl-draw
-    }
+  handleMousePress(_e: mapboxgl.MapMouseEvent, _context: ModeContext): void {
+    // MapDraw handles all mouse events internally via @mapbox/mapbox-gl-draw
+  }
 
-    handleMouseMove(_e: mapboxgl.MapMouseEvent, _context: ModeContext): void {
-        // MapDraw handles all mouse events internally via @mapbox/mapbox-gl-draw
-    }
+  handleMouseMove(_e: mapboxgl.MapMouseEvent, _context: ModeContext): void {
+    // MapDraw handles all mouse events internally via @mapbox/mapbox-gl-draw
+  }
 
-    handleMouseRelease(_e: mapboxgl.MapMouseEvent, _context: ModeContext): void {
-        // MapDraw handles all mouse events internally via @mapbox/mapbox-gl-draw
-    }
+  handleMouseRelease(_e: mapboxgl.MapMouseEvent, _context: ModeContext): void {
+    // MapDraw handles all mouse events internally via @mapbox/mapbox-gl-draw
+  }
 
-    getCursorStyle(): string {
-        return CURSOR_STYLE;
-    }
+  getCursorStyle(): string {
+    return CURSOR_STYLE;
+  }
 
-    canDragPan(): boolean {
-        return false;
-    }
+  canDragPan(): boolean {
+    return false;
+  }
 
-    /**
-     * DrawPolyline uses MapDraw which handles history internally
-     * Return null to avoid duplicate history entries
-     */
-    getHistoryBbox(): Bbox | null {
-        return null;
-    }
+  /**
+   * DrawPolyline uses MapDraw which handles history internally
+   * Return null to avoid duplicate history entries
+   */
+  getHistoryBbox(): Bbox | null {
+    return null;
+  }
 
-    /**
-     * Set the MapDraw instance
-     * This is called from MapController after MapDraw is initialized
-     */
-    setMapDraw(mapDraw: MapDraw): void {
-        this.mapDraw = mapDraw;
-    }
+  /**
+   * Set the MapDraw instance
+   * This is called from MapController after MapDraw is initialized
+   */
+  setMapDraw(mapDraw: MapDraw): void {
+    this.mapDraw = mapDraw;
+  }
 }

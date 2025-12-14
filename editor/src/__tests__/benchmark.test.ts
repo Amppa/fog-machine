@@ -40,4 +40,4 @@ test("fogMap", async () => {
   expect(visitedCount).toEqual(36983);
 });
 
-export { };
+export {};

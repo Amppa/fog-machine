@@ -17,8 +17,8 @@ i18n
           // ===== Common =====
           "main-title": "FogMachine",
           language: "Language",
-          "confirm": "Confirm",
-          "cancel": "Cancel",
+          confirm: "Confirm",
+          cancel: "Cancel",
 
           // ===== Import / Export =====
           import: "Import",
@@ -30,28 +30,25 @@ i18n
           "export-diff": "Differential Export",
           "export-diff-description": "Export only modified tiles",
           "export-gpx": "Export Gpx",
-          "export-description-gpx":
-            "Export data in [GPX] format. [Experimental]",
-          "exporting": "Exporting",
+          "export-description-gpx": "Export data in [GPX] format. [Experimental]",
+          exporting: "Exporting",
 
           // ===== Import Dialog =====
           "import-dialog-description":
             'All your data will be handled locally.\n\nAccept data format:\n- The "Sync" folder.\n- Files in the "Sync" folder.\n- A zip archive contains the "Sync" folder.\n\n',
-          "import-dialog-drag-and-drop":
-            "drag and drop [Fog of World] sync data",
+          "import-dialog-drag-and-drop": "drag and drop [Fog of World] sync data",
           "import-dialog-select": "Select manually",
 
           // ===== Import GPS Dialog =====
-          "import-gps-dialog-description":
-            "Import GPS track data from GPX, KML, or KMZ files.",
+          "import-gps-dialog-description": "Import GPS track data from GPX, KML, or KMZ files.",
           "import-gps-dialog-drag-and-drop": "drag and drop GPS track files",
           "import-gps-success": "GPS track imported successfully",
 
           // ===== Export Messages =====
           "export-done-message":
-            'Exported successfully.\n\nInstructions: \n1. Reset [Fog of World] app\n2. Copy the extracted Sync folder to your cloud folder.\n3. Re-sync [Fog of World] app.',
+            "Exported successfully.\n\nInstructions: \n1. Reset [Fog of World] app\n2. Copy the extracted Sync folder to your cloud folder.\n3. Re-sync [Fog of World] app.",
           "export-diff-done-message":
-            'Differential export successful.\n\nInstructions:\n1. Reset [Fog of World] app\n2. Copy files from the extracted Sync folder to your cloud Sync folder, replacing files with the same name (keep other unchanged files)\n3. Re-sync [Fog of World] app.',
+            "Differential export successful.\n\nInstructions:\n1. Reset [Fog of World] app\n2. Copy files from the extracted Sync folder to your cloud Sync folder, replacing files with the same name (keep other unchanged files)\n3. Re-sync [Fog of World] app.",
           "export-diff-no-changes": "No changes to export.",
           "export-done-message-gpx": "Exported successfully.",
 
@@ -106,8 +103,8 @@ i18n
           // ===== 通用 =====
           "main-title": "迷雾机器",
           language: "语言",
-          "confirm": "確認",
-          "cancel": "取消",
+          confirm: "確認",
+          cancel: "取消",
 
           // ===== 汇入 / 汇出 =====
           import: "导入",
@@ -120,7 +117,7 @@ i18n
           "export-diff-description": "仅导出已修改的 tiles",
           "export-gpx": "导出 GPX",
           "export-description-gpx": "以 [GPX] 的格式导出数据。[实验性功能]",
-          "exporting": "导出中",
+          exporting: "导出中",
 
           // ===== 汇入对话框 =====
           "import-dialog-description":
@@ -129,23 +126,21 @@ i18n
           "import-dialog-select": "手动选择",
 
           // ===== 汇入 GPS 对话框 =====
-          "import-gps-dialog-description":
-            "从 GPX、KML 或 KMZ 档案汇入 GPS 轨迹资料。",
+          "import-gps-dialog-description": "从 GPX、KML 或 KMZ 档案汇入 GPS 轨迹资料。",
           "import-gps-dialog-drag-and-drop": "拖入 GPS 轨迹档案",
           "import-gps-success": "GPS 轨迹汇入成功",
 
           // ===== 汇出讯息 =====
           "export-done-message":
-            '导出成功。\n\n说明： \n1. 重置 [世界迷雾] app\n2. 将解压缩后的Sync资料夹複製云端资料夹中。\n3. [世界迷雾] app 重新同步。',
+            "导出成功。\n\n说明： \n1. 重置 [世界迷雾] app\n2. 将解压缩后的Sync资料夹複製云端资料夹中。\n3. [世界迷雾] app 重新同步。",
           "export-diff-done-message":
-            '差异化导出成功。\n\n说明： \n1. 重置 [世界迷雾] app\n2. 解压缩后的Sync资料夹的文件，複製到云端的Sync资料夹中，取代同名档案（保留其他未变更的档案）\n3. [世界迷雾] app 重新同步。',
+            "差异化导出成功。\n\n说明： \n1. 重置 [世界迷雾] app\n2. 解压缩后的Sync资料夹的文件，複製到云端的Sync资料夹中，取代同名档案（保留其他未变更的档案）\n3. [世界迷雾] app 重新同步。",
           "export-diff-no-changes": "没有变更需要导出。",
           "export-done-message-gpx": "导出成功。",
 
           // ===== 错误 & 提示 =====
           error: "错误",
-          "error-already-imported":
-            "无法多次导入 [世界迷雾] 数据。可通过刷新页面重置。",
+          "error-already-imported": "无法多次导入 [世界迷雾] 数据。可通过刷新页面重置。",
           "error-invalid-format": "无效文件格式。",
           "error-failed-to-load-snapshot": "载入快照失败。",
           "error-invalid-gps": "无效的 GPS 档案格式",

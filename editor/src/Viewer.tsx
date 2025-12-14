@@ -39,9 +39,7 @@ function Viewer(props: Props): JSX.Element {
     if (gloablSnapshotCache[snapshotInfo.id]) {
       snapshot = gloablSnapshotCache[snapshotInfo.id];
     } else {
-      const snapshotRes = await TimeMachineApi.downloadSnapshot(
-        snapshotInfo.downloadToken
-      );
+      const snapshotRes = await TimeMachineApi.downloadSnapshot(snapshotInfo.downloadToken);
       if (!snapshotRes.ok) {
         console.log(snapshotInfoRes);
         props.msgboxShow("error", "error-failed-to-load-snapshot");
@@ -63,15 +61,10 @@ function Viewer(props: Props): JSX.Element {
   if (!snapshotInfo) {
     return <></>;
   } else {
-    const commonClassName =
-      "flex items-center justify-center mx-2 h-9 p-2 bg-white shadow rounded-lg";
+    const commonClassName = "flex items-center justify-center mx-2 h-9 p-2 bg-white shadow rounded-lg";
     return (
       <>
-        <MainMenu
-          mapController={mapController}
-          msgboxShow={props.msgboxShow}
-          mode="viewer"
-        />
+        <MainMenu mapController={mapController} msgboxShow={props.msgboxShow} mode="viewer" />
         {/* TODO show snapshot's note here */}
         <div className="absolute bottom-0 pb-4 z-10 pointer-events-none flex justify-center w-full">
           <button
@@ -89,11 +82,7 @@ function Viewer(props: Props): JSX.Element {
             {moment(snapshotInfo.prev?.timestamp).format("YYYY-MM-DD") + " <"}
           </button>
 
-          <button
-            className={
-              commonClassName + " active:bg-gray-400 ring-4 ring-gray-700"
-            }
-          >
+          <button className={commonClassName + " active:bg-gray-400 ring-4 ring-gray-700"}>
             {moment(snapshotInfo.timestamp).format("YYYY-MM-DD")}
           </button>
 

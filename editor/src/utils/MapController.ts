@@ -26,8 +26,6 @@ export enum ControlMode {
 }
 
 export class MapController {
-
-
   // ============================================================================
   // Instance Fields
   // ============================================================================
@@ -71,9 +69,7 @@ export class MapController {
 
   static create(): MapController {
     if (MapController.instance) {
-      if (DEBUG) console.warn(
-        "WARNING: One shouldn't create a second copy of `mapController`"
-      );
+      if (DEBUG) console.warn("WARNING: One shouldn't create a second copy of `mapController`");
     } else {
       MapController.instance = new MapController();
     }
@@ -133,11 +129,7 @@ export class MapController {
   }
 
   private initMapDraw(map: mapboxgl.Map): void {
-    this.mapDraw = new MapDraw(
-      map,
-      this.getFogMap,
-      this.handleDrawUpdate
-    );
+    this.mapDraw = new MapDraw(map, this.getFogMap, this.handleDrawUpdate);
     // Set MapDraw instance to DrawPolylineMode
     this.modeManager?.setMapDraw(this.mapDraw);
   }
@@ -161,12 +153,7 @@ export class MapController {
   }
 
   private initMapRenderer(map: mapboxgl.Map): void {
-    this.mapRenderer = new MapRenderer(
-      map,
-      0,
-      this.getFogMap,
-      this.getFogOpacity
-    );
+    this.mapRenderer = new MapRenderer(map, 0, this.getFogMap, this.getFogOpacity);
   }
 
   private setMapboxLanguage(): void {
@@ -175,10 +162,7 @@ export class MapController {
 
     this.map?.getStyle().layers.forEach((thisLayer) => {
       if (thisLayer.id.indexOf("-label") > 0) {
-        this.map?.setLayoutProperty(thisLayer.id, "text-field", [
-          "get",
-          "name_" + mapboxLanguage,
-        ]);
+        this.map?.setLayoutProperty(thisLayer.id, "text-field", ["get", "name_" + mapboxLanguage]);
       }
     });
   }
@@ -266,16 +250,16 @@ export class MapController {
 
   getDelPixelSize(): number {
     const delPixelMode = this.modeManager?.getStrategy(ControlMode.DelPixel);
-    if (delPixelMode && 'getDelPixelSize' in delPixelMode) {
-      return (delPixelMode as any).getDelPixelSize();
+    if (delPixelMode && "getDelPixelSize" in delPixelMode) {
+      return (delPixelMode as { getDelPixelSize(): number }).getDelPixelSize();
     }
     return 5; // default
   }
 
   setDelPixelSize(size: number): void {
     const delPixelMode = this.modeManager?.getStrategy(ControlMode.DelPixel);
-    if (delPixelMode && 'setDelPixelSize' in delPixelMode) {
-      (delPixelMode as any).setDelPixelSize(size);
+    if (delPixelMode && "setDelPixelSize" in delPixelMode) {
+      (delPixelMode as { setDelPixelSize(size: number): void }).setDelPixelSize(size);
       this.onChange();
     }
   }
@@ -285,8 +269,8 @@ export class MapController {
       return false;
     }
     const delPixelMode = this.modeManager?.getStrategy(ControlMode.DelPixel);
-    if (delPixelMode && 'getIsDrawing' in delPixelMode) {
-      return (delPixelMode as any).getIsDrawing();
+    if (delPixelMode && "getIsDrawing" in delPixelMode) {
+      return (delPixelMode as { getIsDrawing(): boolean }).getIsDrawing();
     }
     return false;
   }
@@ -303,10 +287,7 @@ export class MapController {
     this.mapViewController?.fitBounds(bounds);
   }
 
-  zoomToBoundingBox(
-    boundingBox: Bbox | null,
-    firstCoordinate: [number, number] | null
-  ): void {
+  zoomToBoundingBox(boundingBox: Bbox | null, firstCoordinate: [number, number] | null): void {
     this.mapViewController?.zoomToBoundingBox(boundingBox, firstCoordinate);
   }
 
@@ -343,11 +324,7 @@ export class MapController {
     }
   }
 
-  private applyFogMapUpdate(
-    newMap: fogMap.FogMap,
-    areaChanged: Bbox | "all",
-    skipGridUpdate = false
-  ) {
+  private applyFogMapUpdate(newMap: fogMap.FogMap, areaChanged: Bbox | "all", skipGridUpdate = false) {
     this.fogMap = newMap;
     this.redrawArea(areaChanged);
     if (!skipGridUpdate && this.showGrid) {

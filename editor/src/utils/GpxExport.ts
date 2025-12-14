@@ -67,11 +67,11 @@ export function exportToGpx(lngLatList: number[][]): Blob {
     <trk>
         <trkseg>
         ${lngLatList
-      .map((lngLat) => {
-        return `<trkpt lon="${lngLat[0]}" lat="${lngLat[1]}"></trkpt>
+          .map((lngLat) => {
+            return `<trkpt lon="${lngLat[0]}" lat="${lngLat[1]}"></trkpt>
             `;
-      })
-      .join("")}
+          })
+          .join("")}
         </trkseg>
     </trk>
     </gpx>
@@ -97,9 +97,7 @@ function findMinIndex(grid: boolean[][]): [number, number] | null {
 function generateGpxFromTile(tile: Tile): Blob[] {
   const n = BITMAP_WIDTH * TILE_WIDTH;
   // TODO: This temp `bitmapGrid` can be avoided.
-  const bitmapGrid: boolean[][] = Array.from({ length: n }, () =>
-    Array.from({ length: n })
-  );
+  const bitmapGrid: boolean[][] = Array.from({ length: n }, () => Array.from({ length: n }));
 
   // BITMAP_WIDTH * TILE_WIDTH = 64 * 128 = 8192
   // 64 * 64 pixels for each block
@@ -109,8 +107,7 @@ function generateGpxFromTile(tile: Tile): Blob[] {
     for (let x = 0; x < BITMAP_WIDTH; x++) {
       for (let y = 0; y < BITMAP_WIDTH; y++) {
         if (block.isVisited(x, y)) {
-          bitmapGrid[block.x * BITMAP_WIDTH + x][block.y * BITMAP_WIDTH + y] =
-            true;
+          bitmapGrid[block.x * BITMAP_WIDTH + x][block.y * BITMAP_WIDTH + y] = true;
         }
       }
     }

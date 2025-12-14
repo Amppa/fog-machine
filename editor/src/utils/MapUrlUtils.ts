@@ -6,11 +6,7 @@ type MapCoordinate = { lat: number; lng: number; zoom?: number };
 // ============================================================================
 // Helper Functions
 // ============================================================================
-function parseCoordinates(
-  parts: string[],
-  latIndex = 0,
-  lngIndex = 1
-): { lat: number; lng: number } | null {
+function parseCoordinates(parts: string[], latIndex = 0, lngIndex = 1): { lat: number; lng: number } | null {
   if (parts.length < Math.max(latIndex, lngIndex) + 1) {
     return null;
   }
@@ -64,7 +60,6 @@ function parseBingMapsUrl(urlObj: URL): MapCoordinate | null {
   return { ...coords, zoom };
 }
 
-
 // e.g. https://www.google.com/maps/@35.6330087,139.8825402,15.89z/data=!5m1!1e2?authuser=0&entry=ttu&g_ep=EgoyMDI1MTIwNy4wIKXMDSoASAFQAw%3D%3D
 function parseGoogleMapsUrl(urlObj: URL): MapCoordinate | null {
   const atPart = urlObj.pathname.split("/@")[1];
@@ -111,10 +106,7 @@ export function parseMapUrl(url: string): MapCoordinate | null {
     const urlObj = new URL(url);
 
     // Google Maps
-    if (
-      urlObj.hostname.includes("google.com") &&
-      urlObj.pathname.startsWith("/maps")
-    ) {
+    if (urlObj.hostname.includes("google.com") && urlObj.pathname.startsWith("/maps")) {
       return parseGoogleMapsUrl(urlObj);
     }
 

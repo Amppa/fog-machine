@@ -41,22 +41,15 @@ export class HistoryManager {
     }
   }
 
-  public undo(
-    apply: (map: fogMap.FogMap, areaChanged: Bbox | "all") => void
-  ): void {
+  public undo(apply: (map: fogMap.FogMap, areaChanged: Bbox | "all") => void): void {
     if (this.canUndo()) {
       this.pos -= 1;
       // `apply` should be called after the pos update
-      apply(
-        this.history[this.pos].fogMap,
-        this.history[this.pos + 1].areaChanged
-      );
+      apply(this.history[this.pos].fogMap, this.history[this.pos + 1].areaChanged);
     }
   }
 
-  public redo(
-    apply: (map: fogMap.FogMap, areaChanged: Bbox | "all") => void
-  ): void {
+  public redo(apply: (map: fogMap.FogMap, areaChanged: Bbox | "all") => void): void {
     if (this.canRedo()) {
       this.pos += 1;
       const item = this.history[this.pos];

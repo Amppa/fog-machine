@@ -21,11 +21,7 @@ export default function FlyToDialog(props: Props): JSX.Element {
     if (isOpen) {
       const center = mapController.getCenter();
       if (center) {
-        setCoordinates(
-          `${center.lat.toFixed(6)}, ${center.lng.toFixed(
-            6
-          )}, ${center.zoom.toFixed(2)}`
-        );
+        setCoordinates(`${center.lat.toFixed(6)}, ${center.lng.toFixed(6)}, ${center.zoom.toFixed(2)}`);
       }
     }
   }, [isOpen, mapController]);
@@ -109,25 +105,17 @@ export default function FlyToDialog(props: Props): JSX.Element {
           </div>
         }
       >
-        <label className="block text-sm font-medium text-gray-700">
-          {t("fly-to-coordinates")}
-        </label>
+        <label className="block text-sm font-medium text-gray-700">{t("fly-to-coordinates")}</label>
         <input
           type="text"
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
           value={coordinates}
           onChange={(e) => setCoordinates(e.target.value)}
         />
-        {coordError && (
-          <p className="mt-2 text-sm text-red-600">{coordError}</p>
-        )}
+        {coordError && <p className="mt-2 text-sm text-red-600">{coordError}</p>}
       </BaseDialog>
 
-      <UrlParserDialog
-        isOpen={isUrlParserOpen}
-        setIsOpen={setIsUrlParserOpen}
-        onConfirm={handleUrlParserConfirm}
-      />
+      <UrlParserDialog isOpen={isUrlParserOpen} setIsOpen={setIsUrlParserOpen} onConfirm={handleUrlParserConfirm} />
     </>
   );
 }

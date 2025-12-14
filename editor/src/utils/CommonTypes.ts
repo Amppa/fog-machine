@@ -21,10 +21,7 @@ export class Bbox {
   /**
    * Create a Bbox from two points (bounding box containing both points)
    */
-  static fromTwoPoints(
-    point1: { lng: number; lat: number },
-    point2: { lng: number; lat: number }
-  ): Bbox {
+  static fromTwoPoints(point1: { lng: number; lat: number }, point2: { lng: number; lat: number }): Bbox {
     return new Bbox(
       Math.min(point1.lng, point2.lng),
       Math.min(point1.lat, point2.lat),
@@ -55,10 +52,5 @@ export class Bbox {
 
 // NOTE: this does not handle wraparound
 function _isBboxOverlap(a: Bbox, b: Bbox) {
-  return (
-    a.north >= b.south &&
-    b.north >= a.south &&
-    a.east >= b.west &&
-    b.east >= a.west
-  );
+  return a.north >= b.south && b.north >= a.south && a.east >= b.west && b.east >= a.west;
 }

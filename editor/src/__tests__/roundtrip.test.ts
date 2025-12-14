@@ -11,4 +11,4 @@ test("tile dump roundtrip", async () => {
   expect(pako.inflate(outputData)).toEqual(pako.inflate(new Uint8Array(data)));
 });
 
-export { };
+export {};

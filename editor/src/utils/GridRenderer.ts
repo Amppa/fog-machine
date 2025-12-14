@@ -35,11 +35,7 @@ export class GridRenderer {
     );
   }
 
-  public update(
-    map: mapboxgl.Map,
-    currentFogMap: fogMap.FogMap,
-    showGrid: boolean
-  ): void {
+  public update(map: mapboxgl.Map, currentFogMap: fogMap.FogMap, showGrid: boolean): void {
     if (!showGrid) {
       this.remove(map);
       return;
@@ -61,13 +57,10 @@ export class GridRenderer {
   }
 
   public remove(map: mapboxgl.Map): void {
-    if (map.getLayer(this.BLOCKS_LAYER_ID))
-      map.removeLayer(this.BLOCKS_LAYER_ID);
-    if (map.getSource(this.BLOCKS_SOURCE_ID))
-      map.removeSource(this.BLOCKS_SOURCE_ID);
+    if (map.getLayer(this.BLOCKS_LAYER_ID)) map.removeLayer(this.BLOCKS_LAYER_ID);
+    if (map.getSource(this.BLOCKS_SOURCE_ID)) map.removeSource(this.BLOCKS_SOURCE_ID);
     if (map.getLayer(this.TILES_LAYER_ID)) map.removeLayer(this.TILES_LAYER_ID);
-    if (map.getSource(this.TILES_SOURCE_ID))
-      map.removeSource(this.TILES_SOURCE_ID);
+    if (map.getSource(this.TILES_SOURCE_ID)) map.removeSource(this.TILES_SOURCE_ID);
 
     this.stats = {
       tiles: { visible: 0, total: 0 },
@@ -129,13 +122,7 @@ export class GridRenderer {
 
     this.stats.tiles = { visible: visibleCount, total: totalCount };
 
-    this.updateLayerData(
-      map,
-      this.TILES_SOURCE_ID,
-      this.TILES_LAYER_ID,
-      tileFeatures,
-      this.TILE_COLOR
-    );
+    this.updateLayerData(map, this.TILES_SOURCE_ID, this.TILES_LAYER_ID, tileFeatures, this.TILE_COLOR);
   }
 
   private showBlock(map: mapboxgl.Map, currentFogMap: fogMap.FogMap): void {
@@ -193,35 +180,17 @@ export class GridRenderer {
 
     this.stats.blocks = { visible: visibleCount, total: totalCount };
 
-    this.updateLayerData(
-      map,
-      this.BLOCKS_SOURCE_ID,
-      this.BLOCKS_LAYER_ID,
-      blockFeatures,
-      this.BLOCK_COLOR
-    );
+    this.updateLayerData(map, this.BLOCKS_SOURCE_ID, this.BLOCKS_LAYER_ID, blockFeatures, this.BLOCK_COLOR);
   }
 
   private clearTileLayer(map: mapboxgl.Map): void {
     this.stats.tiles = { visible: 0, total: 0 };
-    this.updateLayerData(
-      map,
-      this.TILES_SOURCE_ID,
-      this.TILES_LAYER_ID,
-      [],
-      this.TILE_COLOR
-    );
+    this.updateLayerData(map, this.TILES_SOURCE_ID, this.TILES_LAYER_ID, [], this.TILE_COLOR);
   }
 
   private clearBlockLayer(map: mapboxgl.Map): void {
     this.stats.blocks = { visible: 0, total: 0 };
-    this.updateLayerData(
-      map,
-      this.BLOCKS_SOURCE_ID,
-      this.BLOCKS_LAYER_ID,
-      [],
-      this.BLOCK_COLOR
-    );
+    this.updateLayerData(map, this.BLOCKS_SOURCE_ID, this.BLOCKS_LAYER_ID, [], this.BLOCK_COLOR);
   }
 
   private updateLayerData(

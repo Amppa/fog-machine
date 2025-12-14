@@ -33,11 +33,7 @@ export class MapDraw {
         {
           id: "gl-draw-line",
           type: "line",
-          filter: [
-            "all",
-            ["==", "$type", "LineString"],
-            ["!=", "mode", "static"],
-          ],
+          filter: ["all", ["==", "$type", "LineString"], ["!=", "mode", "static"]],
           layout: {
             "line-cap": "round",
             "line-join": "round",
@@ -60,22 +56,14 @@ export class MapDraw {
 
           let [startLng, startLat] = coordinates[0];
           let newMap = this.getCurrentFogMap();
-          const bounds = new mapboxgl.LngLatBounds(
-            coordinates[0],
-            coordinates[0]
-          );
+          const bounds = new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]);
           for (let j = 1; j < coordinates.length; ++j) {
             const [endLng, endLat] = coordinates[j];
             newMap = newMap.addLine(startLng, startLat, endLng, endLat);
             bounds.extend(coordinates[j]);
             [startLng, startLat] = [endLng, endLat];
           }
-          const bbox = new Bbox(
-            bounds.getWest(),
-            bounds.getSouth(),
-            bounds.getEast(),
-            bounds.getNorth()
-          );
+          const bbox = new Bbox(bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth());
           this.updateFogMap(newMap, bbox);
         }
       }

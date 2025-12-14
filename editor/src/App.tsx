@@ -14,9 +14,7 @@ type ModeProps = {
 };
 function Mode(props: ModeProps) {
   if (!props.mapController) return <></>;
-  const snapshotIdStr = new URL(window.location.href).searchParams.get(
-    "viewing-snapshot"
-  );
+  const snapshotIdStr = new URL(window.location.href).searchParams.get("viewing-snapshot");
   if (snapshotIdStr) {
     const snapshotId = Number(snapshotIdStr);
     return (
@@ -28,13 +26,7 @@ function Mode(props: ModeProps) {
       />
     );
   } else {
-    return (
-      <Editor
-        mapController={props.mapController}
-        setLoaded={props.setLoaded}
-        msgboxShow={props.msgboxShow}
-      />
-    );
+    return <Editor mapController={props.mapController} setLoaded={props.setLoaded} msgboxShow={props.msgboxShow} />;
   }
 }
 
@@ -48,9 +40,7 @@ function App(): JSX.Element {
     }
   };
 
-  const [mapController, setmapController] = useState<MapController | null>(
-    null
-  );
+  const [mapController, setmapController] = useState<MapController | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [msgboxState, setMsgboxState] = useState<{
     isOpen: boolean;
@@ -89,10 +79,7 @@ function App(): JSX.Element {
       }
     >
       <div className="mt-2">
-        <p
-          className="text-xs text-gray-500"
-          style={{ whiteSpace: "pre-wrap" }}
-        >
+        <p className="text-xs text-gray-500" style={{ whiteSpace: "pre-wrap" }}>
           {t_(msgboxState.msg)}
         </p>
       </div>
@@ -107,14 +94,7 @@ function App(): JSX.Element {
         fill="none"
         viewBox="0 0 24 24"
       >
-        <circle
-          className="opacity-25"
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          strokeWidth="4"
-        ></circle>
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
         <path
           className="opacity-75"
           fill="currentColor"
@@ -136,11 +116,7 @@ function App(): JSX.Element {
         />
       </div>
       {msgbox}
-      <Mode
-        mapController={mapController}
-        setLoaded={setLoaded}
-        msgboxShow={msgboxShow}
-      />
+      <Mode mapController={mapController} setLoaded={setLoaded} msgboxShow={msgboxShow} />
       {loaded ? <></> : loadingSpinner}
     </>
   );

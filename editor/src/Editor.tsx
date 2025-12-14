@@ -9,7 +9,6 @@ import { ReactComponent as IconRedo } from "./assets/svg/redo.svg";
 import { ReactComponent as IconUndo } from "./assets/svg/undo.svg";
 import { ReactComponent as IconPencil } from "./assets/svg/pencil.svg";
 import { ReactComponent as IconPencilScribble } from "./assets/svg/pencil-scribble.svg";
-import { ReactComponent as IconEraser } from "./assets/svg/eraser.svg";
 import { ReactComponent as IconEraserSquare } from "./assets/svg/eraser-square.svg";
 import { ReactComponent as IconEraserBlocks } from "./assets/svg/earser-3blocks.svg";
 import { ReactComponent as IconEraserScribble } from "./assets/svg/earser-scribble.svg";
@@ -32,9 +31,7 @@ function Editor(props: Props): JSX.Element {
     canUndo: false,
   });
 
-  const [eraserSize, setEraserSize] = useState(
-    mapController.getDelPixelSize()
-  );
+  const [eraserSize, setEraserSize] = useState(mapController.getDelPixelSize());
   const [isDeletingPixel, setIsDeletingPixel] = useState(false);
 
   const [isFlyToDialogOpen, setIsFlyToDialogOpen] = useState(false);
@@ -98,7 +95,7 @@ function Editor(props: Props): JSX.Element {
       icon: <IconPencilScribble className="w-full h-full" />,
       clickable: true,
       enabled: controlMode === ControlMode.DrawScribble,
-      onClick: () => toggleMode(ControlMode.DrawScribble)
+      onClick: () => toggleMode(ControlMode.DrawScribble),
     },
     {
       key: "eraser",
@@ -112,48 +109,35 @@ function Editor(props: Props): JSX.Element {
       icon: <IconEraserBlocks className="w-full h-full" />,
       clickable: true,
       enabled: controlMode === ControlMode.DelBlock,
-      onClick: () => toggleMode(ControlMode.DelBlock)
+      onClick: () => toggleMode(ControlMode.DelBlock),
     },
     {
       key: "deletePixel",
       icon: <IconEraserScribble className="w-full h-full" />,
       clickable: true,
       enabled: controlMode === ControlMode.DelPixel,
-      onClick: () => toggleMode(ControlMode.DelPixel)
+      onClick: () => toggleMode(ControlMode.DelPixel),
     },
   ];
 
   return (
     <>
-      <MainMenu
-        mapController={mapController}
-        msgboxShow={props.msgboxShow}
-        mode="editor"
-      />
+      <MainMenu mapController={mapController} msgboxShow={props.msgboxShow} mode="editor" />
 
-      <FlyToDialog
-        mapController={mapController}
-        isOpen={isFlyToDialogOpen}
-        setIsOpen={setIsFlyToDialogOpen}
-      />
+      <FlyToDialog mapController={mapController} isOpen={isFlyToDialogOpen} setIsOpen={setIsFlyToDialogOpen} />
 
       <div className="absolute bottom-0 pb-4 z-10 pointer-events-none flex justify-center w-full">
         {toolButtons.map((toolButton) =>
           toolButton !== null ? (
             <div key={toolButton.key} className="relative flex flex-col items-center justify-end">
-
-              {toolButton.key === "deletePixel" &&
-                controlMode === ControlMode.DelPixel &&
-                !isDeletingPixel ? (
+              {toolButton.key === "deletePixel" && controlMode === ControlMode.DelPixel && !isDeletingPixel ? (
                 <div className="absolute bottom-full mb-3 bg-white shadow-lg rounded-lg p-1 flex space-x-1 pointer-events-auto ring-1 ring-gray-200">
                   {ERASER_DIAMETERS.map((diameter, index) => (
                     <div
                       key={index}
                       className={
                         "flex items-center justify-center w-6 h-6 rounded hover:bg-gray-100 cursor-pointer" +
-                        (eraserSize === diameter
-                          ? " bg-gray-200 ring-2 ring-gray-400"
-                          : "")
+                        (eraserSize === diameter ? " bg-gray-200 ring-2 ring-gray-400" : "")
                       }
                       onClick={(e) => {
                         e.stopPropagation();
@@ -176,9 +160,7 @@ function Editor(props: Props): JSX.Element {
                 className={
                   "flex items-center justify-center mx-2 w-9 h-9 p-2 bg-white shadow rounded-lg hover:bg-gray-200 active:bg-gray-400" +
                   (toolButton.enabled ? " ring-4 ring-gray-700" : "") +
-                  (toolButton.clickable
-                    ? " pointer-events-auto"
-                    : " text-gray-300 opacity-40")
+                  (toolButton.clickable ? " pointer-events-auto" : " text-gray-300 opacity-40")
                 }
                 onClick={() => {
                   if (toolButton.clickable) {
@@ -190,12 +172,7 @@ function Editor(props: Props): JSX.Element {
               </button>
             </div>
           ) : (
-            <div
-              key="|"
-              className={
-                "flex items-center justify-center rounded mx-2 w-1 h-9 bg-black shadow"
-              }
-            ></div>
+            <div key="|" className={"flex items-center justify-center rounded mx-2 w-1 h-9 bg-black shadow"}></div>
           )
         )}
       </div>

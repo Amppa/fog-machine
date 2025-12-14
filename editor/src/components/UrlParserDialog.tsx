@@ -87,9 +87,7 @@ export default function UrlParserDialog(props: Props): JSX.Element {
         </div>
       }
     >
-      <label className="block text-sm font-medium text-gray-700">
-        {t("url-parser-paste-url")}
-      </label>
+      <label className="block text-sm font-medium text-gray-700">{t("url-parser-paste-url")}</label>
       <input
         type="text"
         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
@@ -97,21 +95,14 @@ export default function UrlParserDialog(props: Props): JSX.Element {
         onChange={(e) => handleUrlInputChange(e.target.value)}
         placeholder={String(t("url-parser-placeholder"))}
       />
-      <p className="mt-2 text-xs text-gray-500">
-        {t("url-parser-supports")}
-      </p>
+      <p className="mt-2 text-xs text-gray-500">{t("url-parser-supports")}</p>
       {parsedResult && (
         <div className="mt-2 text-sm text-green-600">
-          {t("url-parser-parsed")}: {parsedResult.lat.toFixed(6)},{" "}
-          {parsedResult.lng.toFixed(6)}
-          {parsedResult.zoom !== undefined
-            ? `, ${t("url-parser-zoom")}: ${parsedResult.zoom}`
-            : ""}
+          {t("url-parser-parsed")}: {parsedResult.lat.toFixed(6)}, {parsedResult.lng.toFixed(6)}
+          {parsedResult.zoom !== undefined ? `, ${t("url-parser-zoom")}: ${parsedResult.zoom}` : ""}
         </div>
       )}
-      {urlError && (
-        <p className="mt-2 text-sm text-red-600">{urlError}</p>
-      )}
+      {urlError && <p className="mt-2 text-sm text-red-600">{urlError}</p>}
     </BaseDialog>
   );
 }

@@ -9,12 +9,12 @@ import { HistoryManager } from "../HistoryManager";
  * Contains all dependencies needed by modes
  */
 export interface ModeContext {
-    map: mapboxgl.Map;
-    fogMap: FogMap;
-    gridRenderer: GridRenderer;
-    historyManager: HistoryManager;
-    updateFogMap: (newMap: FogMap, area: Bbox | "all", skipHistory?: boolean, skipGridUpdate?: boolean) => void;
-    onChange: () => void;
+  map: mapboxgl.Map;
+  fogMap: FogMap;
+  gridRenderer: GridRenderer;
+  historyManager: HistoryManager;
+  updateFogMap: (newMap: FogMap, area: Bbox | "all", skipHistory?: boolean, skipGridUpdate?: boolean) => void;
+  onChange: () => void;
 }
 
 /**
@@ -22,45 +22,45 @@ export interface ModeContext {
  * Each mode implements this interface to define its behavior
  */
 export interface ModeStrategy {
-    /**
-     * Called when the mode is activated
-     */
-    activate(context: ModeContext): void;
+  /**
+   * Called when the mode is activated
+   */
+  activate(context: ModeContext): void;
 
-    /**
-     * Called when the mode is deactivated
-     */
-    deactivate(context: ModeContext): void;
+  /**
+   * Called when the mode is deactivated
+   */
+  deactivate(context: ModeContext): void;
 
-    /**
-     * Handle mouse press event
-     */
-    handleMousePress(e: mapboxgl.MapMouseEvent, context: ModeContext): void;
+  /**
+   * Handle mouse press event
+   */
+  handleMousePress(e: mapboxgl.MapMouseEvent, context: ModeContext): void;
 
-    /**
-     * Handle mouse move event
-     */
-    handleMouseMove(e: mapboxgl.MapMouseEvent, context: ModeContext): void;
+  /**
+   * Handle mouse move event
+   */
+  handleMouseMove(e: mapboxgl.MapMouseEvent, context: ModeContext): void;
 
-    /**
-     * Handle mouse release event
-     */
-    handleMouseRelease(e: mapboxgl.MapMouseEvent, context: ModeContext): void;
+  /**
+   * Handle mouse release event
+   */
+  handleMouseRelease(e: mapboxgl.MapMouseEvent, context: ModeContext): void;
 
-    /**
-     * Get the cursor style for this mode
-     */
-    getCursorStyle(): string;
+  /**
+   * Get the cursor style for this mode
+   */
+  getCursorStyle(): string;
 
-    /**
-     * Whether drag pan is allowed in this mode
-     */
-    canDragPan(): boolean;
+  /**
+   * Whether drag pan is allowed in this mode
+   */
+  canDragPan(): boolean;
 
-    /**
-     * Get the bounding box for history management
-     * Called after handleMouseRelease to save the operation to history
-     * Returns null if no operation should be saved (e.g., ViewMode)
-     */
-    getHistoryBbox(): Bbox | null;
+  /**
+   * Get the bounding box for history management
+   * Called after handleMouseRelease to save the operation to history
+   * Returns null if no operation should be saved (e.g., ViewMode)
+   */
+  getHistoryBbox(): Bbox | null;
 }

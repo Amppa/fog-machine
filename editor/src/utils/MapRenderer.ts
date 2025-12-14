@@ -15,10 +15,7 @@ function lngLatToTileXY([lng, lat]: number[], zoom: number): [number, number] {
   const n = Math.pow(2, zoom);
   const latRad = (lat / 180) * Math.PI;
   const x = ((lng + 180.0) / 360.0) * n;
-  let y =
-    ((1.0 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) /
-      2.0) *
-    n;
+  let y = ((1.0 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2.0) * n;
   // In mapbox globe view, we may get some crazy y coordiates.
   // I guess related to the Mercator projection inflation.
   y = Math.min(Math.max(y, 0), n - 1);
@@ -29,18 +26,12 @@ function lngLatToTileXY([lng, lat]: number[], zoom: number): [number, number] {
 function tileXYToLngLat([x, y]: number[], zoom: number): [number, number] {
   const n = Math.pow(2, zoom);
   const lng = (x / n) * 360 - 180;
-  const lat =
-    (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n))) * 180) / Math.PI;
+  const lat = (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n))) * 180) / Math.PI;
   return [lng, lat];
 }
 
 function arrayEquals(a: number[], b: number[]) {
-  return (
-    Array.isArray(a) &&
-    Array.isArray(b) &&
-    a.length === b.length &&
-    a.every((val, index) => val === b[index])
-  );
+  return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((val, index) => val === b[index]);
 }
 
 // A lot of tiles we are drawing are empty. This can help us 1) don't create a
@@ -61,8 +52,7 @@ class LazyTileCanvas {
         this.context = this.canvas.getContext("2d")!;
         this.canvas.width = 512;
         this.canvas.height = 512;
-        this.context.fillStyle =
-          "rgba(0, 0, 0," + this.opacity.toString() + ")";
+        this.context.fillStyle = "rgba(0, 0, 0," + this.opacity.toString() + ")";
         this.context.fillRect(0, 0, 512, 512);
       } else {
         this.context = this.canvas.getContext("2d")!;
@@ -111,21 +101,14 @@ class Internal {
     dx: number,
     dy: number
   ): void {
-    const CANVAS_FOW_BLOCK_SIZE_OFFSET =
-      tileSizeOffset - FogMap.TILE_WIDTH_OFFSET;
+    const CANVAS_FOW_BLOCK_SIZE_OFFSET = tileSizeOffset - FogMap.TILE_WIDTH_OFFSET;
     // ctx.strokeRect(dx,dy,1<<tileSizeOffset, 1<<tileSizeOffset);
     const overscanOffset = Math.max(CANVAS_FOW_BLOCK_SIZE_OFFSET, 0);
     const underscanOffset = Math.max(-CANVAS_FOW_BLOCK_SIZE_OFFSET, 0);
     Object.values(fowTile.blocks).forEach((block) => {
       const blockDx = dx + ((block.x >> underscanOffset) << overscanOffset);
       const blockDy = dy + ((block.y >> underscanOffset) << overscanOffset);
-      Internal.renderBlockOnCanvas(
-        block,
-        tileCanvas,
-        CANVAS_FOW_BLOCK_SIZE_OFFSET,
-        blockDx,
-        blockDy
-      );
+      Internal.renderBlockOnCanvas(block, tileCanvas, CANVAS_FOW_BLOCK_SIZE_OFFSET, blockDx, blockDy);
     });
   }
 
@@ -139,8 +122,7 @@ class Internal {
     if (blockSizeOffset <= 0) {
       tileCanvas.ctx().clearRect(dx, dy, 1, 1);
     } else {
-      const CANVAS_FOW_PIXEL_SIZE_OFFSET =
-        blockSizeOffset - FogMap.BITMAP_WIDTH_OFFSET;
+      const CANVAS_FOW_PIXEL_SIZE_OFFSET = blockSizeOffset - FogMap.BITMAP_WIDTH_OFFSET;
       for (let x = 0; x < FogMap.BITMAP_WIDTH; x++) {
         for (let y = 0; y < FogMap.BITMAP_WIDTH; y++) {
           if (fowBlock.isVisited(x, y)) {
@@ -161,11 +143,7 @@ class Internal {
     }
   }
 
-  static drawFogCanvas(
-    fogMap: FogMap.FogMap,
-    tileIndex: TileIndex,
-    opacity: number
-  ) {
+  static drawFogCanvas(fogMap: FogMap.FogMap, tileIndex: TileIndex, opacity: number) {
     const tileCanvas = new LazyTileCanvas(opacity);
 
     if (Object.values(fogMap.tiles).length === 0) {
@@ -181,13 +159,11 @@ class Internal {
       const fowTileYMax = (tileIndex.y + 1) << CANVAS_NUM_FOW_TILE_OFFSET;
       for (let fowTileX = fowTileXMin; fowTileX < fowTileXMax; fowTileX++) {
         for (let fowTileY = fowTileYMin; fowTileY < fowTileYMax; fowTileY++) {
-          const fowTile =
-            fogMap.tiles[FogMap.FogMap.makeKeyXY(fowTileX, fowTileY)];
+          const fowTile = fogMap.tiles[FogMap.FogMap.makeKeyXY(fowTileX, fowTileY)];
 
           if (fowTile) {
             // TODO: what if this < 0?
-            const CANVAS_FOW_TILE_SIZE_OFFSET =
-              CANVAS_SIZE_OFFSET - CANVAS_NUM_FOW_TILE_OFFSET;
+            const CANVAS_FOW_TILE_SIZE_OFFSET = CANVAS_SIZE_OFFSET - CANVAS_NUM_FOW_TILE_OFFSET;
             Internal.renderTileOnCanvas(
               fowTile,
               tileCanvas,
@@ -204,29 +180,20 @@ class Internal {
       const fowTileY = tileIndex.y >> TILE_OVER_OFFSET;
       const subTileMask = (1 << TILE_OVER_OFFSET) - 1;
 
-      const CANVAS_NUM_FOW_BLOCK_OFFSET =
-        FogMap.TILE_WIDTH_OFFSET - TILE_OVER_OFFSET;
+      const CANVAS_NUM_FOW_BLOCK_OFFSET = FogMap.TILE_WIDTH_OFFSET - TILE_OVER_OFFSET;
 
       if (tileIndex.z > FOW_BLOCK_ZOOM) {
         // sub-block rendering
-        const fowBlockX =
-          (tileIndex.x & subTileMask) >> -CANVAS_NUM_FOW_BLOCK_OFFSET;
-        const fowBlockY =
-          (tileIndex.y & subTileMask) >> -CANVAS_NUM_FOW_BLOCK_OFFSET;
-        const subBlockMask =
-          (1 << (TILE_OVER_OFFSET - FogMap.TILE_WIDTH_OFFSET)) - 1;
+        const fowBlockX = (tileIndex.x & subTileMask) >> -CANVAS_NUM_FOW_BLOCK_OFFSET;
+        const fowBlockY = (tileIndex.y & subTileMask) >> -CANVAS_NUM_FOW_BLOCK_OFFSET;
+        const subBlockMask = (1 << (TILE_OVER_OFFSET - FogMap.TILE_WIDTH_OFFSET)) - 1;
 
-        const CANVAS_NUM_FOW_PIXEL_OFFSET =
-          CANVAS_NUM_FOW_BLOCK_OFFSET + FogMap.BITMAP_WIDTH_OFFSET;
+        const CANVAS_NUM_FOW_PIXEL_OFFSET = CANVAS_NUM_FOW_BLOCK_OFFSET + FogMap.BITMAP_WIDTH_OFFSET;
 
-        const fowBlockPixelXMin =
-          (tileIndex.x & subBlockMask) << CANVAS_NUM_FOW_PIXEL_OFFSET;
-        const fowBlockPixelXMax =
-          ((tileIndex.x & subBlockMask) + 1) << CANVAS_NUM_FOW_PIXEL_OFFSET;
-        const fowBlockPixelYMin =
-          (tileIndex.y & subBlockMask) << CANVAS_NUM_FOW_PIXEL_OFFSET;
-        const fowBlockPixelYMax =
-          ((tileIndex.y & subBlockMask) + 1) << CANVAS_NUM_FOW_PIXEL_OFFSET;
+        const fowBlockPixelXMin = (tileIndex.x & subBlockMask) << CANVAS_NUM_FOW_PIXEL_OFFSET;
+        const fowBlockPixelXMax = ((tileIndex.x & subBlockMask) + 1) << CANVAS_NUM_FOW_PIXEL_OFFSET;
+        const fowBlockPixelYMin = (tileIndex.y & subBlockMask) << CANVAS_NUM_FOW_PIXEL_OFFSET;
+        const fowBlockPixelYMax = ((tileIndex.y & subBlockMask) + 1) << CANVAS_NUM_FOW_PIXEL_OFFSET;
 
         const block =
           fogMap.tiles[FogMap.FogMap.makeKeyXY(fowTileX, fowTileY)]?.blocks[
@@ -234,53 +201,27 @@ class Internal {
           ];
 
         if (block) {
-          for (
-            let fowPixelX = fowBlockPixelXMin;
-            fowPixelX < fowBlockPixelXMax;
-            fowPixelX++
-          ) {
-            for (
-              let fowPixelY = fowBlockPixelYMin;
-              fowPixelY < fowBlockPixelYMax;
-              fowPixelY++
-            ) {
-              const CANVAS_FOW_PIXEL_SIZE_OFFSET =
-                CANVAS_SIZE_OFFSET - CANVAS_NUM_FOW_PIXEL_OFFSET;
+          for (let fowPixelX = fowBlockPixelXMin; fowPixelX < fowBlockPixelXMax; fowPixelX++) {
+            for (let fowPixelY = fowBlockPixelYMin; fowPixelY < fowBlockPixelYMax; fowPixelY++) {
+              const CANVAS_FOW_PIXEL_SIZE_OFFSET = CANVAS_SIZE_OFFSET - CANVAS_NUM_FOW_PIXEL_OFFSET;
               if (block.isVisited(fowPixelX, fowPixelY)) {
-                const x =
-                  (fowPixelX - fowBlockPixelXMin) <<
-                  CANVAS_FOW_PIXEL_SIZE_OFFSET;
-                const y =
-                  (fowPixelY - fowBlockPixelYMin) <<
-                  CANVAS_FOW_PIXEL_SIZE_OFFSET;
-                tileCanvas
-                  .ctx()
-                  .clearRect(
-                    x,
-                    y,
-                    1 << CANVAS_FOW_PIXEL_SIZE_OFFSET,
-                    1 << CANVAS_FOW_PIXEL_SIZE_OFFSET
-                  );
+                const x = (fowPixelX - fowBlockPixelXMin) << CANVAS_FOW_PIXEL_SIZE_OFFSET;
+                const y = (fowPixelY - fowBlockPixelYMin) << CANVAS_FOW_PIXEL_SIZE_OFFSET;
+                tileCanvas.ctx().clearRect(x, y, 1 << CANVAS_FOW_PIXEL_SIZE_OFFSET, 1 << CANVAS_FOW_PIXEL_SIZE_OFFSET);
               }
             }
           }
         }
       } else {
         // sub-tile rendering
-        const fowBlockXMin =
-          (tileIndex.x & subTileMask) << CANVAS_NUM_FOW_BLOCK_OFFSET;
-        const fowBlockXMax =
-          ((tileIndex.x & subTileMask) + 1) << CANVAS_NUM_FOW_BLOCK_OFFSET;
-        const fowBlockYMin =
-          (tileIndex.y & subTileMask) << CANVAS_NUM_FOW_BLOCK_OFFSET;
-        const fowBlockYMax =
-          ((tileIndex.y & subTileMask) + 1) << CANVAS_NUM_FOW_BLOCK_OFFSET;
+        const fowBlockXMin = (tileIndex.x & subTileMask) << CANVAS_NUM_FOW_BLOCK_OFFSET;
+        const fowBlockXMax = ((tileIndex.x & subTileMask) + 1) << CANVAS_NUM_FOW_BLOCK_OFFSET;
+        const fowBlockYMin = (tileIndex.y & subTileMask) << CANVAS_NUM_FOW_BLOCK_OFFSET;
+        const fowBlockYMax = ((tileIndex.y & subTileMask) + 1) << CANVAS_NUM_FOW_BLOCK_OFFSET;
 
-        const CANVAS_FOW_BLOCK_SIZE_OFFSET =
-          CANVAS_SIZE_OFFSET - CANVAS_NUM_FOW_BLOCK_OFFSET;
+        const CANVAS_FOW_BLOCK_SIZE_OFFSET = CANVAS_SIZE_OFFSET - CANVAS_NUM_FOW_BLOCK_OFFSET;
 
-        const blocks =
-          fogMap.tiles[FogMap.FogMap.makeKeyXY(fowTileX, fowTileY)]?.blocks;
+        const blocks = fogMap.tiles[FogMap.FogMap.makeKeyXY(fowTileX, fowTileY)]?.blocks;
         if (blocks) {
           Object.values(blocks).forEach((block) => {
             if (
@@ -289,17 +230,9 @@ class Internal {
               block.y >= fowBlockYMin &&
               block.y < fowBlockYMax
             ) {
-              const dx =
-                (block.x - fowBlockXMin) << CANVAS_FOW_BLOCK_SIZE_OFFSET;
-              const dy =
-                (block.y - fowBlockYMin) << CANVAS_FOW_BLOCK_SIZE_OFFSET;
-              Internal.renderBlockOnCanvas(
-                block,
-                tileCanvas,
-                CANVAS_FOW_BLOCK_SIZE_OFFSET,
-                dx,
-                dy
-              );
+              const dx = (block.x - fowBlockXMin) << CANVAS_FOW_BLOCK_SIZE_OFFSET;
+              const dy = (block.y - fowBlockYMin) << CANVAS_FOW_BLOCK_SIZE_OFFSET;
+              Internal.renderBlockOnCanvas(block, tileCanvas, CANVAS_FOW_BLOCK_SIZE_OFFSET, dx, dy);
             }
           });
         }
@@ -319,11 +252,7 @@ export class MapRenderer {
   private zoomOffset: number;
   private currentTileRange: [number, number, number, number];
   private currentZoom: number;
-  private tileCanvasCache: LRUCache<
-    TileIndexKey,
-    HTMLCanvasElement | "empty",
-    unknown
-  >;
+  private tileCanvasCache: LRUCache<TileIndexKey, HTMLCanvasElement | "empty", unknown>;
 
   constructor(
     mapboxMap: mapboxgl.Map,
@@ -402,20 +331,9 @@ export class MapRenderer {
     const bounds = this.mapboxMap.getBounds();
 
     const [left, top] = lngLatToTileXY(bounds.getNorthWest().toArray(), zoom);
-    const [right, bottom] = lngLatToTileXY(
-      bounds.getSouthEast().toArray(),
-      zoom
-    );
-    const tileRange: [number, number, number, number] = [
-      left,
-      top,
-      right,
-      bottom,
-    ];
-    if (
-      !arrayEquals(this.currentTileRange, tileRange) ||
-      this.currentZoom != zoom
-    ) {
+    const [right, bottom] = lngLatToTileXY(bounds.getSouthEast().toArray(), zoom);
+    const tileRange: [number, number, number, number] = [left, top, right, bottom];
+    if (!arrayEquals(this.currentTileRange, tileRange) || this.currentZoom != zoom) {
       this.currentTileRange = tileRange;
       this.currentZoom = zoom;
 
@@ -427,9 +345,7 @@ export class MapRenderer {
         tileXYToLngLat([right + 1, top], zoom)
       );
 
-      const mainCanvasSource = this.mapboxMap.getSource(
-        "main-canvas-source"
-      ) as mapboxgl.CanvasSource | undefined;
+      const mainCanvasSource = this.mapboxMap.getSource("main-canvas-source") as mapboxgl.CanvasSource | undefined;
       mainCanvasSource?.setCoordinates([
         tileBounds.getNorthWest().toArray(),
         tileBounds.getNorthEast().toArray(),
@@ -471,11 +387,7 @@ export class MapRenderer {
             canvas = cacheCanvas;
           }
         } else {
-          canvas = Internal.drawFogCanvas(
-            this.getCurrentFogMap(),
-            tileIndex,
-            opacity
-          ).getCanvas();
+          canvas = Internal.drawFogCanvas(this.getCurrentFogMap(), tileIndex, opacity).getCanvas();
           this.tileCanvasCache.set(key, canvas ? canvas : "empty");
         }
         const dx = (x - left) * 512;
@@ -488,9 +400,7 @@ export class MapRenderer {
       }
     }
 
-    const mainCanvasSource = this.mapboxMap.getSource("main-canvas-source") as
-      | mapboxgl.CanvasSource
-      | undefined;
+    const mainCanvasSource = this.mapboxMap.getSource("main-canvas-source") as mapboxgl.CanvasSource | undefined;
     mainCanvasSource?.play();
     mainCanvasSource?.pause();
 

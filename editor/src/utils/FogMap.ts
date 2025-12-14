@@ -68,9 +68,7 @@ export class FogMap {
     return new FogMap(mutableTiles, new Set());
   }
 
-  updateBlocks(newBlocks: {
-    [tileKey: string]: { [blockKey: string]: Block | null };
-  }): FogMap {
+  updateBlocks(newBlocks: { [tileKey: string]: { [blockKey: string]: Block | null } }): FogMap {
     const mutableTiles = { ...this.tiles };
     const mutableDirtyTiles = new Set(this.dirtyTiles);
     let changed = false;
@@ -106,13 +104,7 @@ export class FogMap {
 
       if (tileChanged) {
         // Keep empty tiles instead of deleting them
-        const newTile = new Tile(
-          tile.filename,
-          tile.id,
-          tile.x,
-          tile.y,
-          mutableBlocks
-        );
+        const newTile = new Tile(tile.filename, tile.id, tile.x, tile.y, mutableBlocks);
         mutableTiles[tileKey] = newTile;
         mutableDirtyTiles.add(tileKey);
         changed = true;
@@ -125,9 +117,7 @@ export class FogMap {
     return this;
   }
 
-  async exportArchive(
-    onProgress?: (current: number, total: number) => void
-  ): Promise<Blob | null> {
+  async exportArchive(onProgress?: (current: number, total: number) => void): Promise<Blob | null> {
     const zip = new JSZip();
     const syncZip = zip.folder("Sync");
     if (!syncZip) {
@@ -165,9 +155,7 @@ export class FogMap {
     return syncZip.generateAsync({ type: "blob" });
   }
 
-  async exportDirtyArchive(
-    onProgress?: (current: number, total: number) => void
-  ): Promise<Blob | null> {
+  async exportDirtyArchive(onProgress?: (current: number, total: number) => void): Promise<Blob | null> {
     const zip = new JSZip();
     const syncZip = zip.folder("Sync");
     if (!syncZip) {
@@ -213,23 +201,15 @@ export class FogMap {
     return this.dirtyTiles.size;
   }
 
-
   static LngLatToGlobalXY(lng: number, lat: number): number[] {
     const x = ((lng + 180) / 360) * 512;
-    const y =
-      ((Math.PI - Math.asinh(Math.tan((lat / 180) * Math.PI))) * 512) /
-      (2 * Math.PI);
+    const y = ((Math.PI - Math.asinh(Math.tan((lat / 180) * Math.PI))) * 512) / (2 * Math.PI);
     const xg = Math.floor(x * TILE_WIDTH * BITMAP_WIDTH);
     const yg = Math.floor(y * TILE_WIDTH * BITMAP_WIDTH);
     return [xg, yg];
   }
 
-  static *traceLine(
-    x0: number,
-    y0: number,
-    x1: number,
-    y1: number
-  ): Generator<[number, number]> {
+  static *traceLine(x0: number, y0: number, x1: number, y1: number): Generator<[number, number]> {
     // Calculate line deltas
     const dx = Math.abs(x1 - x0);
     const dy = Math.abs(y1 - y0);
@@ -256,16 +236,8 @@ export class FogMap {
     }
   }
 
-  addLine(
-    startLng: number,
-    startLat: number,
-    endLng: number,
-    endLat: number,
-    val = true
-  ): FogMap {
-    if (DEBUG) console.log(
-      `[${startLng},${startLat}] to [${endLng},${endLat}] (val=${val})`
-    );
+  addLine(startLng: number, startLat: number, endLng: number, endLat: number, val = true): FogMap {
+    if (DEBUG) console.log(`[${startLng},${startLat}] to [${endLng},${endLat}] (val=${val})`);
     const [x0, y0] = FogMap.LngLatToGlobalXY(startLng, startLat);
     const [x1, y1] = FogMap.LngLatToGlobalXY(endLng, endLat);
 
@@ -424,24 +396,15 @@ export class FogMap {
           const localXMax = xMax - tx;
           const localYMax = yMax - ty;
 
-          const localKeys = tile.getIntersectingBlocks(
-            localXMin,
-            localYMin,
-            localXMax,
-            localYMax
-          );
-          localKeys.forEach((bk) =>
-            result.push({ tileKey: key, blockKey: bk })
-          );
+          const localKeys = tile.getIntersectingBlocks(localXMin, localYMin, localXMax, localYMax);
+          localKeys.forEach((bk) => result.push({ tileKey: key, blockKey: bk }));
         }
       }
     }
     return result;
   }
 
-  removeBlocks(blocksToRemove: {
-    [tileKey: string]: string[] | Set<string>;
-  }): FogMap {
+  removeBlocks(blocksToRemove: { [tileKey: string]: string[] | Set<string> }): FogMap {
     let mutableTiles: { [key: XYKey]: Tile } | null = null;
     let mutableDirtyTiles: Set<XYKey> | null = null;
 
@@ -537,13 +500,7 @@ export class Tile {
   readonly y: number;
   readonly blocks: { [key: XYKey]: Block };
 
-  constructor(
-    filename: string,
-    id: TileID,
-    x: number,
-    y: number,
-    blocks: { [key: XYKey]: Block }
-  ) {
+  constructor(filename: string, id: TileID, x: number, y: number, blocks: { [key: XYKey]: Block }) {
     Object.freeze(blocks);
     this.filename = filename;
     this.id = id;
@@ -584,9 +541,7 @@ export class Tile {
     // TODO: try catch
     const actualData = pako.inflate(new Uint8Array(data));
 
-    const header = new Uint16Array(
-      actualData.slice(0, TILE_HEADER_SIZE).buffer
-    );
+    const header = new Uint16Array(actualData.slice(0, TILE_HEADER_SIZE).buffer);
 
     const blocks = {} as { [key: XYKey]: Block };
 
@@ -638,16 +593,13 @@ export class Tile {
 
   static XYToLngLat(x: number, y: number): number[] {
     const lng = (x / 512) * 360 - 180;
-    const lat =
-      (Math.atan(Math.sinh(Math.PI - (2 * Math.PI * y) / 512)) * 180) / Math.PI;
+    const lat = (Math.atan(Math.sinh(Math.PI - (2 * Math.PI * y) / 512)) * 180) / Math.PI;
     return [lng, lat];
   }
 
   static LngLatToXY(lng: number, lat: number): number[] {
     const x = ((lng + 180) / 360) * 512;
-    const y =
-      ((Math.PI - Math.asinh(Math.tan((lat / 180) * Math.PI))) * 512) /
-      (2 * Math.PI);
+    const y = ((Math.PI - Math.asinh(Math.tan((lat / 180) * Math.PI))) * 512) / (2 * Math.PI);
     return [x, y];
   }
 
@@ -696,9 +648,7 @@ export class Tile {
           block = Block.create(blockX, blockY, null);
         }
         if (block) {
-          if (DEBUG) console.log(
-            `block draw: blockx: ${blockX}, blocky: ${blockY} x: ${x}, y: ${y}`
-          );
+          if (DEBUG) console.log(`block draw: blockx: ${blockX}, blocky: ${blockY} x: ${x}, y: ${y}`);
           let newBlock;
           [newBlock, x, y, p] = block.addLine(
             x - (blockX << BITMAP_WIDTH_OFFSET),
@@ -745,9 +695,7 @@ export class Tile {
           block = Block.create(blockX, blockY, null);
         }
         if (block) {
-          if (DEBUG) console.log(
-            `block draw: blockx: ${blockX}, blocky: ${blockY} x: ${x}, y: ${y}`
-          );
+          if (DEBUG) console.log(`block draw: blockx: ${blockX}, blocky: ${blockY} x: ${x}, y: ${y}`);
           let newBlock;
           [newBlock, x, y, p] = block.addLine(
             x - (blockX << BITMAP_WIDTH_OFFSET),
@@ -785,24 +733,14 @@ export class Tile {
       } else {
         if (DEBUG) console.log("return updated tile");
         Object.freeze(mutableBlocks);
-        return [
-          new Tile(this.filename, this.id, this.x, this.y, mutableBlocks),
-          x,
-          y,
-          p,
-        ];
+        return [new Tile(this.filename, this.id, this.x, this.y, mutableBlocks), x, y, p];
       }
     } else {
       return [this, x, y, p];
     }
   }
 
-  getIntersectingBlocks(
-    xMin: number,
-    yMin: number,
-    xMax: number,
-    yMax: number
-  ): string[] {
+  getIntersectingBlocks(xMin: number, yMin: number, xMax: number, yMax: number): string[] {
     const bxMin = Math.floor(xMin * TILE_WIDTH);
     const byMin = Math.floor(yMin * TILE_WIDTH);
     const bxMax = Math.ceil(xMax * TILE_WIDTH);
@@ -852,9 +790,7 @@ export class Tile {
   }
 
   clearRect(x: number, y: number, width: number, height: number): Tile | null {
-    if (DEBUG) console.log(
-      `clearRect: x: ${x}, y: ${y}, width: ${width}, height: ${height}`
-    );
+    if (DEBUG) console.log(`clearRect: x: ${x}, y: ${y}, width: ${width}, height: ${height}`);
     const xMin = x;
     const yMin = y;
     const xMax = x + width;
@@ -913,12 +849,7 @@ export class Block {
   readonly bitmap: Uint8Array;
   readonly extraData: Uint8Array;
 
-  private constructor(
-    x: number,
-    y: number,
-    bitmap: Uint8Array,
-    extraData: Uint8Array
-  ) {
+  private constructor(x: number, y: number, bitmap: Uint8Array, extraData: Uint8Array) {
     this.x = x;
     this.y = y;
     this.bitmap = bitmap;
@@ -967,11 +898,7 @@ export class Block {
       }
     }
     const checksumDataview = new DataView(this.extraData.buffer, 1, 2);
-    checksumDataview.setUint16(
-      0,
-      (checksumDataview.getUint16(0, false) & 0xc000) | ((count << 1) + 1),
-      false
-    );
+    checksumDataview.setUint16(0, (checksumDataview.getUint16(0, false) & 0xc000) | ((count << 1) + 1), false);
 
     data.set(this.bitmap);
     data.set(this.extraData, BLOCK_BITMAP_SIZE);
@@ -980,22 +907,15 @@ export class Block {
   }
 
   region(): string {
-    const regionChar0 = String.fromCharCode(
-      (this.extraData[0] >> 3) + "?".charCodeAt(0)
-    );
+    const regionChar0 = String.fromCharCode((this.extraData[0] >> 3) + "?".charCodeAt(0));
     const regionChar1 = String.fromCharCode(
-      (((this.extraData[0] & 0x7) << 2) | ((this.extraData[1] & 0xc0) >> 6)) +
-      "?".charCodeAt(0)
+      (((this.extraData[0] & 0x7) << 2) | ((this.extraData[1] & 0xc0) >> 6)) + "?".charCodeAt(0)
     );
     return regionChar0 + regionChar1;
   }
 
   count(): number {
-    return (
-      (new DataView(this.extraData.buffer, 1, 2).getUint16(0, false) &
-        0x3fff) >>
-      1
-    );
+    return (new DataView(this.extraData.buffer, 1, 2).getUint16(0, false) & 0x3fff) >> 1;
   }
 
   isVisited(x: number, y: number): boolean {
@@ -1005,18 +925,12 @@ export class Block {
     return (this.bitmap[i + j * 8] & (1 << bitOffset)) !== 0;
   }
 
-  private static setPoint(
-    mutableBitmap: Uint8Array,
-    x: number,
-    y: number,
-    val: boolean
-  ): void {
+  private static setPoint(mutableBitmap: Uint8Array, x: number, y: number, val: boolean): void {
     const bitOffset = 7 - (x % 8);
     const i = Math.floor(x / 8);
     const j = y;
     const valNumber = val ? 1 : 0;
-    mutableBitmap[i + j * 8] =
-      (mutableBitmap[i + j * 8] & ~(1 << bitOffset)) | (valNumber << bitOffset);
+    mutableBitmap[i + j * 8] = (mutableBitmap[i + j * 8] & ~(1 << bitOffset)) | (valNumber << bitOffset);
   }
 
   private static bitmapEqual(a: Uint8Array, b: Uint8Array): boolean {
@@ -1104,12 +1018,7 @@ export class Block {
     if (Block.bitmapEqual(mutableBitmap, this.bitmap)) {
       return [this, x, y, p];
     } else {
-      return [
-        new Block(this.x, this.y, mutableBitmap, this.extraData),
-        x,
-        y,
-        p,
-      ];
+      return [new Block(this.x, this.y, mutableBitmap, this.extraData), x, y, p];
     }
   }
 

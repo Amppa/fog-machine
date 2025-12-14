@@ -1,47 +1,45 @@
 import { Bbox } from "./CommonTypes";
 import { Coordinate } from "./GpsImportTypes";
-import { FogMap } from "./FogMap";
+import { FogMap, Block } from "./FogMap";
 
 export function crossesAntimeridian(lon1: number, lon2: number): boolean {
-    return Math.abs(lon2 - lon1) > 180;
+  return Math.abs(lon2 - lon1) > 180;
 }
 
-export function calculateBoundingBoxFromCoordinates(
-    coordinates: Coordinate[]
-): Bbox | null {
-    if (coordinates.length === 0) return null;
+export function calculateBoundingBoxFromCoordinates(coordinates: Coordinate[]): Bbox | null {
+  if (coordinates.length === 0) return null;
 
-    let minLng = Infinity;
-    let minLat = Infinity;
-    let maxLng = -Infinity;
-    let maxLat = -Infinity;
+  let minLng = Infinity;
+  let minLat = Infinity;
+  let maxLng = -Infinity;
+  let maxLat = -Infinity;
 
-    for (const coord of coordinates) {
-        minLng = Math.min(minLng, coord.longitude);
-        minLat = Math.min(minLat, coord.latitude);
-        maxLng = Math.max(maxLng, coord.longitude);
-        maxLat = Math.max(maxLat, coord.latitude);
-    }
+  for (const coord of coordinates) {
+    minLng = Math.min(minLng, coord.longitude);
+    minLat = Math.min(minLat, coord.latitude);
+    maxLng = Math.max(maxLng, coord.longitude);
+    maxLat = Math.max(maxLat, coord.latitude);
+  }
 
-    return new Bbox(minLng, minLat, maxLng, maxLat);
+  return new Bbox(minLng, minLat, maxLng, maxLat);
 }
 
 export function arrayBufferToString(buffer: ArrayBuffer): string {
-    const decoder = new TextDecoder("utf-8");
-    return decoder.decode(buffer);
+  const decoder = new TextDecoder("utf-8");
+  return decoder.decode(buffer);
 }
 
 /**
  * Merge two FogMaps using FogMap's updateBlocks method
  */
 export function mergeFogMaps(base: FogMap, toMerge: FogMap): FogMap {
-    const newBlocks: {
-        [tileKey: string]: { [blockKey: string]: any };
-    } = {};
+  const newBlocks: {
+    [tileKey: string]: { [blockKey: string]: Block | null };
+  } = {};
 
-    Object.entries(toMerge.tiles).forEach(([tileKey, tile]) => {
-        newBlocks[tileKey] = { ...tile.blocks };
-    });
+  Object.entries(toMerge.tiles).forEach(([tileKey, tile]) => {
+    newBlocks[tileKey] = { ...tile.blocks };
+  });
 
-    return base.updateBlocks(newBlocks);
+  return base.updateBlocks(newBlocks);
 }
