@@ -1,6 +1,6 @@
 import { ControlMode, MapController } from "./utils/MapController";
 import { useEffect, useState } from "react";
-const ERASER_DIAMETERS = [1, 3, 9, 31]; // Eraser diameter in fog pixels
+const DEL_PIXEL_DIAMETERS = [1, 3, 9, 31]; // Eraser diameter in fog pixels
 import Mousetrap from "mousetrap";
 import MainMenu from "./components/MainMenu";
 import FlyToDialog from "./components/FlyToDialog";
@@ -132,7 +132,7 @@ function Editor(props: Props): JSX.Element {
             <div key={toolButton.key} className="relative flex flex-col items-center justify-end">
               {toolButton.key === "deletePixel" && controlMode === ControlMode.DelPixel && !isDeletingPixel ? (
                 <div className="absolute bottom-full mb-3 bg-white shadow-lg rounded-lg p-1 flex space-x-1 pointer-events-auto ring-1 ring-gray-200">
-                  {ERASER_DIAMETERS.map((diameter, index) => (
+                  {DEL_PIXEL_DIAMETERS.map((diameter, index) => (
                     <div
                       key={index}
                       className={
