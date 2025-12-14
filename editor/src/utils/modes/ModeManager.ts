@@ -66,13 +66,6 @@ export class ModeManager {
   }
 
   /**
-   * Get current mode
-   */
-  getCurrentMode(): ControlMode {
-    return this.currentMode;
-  }
-
-  /**
    * Handle mouse press event
    */
   handleMousePress(e: mapboxgl.MapMouseEvent): void {
