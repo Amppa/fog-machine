@@ -18,17 +18,20 @@ export class MapDraw {
   private getCurrentFogMap: () => fogMap.FogMap;
   private updateFogMap: (newMap: fogMap.FogMap, areaChanged: Bbox) => void;
   private historyManager: HistoryManager;
+  private onChange: () => void;
 
   constructor(
     map: mapboxgl.Map,
     getCurrentFogMap: () => fogMap.FogMap,
     updateFogMap: (newMap: fogMap.FogMap, areaChanged: Bbox) => void,
-    historyManager: HistoryManager
+    historyManager: HistoryManager,
+    onChange: () => void
   ) {
     this.map = map;
     this.getCurrentFogMap = getCurrentFogMap;
     this.updateFogMap = updateFogMap;
     this.historyManager = historyManager;
+    this.onChange = onChange;
     this.mapboxDraw = new MapboxDraw({
       displayControlsDefault: false,
       defaultMode: "draw_line_string",
@@ -71,6 +74,7 @@ export class MapDraw {
           const bbox = new Bbox(bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth());
           this.updateFogMap(newMap, bbox);
           this.historyManager.append(newMap, bbox);
+          this.onChange(); // Trigger UI update for undo/redo buttons
         }
       }
       this.mapboxDraw.trash(); // clean up the user drawing

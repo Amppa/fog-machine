@@ -94,6 +94,7 @@ export class ModeManager {
     const historyBbox = strategy?.getHistoryBbox();
     if (historyBbox) {
       this.context.historyManager.append(this.context.fogMap, historyBbox);
+      this.context.onChange(); // Trigger UI update for undo/redo buttons
     }
   }
 
