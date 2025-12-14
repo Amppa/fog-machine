@@ -74,6 +74,9 @@ export class DelBlockMode implements ModeStrategy {
 
         this.delBlockState = this.resetDelBlockState();
         this.updatePendingDelLayer(context.map);
+
+        // Force grid update after block deletion
+        this.updateGridLayer(context);
     }
 
     getCursorStyle(): string {
