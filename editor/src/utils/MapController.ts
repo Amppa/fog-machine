@@ -140,6 +140,7 @@ export class MapController {
       updateFogMap: this.updateFogMap.bind(this),
       onChange: this.onChange.bind(this),
       saveToHistory: this.saveToHistory,
+      ensureMinZoomLevel: this.ensureMinZoomLevel.bind(this),
     };
     this.modeManager = new ModeManager(context);
   }
@@ -273,6 +274,14 @@ export class MapController {
 
   flyTo(lng: number, lat: number, zoom?: number): void {
     this.mapViewController?.flyTo(lng, lat, zoom);
+  }
+
+  ensureMinZoomLevel(minZoom: number): void {
+    const center = this.getCenter();
+    if (!center) return;
+    if (center.zoom < minZoom) {
+      this.flyTo(center.lng, center.lat, minZoom);
+    }
   }
 
   fitBounds(bounds: Bbox): void {

@@ -4,6 +4,7 @@ import { Bbox } from "../CommonTypes";
 import * as fogMap from "../FogMap";
 
 const CURSOR_STYLE = "cell";
+const MIN_ZOOM_FOR_BLOCKS = 6;
 
 const DEL_BLOCK_CURSOR_STYLE = {
   SIZE: 20,
@@ -37,6 +38,9 @@ export class DelBlockMode implements ModeStrategy {
   }
 
   activate(context: ModeContext): void {
+    // Auto-zoom to level 6 if current zoom is too low to see blocks clearly
+
+    context.ensureMinZoomLevel(MIN_ZOOM_FOR_BLOCKS);
     // DelBlock layers are initialized in MapController
   }
 

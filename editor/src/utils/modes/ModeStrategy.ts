@@ -16,6 +16,7 @@ export interface ModeContext {
   updateFogMap: (newMap: FogMap, area: Bbox | "all", skipGridUpdate?: boolean) => void;
   onChange: () => void;
   saveToHistory: (fogMap: FogMap, bbox: Bbox | "all") => void;
+  ensureMinZoomLevel: (minZoom: number) => void;
 }
 
 /**

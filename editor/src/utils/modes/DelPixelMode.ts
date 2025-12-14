@@ -157,15 +157,7 @@ export class DelPixelMode implements ModeStrategy {
   private isDrawing = false;
 
   activate(context: ModeContext): void {
-    const currentZoom = context.map.getZoom();
-    if (currentZoom < AUTO_ZOOM_LEVEL) {
-      const center = context.map.getCenter();
-      context.map.flyTo({
-        zoom: AUTO_ZOOM_LEVEL,
-        center: [center.lng, center.lat],
-        essential: true,
-      });
-    }
+    context.ensureMinZoomLevel(AUTO_ZOOM_LEVEL);
   }
 
   deactivate(_context: ModeContext): void {
