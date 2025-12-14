@@ -7,6 +7,8 @@
 import mapboxgl from "mapbox-gl";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import { Bbox } from "./CommonTypes";
+import { HistoryManager } from "./HistoryManager";
+import * as fogMap from "./FogMap";
 
 const DEBUG = false;
 
@@ -15,15 +17,18 @@ export class MapDraw {
   private mapboxDraw: MapboxDraw;
   private getCurrentFogMap: () => fogMap.FogMap;
   private updateFogMap: (newMap: fogMap.FogMap, areaChanged: Bbox) => void;
+  private historyManager: HistoryManager;
 
   constructor(
     map: mapboxgl.Map,
     getCurrentFogMap: () => fogMap.FogMap,
-    updateFogMap: (newMap: fogMap.FogMap, areaChanged: Bbox) => void
+    updateFogMap: (newMap: fogMap.FogMap, areaChanged: Bbox) => void,
+    historyManager: HistoryManager
   ) {
     this.map = map;
     this.getCurrentFogMap = getCurrentFogMap;
     this.updateFogMap = updateFogMap;
+    this.historyManager = historyManager;
     this.mapboxDraw = new MapboxDraw({
       displayControlsDefault: false,
       defaultMode: "draw_line_string",
@@ -65,6 +70,7 @@ export class MapDraw {
           }
           const bbox = new Bbox(bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth());
           this.updateFogMap(newMap, bbox);
+          this.historyManager.append(newMap, bbox);
         }
       }
       this.mapboxDraw.trash(); // clean up the user drawing

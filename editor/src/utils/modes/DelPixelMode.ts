@@ -36,7 +36,7 @@ class PixelEraser {
       BITMAP_WIDTH_OFFSET: number;
       ALL_OFFSET: number;
     }
-  ) {}
+  ) { }
 
   erasePixel(gx: number, gy: number): void {
     const pixelKey = `${gx},${gy}`;
@@ -285,7 +285,7 @@ export class DelPixelMode implements ModeStrategy {
     this.lastPos = lngLat;
 
     if (result?.changed) {
-      context.updateFogMap(result.newMap, result.segmentBbox, true, true);
+      context.updateFogMap(result.newMap, result.segmentBbox, true);
     }
   }
 }

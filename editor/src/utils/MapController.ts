@@ -80,10 +80,6 @@ export class MapController {
     return this.fogMap;
   };
 
-  private handleDrawUpdate = (newMap: fogMap.FogMap, areaChanged: Bbox | "all"): void => {
-    this.updateFogMap(newMap, areaChanged);
-  };
-
   private getFogOpacity = (): number => {
     const opacityMap: Record<FogConcentration, number> = {
       high: 0.8,
@@ -303,13 +299,9 @@ export class MapController {
   private updateFogMap(
     newMap: fogMap.FogMap,
     areaChanged: Bbox | "all",
-    skipHistory = false,
     skipGridUpdate = false
   ): void {
     if (this.fogMap !== newMap) {
-      if (!skipHistory) {
-        this.historyManager.append(newMap, areaChanged);
-      }
       this.applyFogMapUpdate(newMap, areaChanged, skipGridUpdate);
     }
   }

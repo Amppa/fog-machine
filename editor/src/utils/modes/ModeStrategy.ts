@@ -13,7 +13,7 @@ export interface ModeContext {
   fogMap: FogMap;
   gridRenderer: GridRenderer;
   historyManager: HistoryManager;
-  updateFogMap: (newMap: FogMap, area: Bbox | "all", skipHistory?: boolean, skipGridUpdate?: boolean) => void;
+  updateFogMap: (newMap: FogMap, area: Bbox | "all", skipGridUpdate?: boolean) => void;
   onChange: () => void;
 }
 

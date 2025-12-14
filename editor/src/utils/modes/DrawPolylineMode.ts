@@ -17,7 +17,8 @@ export class DrawPolylineMode implements ModeStrategy {
     this.mapDraw = new MapDraw(
       context.map,
       () => context.fogMap,
-      context.updateFogMap
+      context.updateFogMap,
+      context.historyManager
     );
     this.mapDraw.activate();
   }

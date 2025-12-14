@@ -41,8 +41,8 @@ export class DrawScribbleMode implements ModeStrategy {
       this.strokeBbox = Bbox.merge(this.strokeBbox, segmentBbox);
     }
 
-    // Skip history during drawing, we'll save the entire stroke on mouse release
-    context.updateFogMap(newMap, segmentBbox, true);
+    // Update map during drawing, history will be saved by ModeManager on release
+    context.updateFogMap(newMap, segmentBbox);
     this.lastPos = currentPos;
   }
 

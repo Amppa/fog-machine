@@ -74,9 +74,9 @@ export class DelRectMode implements ModeStrategy {
     // Clear visual rectangle
     eraserSource.setData(this.createEmptyFeature());
 
-    // Erase fog, skip history (will be saved by ModeManager)
+    // Erase fog, history will be saved by ModeManager
     const newMap = context.fogMap.clearBbox(bounds);
-    context.updateFogMap(newMap, bounds, true); // skipHistory = true
+    context.updateFogMap(newMap, bounds);
 
     // Save bbox for history
     this.lastOperationBbox = bounds;

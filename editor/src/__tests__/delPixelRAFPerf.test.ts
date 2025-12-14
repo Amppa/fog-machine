@@ -6,7 +6,7 @@ import mapboxgl from "mapbox-gl";
 // Mock ModeContext
 interface MockContext {
   fogMap: fogMap.FogMap;
-  updateFogMap: (newMap: fogMap.FogMap, bbox: Bbox | "all", skipHistory: boolean, skipRender?: boolean) => void;
+  updateFogMap: (newMap: fogMap.FogMap, bbox: Bbox | "all", skipRender?: boolean) => void;
   onChange: () => void;
   map: unknown;
   gridRenderer: unknown;
@@ -227,4 +227,4 @@ describe("RAF Batch Processing Performance Test", () => {
   });
 });
 
-export {};
+export { };

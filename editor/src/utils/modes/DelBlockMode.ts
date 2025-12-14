@@ -70,13 +70,18 @@ export class DelBlockMode implements ModeStrategy {
 
   handleMouseRelease(_e: mapboxgl.MapMouseEvent, context: ModeContext): void {
     const newMap = context.fogMap.removeBlocks(this.delBlockState.blocks);
-    context.updateFogMap(newMap, this.delBlockState.bbox || "all", true);
+    const bboxForHistory = this.delBlockState.bbox;
+
+    context.updateFogMap(newMap, bboxForHistory || "all");
 
     this.delBlockState = this.resetDelBlockState();
     this.updatePendingDelLayer(context.map);
 
     // Force grid update after block deletion
     this.updateGridLayer(context);
+
+    // Store bbox for history (will be read by ModeManager)
+    this.delBlockState.bbox = bboxForHistory;
   }
 
   getCursorStyle(): string {
@@ -88,7 +93,9 @@ export class DelBlockMode implements ModeStrategy {
   }
 
   getHistoryBbox(): Bbox | null {
-    return this.delBlockState.bbox;
+    const bbox = this.delBlockState.bbox;
+    this.delBlockState.bbox = null; // Clear after reading
+    return bbox;
   }
 
   /**
