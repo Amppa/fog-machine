@@ -310,6 +310,7 @@ export class MapController {
   replaceFogMap(newMap: fogMap.FogMap): void {
     this.historyManager = new HistoryManager(fogMap.FogMap.empty);
     this.updateFogMap(newMap, "all");
+    this.saveToHistory(newMap, "all");
   }
 
   redrawArea(area: Bbox | "all"): void {
