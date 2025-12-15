@@ -89,7 +89,7 @@ export class MapController {
     return opacityMap[this.fogConcentration];
   };
 
-  private saveToHistory = (fogMap: FogMap, bbox: Bbox | "all"): void => {
+  saveToHistory = (fogMap: FogMap, bbox: Bbox | "all"): void => {
     this.historyManager.append(fogMap, bbox);
     this.onChange();
   };

@@ -16,13 +16,13 @@ export class MapDraw {
   private mapboxDraw: MapboxDraw;
   private getCurrentFogMap: () => fogMap.FogMap;
   private updateFogMap: (newMap: fogMap.FogMap, areaChanged: Bbox) => void;
-  private saveToHistory: (fogMap: fogMap.FogMap, bbox: Bbox) => void;
+  private saveToHistory: (fogMap: fogMap.FogMap, bbox: Bbox | "all") => void;
 
   constructor(
     map: mapboxgl.Map,
     getCurrentFogMap: () => fogMap.FogMap,
     updateFogMap: (newMap: fogMap.FogMap, areaChanged: Bbox) => void,
-    saveToHistory: (fogMap: fogMap.FogMap, bbox: Bbox) => void
+    saveToHistory: (fogMap: fogMap.FogMap, bbox: Bbox | "all") => void
   ) {
     this.map = map;
     this.getCurrentFogMap = getCurrentFogMap;
