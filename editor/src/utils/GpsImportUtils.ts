@@ -15,10 +15,10 @@ export function calculateBoundingBoxFromCoordinates(coordinates: Coordinate[]): 
   let maxLat = -Infinity;
 
   for (const coord of coordinates) {
-    minLng = Math.min(minLng, coord.longitude);
-    minLat = Math.min(minLat, coord.latitude);
-    maxLng = Math.max(maxLng, coord.longitude);
-    maxLat = Math.max(maxLat, coord.latitude);
+    minLng = Math.min(minLng, coord.lng);
+    minLat = Math.min(minLat, coord.lat);
+    maxLng = Math.max(maxLng, coord.lng);
+    maxLat = Math.max(maxLat, coord.lat);
   }
 
   return new Bbox(minLng, minLat, maxLng, maxLat);

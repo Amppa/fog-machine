@@ -13,6 +13,7 @@ export class Bbox {
 
   /**
    * Create a Bbox from a single point (zero-area bbox)
+   * lngLat is from Mapbox GL 
    */
   static fromPoint(lngLat: { lng: number; lat: number }): Bbox {
     return new Bbox(lngLat.lng, lngLat.lat, lngLat.lng, lngLat.lat);
