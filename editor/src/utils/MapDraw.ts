@@ -8,26 +8,16 @@ import mapboxgl from "mapbox-gl";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import { Bbox } from "./CommonTypes";
 import * as fogMap from "./FogMap";
+import { ModeContext } from "./modes/ModeStrategy";
 
 const DEBUG = false;
 
 export class MapDraw {
-  private map: mapboxgl.Map;
+  private context: ModeContext;
   private mapboxDraw: MapboxDraw;
-  private getCurrentFogMap: () => fogMap.FogMap;
-  private updateFogMap: (newMap: fogMap.FogMap, areaChanged: Bbox) => void;
-  private saveToHistory: (fogMap: fogMap.FogMap, bbox: Bbox | "all") => void;
 
-  constructor(
-    map: mapboxgl.Map,
-    getCurrentFogMap: () => fogMap.FogMap,
-    updateFogMap: (newMap: fogMap.FogMap, areaChanged: Bbox) => void,
-    saveToHistory: (fogMap: fogMap.FogMap, bbox: Bbox | "all") => void
-  ) {
-    this.map = map;
-    this.getCurrentFogMap = getCurrentFogMap;
-    this.updateFogMap = updateFogMap;
-    this.saveToHistory = saveToHistory;
+  constructor(context: ModeContext) {
+    this.context = context;
     this.mapboxDraw = new MapboxDraw({
       displayControlsDefault: false,
       defaultMode: "draw_line_string",
@@ -51,7 +41,7 @@ export class MapDraw {
       ],
     });
 
-    this.map.on("draw.create", (e: GeoJSON) => {
+    this.context.map.on("draw.create", (e: GeoJSON) => {
       // parse each line segments, apply to fogmap
       if (DEBUG) console.log(e.features);
       for (const geo of e.features) {
@@ -59,7 +49,7 @@ export class MapDraw {
           const coordinates = geo.geometry.coordinates;
 
           let [startLng, startLat] = coordinates[0];
-          let newMap = this.getCurrentFogMap();
+          let newMap = this.context.fogMap;
           const bounds = new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]);
           for (let j = 1; j < coordinates.length; ++j) {
             const [endLng, endLat] = coordinates[j];
@@ -68,24 +58,24 @@ export class MapDraw {
             [startLng, startLat] = [endLng, endLat];
           }
           const bbox = new Bbox(bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth());
-          this.updateFogMap(newMap, bbox);
-          this.saveToHistory(newMap, bbox);
+          this.context.updateFogMap(newMap, bbox);
+          this.context.saveToHistory(newMap, bbox);
         }
       }
       this.mapboxDraw.trash(); // clean up the user drawing
     });
-    this.map.on("draw.modechange", (_ev) => {
+    this.context.map.on("draw.modechange", (_ev) => {
       this.mapboxDraw.changeMode("draw_line_string", {});
     });
   }
 
   activate() {
-    this.map?.addControl(this.mapboxDraw, "bottom-left");
+    this.context.map?.addControl(this.mapboxDraw, "bottom-left");
   }
 
   deactivate() {
-    if (this.map.hasControl(this.mapboxDraw)) {
-      this.map.removeControl(this.mapboxDraw);
+    if (this.context.map.hasControl(this.mapboxDraw)) {
+      this.context.map.removeControl(this.mapboxDraw);
     }
   }
 }
