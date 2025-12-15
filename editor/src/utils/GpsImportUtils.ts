@@ -6,22 +6,15 @@ export function crossesAntimeridian(lon1: number, lon2: number): boolean {
   return Math.abs(lon2 - lon1) > 180;
 }
 
-export function calculateBoundingBoxFromCoordinates(coordinates: Coordinate[]): Bbox | null {
+export function calculateBoundingBox(coordinates: Coordinate[]): Bbox | null {
   if (coordinates.length === 0) return null;
-
-  let minLng = Infinity;
-  let minLat = Infinity;
-  let maxLng = -Infinity;
-  let maxLat = -Infinity;
+  const boundingBox = new Bbox(Infinity, Infinity, -Infinity, -Infinity);
 
   for (const coord of coordinates) {
-    minLng = Math.min(minLng, coord.lng);
-    minLat = Math.min(minLat, coord.lat);
-    maxLng = Math.max(maxLng, coord.lng);
-    maxLat = Math.max(maxLat, coord.lat);
+    boundingBox.extend({ lng: coord.lng, lat: coord.lat });
   }
 
-  return new Bbox(minLng, minLat, maxLng, maxLat);
+  return boundingBox;
 }
 
 export function arrayBufferToString(buffer: ArrayBuffer): string {

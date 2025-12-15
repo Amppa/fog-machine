@@ -46,33 +46,25 @@ function getFirstCoordinate(gpx: any): [number, number] | null {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function calculateBoundingBox(gpx: any): Bbox | null {
-  let minLng = Infinity;
-  let minLat = Infinity;
-  let maxLng = -Infinity;
-  let maxLat = -Infinity;
+  const boundingBox = new Bbox(Infinity, Infinity, -Infinity, -Infinity);
+
   let hasPoints = false;
 
   for (const track of gpx.tracks) {
     for (const point of track.points) {
-      minLng = Math.min(minLng, point.longitude);
-      minLat = Math.min(minLat, point.latitude);
-      maxLng = Math.max(maxLng, point.longitude);
-      maxLat = Math.max(maxLat, point.latitude);
+      boundingBox.extend({ lng: point.longitude, lat: point.latitude });
       hasPoints = true;
     }
   }
 
   for (const route of gpx.routes) {
     for (const point of route.points) {
-      minLng = Math.min(minLng, point.longitude);
-      minLat = Math.min(minLat, point.latitude);
-      maxLng = Math.max(maxLng, point.longitude);
-      maxLat = Math.max(maxLat, point.latitude);
+      boundingBox.extend({ lng: point.longitude, lat: point.latitude });
       hasPoints = true;
     }
   }
 
-  return hasPoints ? new Bbox(minLng, minLat, maxLng, maxLat) : null;
+  return hasPoints ? boundingBox : null;
 }
 
 export function importGpxToFogMap(gpxData: string): GpsImportResult {
