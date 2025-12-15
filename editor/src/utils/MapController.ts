@@ -291,22 +291,15 @@ export class MapController {
   // ============================================================================
   // FogMap Update Logic
   // ============================================================================
-  private updateFogMap(
-    newMap: fogMap.FogMap,
-    areaChanged: Bbox | "all",
-    skipGridUpdate = false
-  ): void {
+  updateFogMap(newMap: fogMap.FogMap, areaChanged: Bbox | "all"): void {
     if (this.fogMap !== newMap) {
-      this.applyFogMapUpdate(newMap, areaChanged, skipGridUpdate);
+      this.applyFogMapUpdate(newMap, areaChanged);
     }
   }
 
-  private applyFogMapUpdate(newMap: fogMap.FogMap, areaChanged: Bbox | "all", skipGridUpdate = false) {
+  private applyFogMapUpdate(newMap: fogMap.FogMap, areaChanged: Bbox | "all") {
     this.fogMap = newMap;
     this.redrawArea(areaChanged);
-    if (!skipGridUpdate && this.showGrid) {
-      this.updateGridLayer();
-    }
     this.onChange();
   }
 

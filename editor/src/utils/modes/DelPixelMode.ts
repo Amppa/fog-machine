@@ -277,7 +277,7 @@ export class DelPixelMode implements ModeStrategy {
     this.lastPos = lngLat;
 
     if (result?.changed) {
-      context.updateFogMap(result.newMap, result.segmentBbox, true);
+      context.updateFogMap(result.newMap, result.segmentBbox);
     }
   }
 }
