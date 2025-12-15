@@ -44,7 +44,7 @@ export class DelBlockMode implements ModeStrategy {
     // DelBlock layers are initialized in MapController
   }
 
-  deactivate(context: ModeContext): void {
+  deactivate(_context: ModeContext): void {
     // DelBlock layers are cleaned up in MapController
     this.delBlockState = this.resetDelBlockState();
 
