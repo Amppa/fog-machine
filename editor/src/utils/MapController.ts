@@ -94,6 +94,10 @@ export class MapController {
     this.onChange();
   };
 
+  private ensureMinZoomLevelWrapper = (minZoom: number): void => {
+    this.mapViewController?.ensureMinZoomLevel(minZoom);
+  };
+
   // ============================================================================
   // Initialization Methods
   // ============================================================================
@@ -140,7 +144,7 @@ export class MapController {
       updateFogMap: this.updateFogMap.bind(this),
       onChange: this.onChange.bind(this),
       saveToHistory: this.saveToHistory,
-      ensureMinZoomLevel: (minZoom: number) => this.mapViewController?.ensureMinZoomLevel(minZoom),
+      ensureMinZoomLevel: this.ensureMinZoomLevelWrapper,
     };
     this.modeManager = new ModeManager(context);
   }
